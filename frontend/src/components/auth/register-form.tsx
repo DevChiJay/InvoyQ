@@ -21,6 +21,7 @@ import { useAuthStore } from '@/stores/auth-store';
 import { toast } from 'sonner';
 import { Check, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import GoogleOAuthButton from './google-oauth-button';
 
 const registerSchema = z.object({
   full_name: z.string().min(2, 'Name must be at least 2 characters'),
@@ -233,6 +234,20 @@ export default function RegisterForm() {
             </Button>
           </form>
         </Form>
+
+        <div className="relative my-4">
+          <div className="absolute inset-0 flex items-center">
+            <span className="w-full border-t" />
+          </div>
+          <div className="relative flex justify-center text-xs uppercase">
+            <span className="bg-white px-2 text-muted-foreground dark:bg-gray-950">
+              Or continue with
+            </span>
+          </div>
+        </div>
+
+        <GoogleOAuthButton className="w-full" />
+
         <div className="mt-4 text-center text-sm">
           Already have an account?{' '}
           <Link href="/login" className="text-primary hover:underline">

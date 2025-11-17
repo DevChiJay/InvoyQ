@@ -9,3 +9,6 @@ pytest
 httpx
 python-dotenv
 stripe
+google-auth
+google-auth-oauthlib
+google-auth-httplib2

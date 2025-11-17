@@ -141,3 +141,114 @@ def resend_verification(request: ResendVerificationRequest, db: Session = Depend
     
     return {"message": "Verification email sent successfully. Please check your inbox."}
 
+
+# ==================== Google OAuth ====================
+from urllib.parse import urlencode
+from google.oauth2 import id_token
+from google.auth.transport import requests as google_requests
+
+
+@router.get("/google/login")
+def google_login():
+    """Redirect user to Google OAuth consent screen"""
+    if not settings.GOOGLE_CLIENT_ID:
+        raise HTTPException(status_code=500, detail="Google OAuth not configured")
+    
+    params = {
+        "client_id": settings.GOOGLE_CLIENT_ID,
+        "redirect_uri": settings.GOOGLE_REDIRECT_URI,
+        "response_type": "code",
+        "scope": "openid email profile",
+        "access_type": "offline",
+        "prompt": "select_account",
+    }
+    
+    auth_url = f"https://accounts.google.com/o/oauth2/v2/auth?{urlencode(params)}"
+    return {"auth_url": auth_url}
+
+
+@router.get("/google/callback")
+async def google_callback(code: str, db: Session = Depends(get_db)):
+    """Handle Google OAuth callback and create/login user"""
+    if not settings.GOOGLE_CLIENT_ID or not settings.GOOGLE_CLIENT_SECRET:
+        raise HTTPException(status_code=500, detail="Google OAuth not configured")
+    
+    try:
+        # Exchange authorization code for access token
+        import httpx
+        token_url = "https://oauth2.googleapis.com/token"
+        token_data = {
+            "code": code,
+            "client_id": settings.GOOGLE_CLIENT_ID,
+            "client_secret": settings.GOOGLE_CLIENT_SECRET,
+            "redirect_uri": settings.GOOGLE_REDIRECT_URI,
+            "grant_type": "authorization_code",
+        }
+        
+        async with httpx.AsyncClient() as client:
+            token_response = await client.post(token_url, data=token_data)
+            token_response.raise_for_status()
+            tokens = token_response.json()
+        
+        # Verify and decode the ID token
+        id_info = id_token.verify_oauth2_token(
+            tokens["id_token"],
+            google_requests.Request(),
+            settings.GOOGLE_CLIENT_ID
+        )
+        
+        # Extract user information
+        google_user_id = id_info["sub"]
+        email = id_info.get("email")
+        full_name = id_info.get("name", "")
+        avatar_url = id_info.get("picture")
+        email_verified = id_info.get("email_verified", False)
+        
+        if not email:
+            raise HTTPException(status_code=400, detail="Email not provided by Google")
+        
+        # Check if user exists
+        user = db.query(User).filter(User.email == email).first()
+        
+        if user:
+            # Update existing user with Google OAuth info if not already set
+            if not user.oauth_provider:
+                user.oauth_provider = "google"
+                user.oauth_provider_id = google_user_id
+            if not user.avatar_url and avatar_url:
+                user.avatar_url = avatar_url
+            # Mark as verified if Google says email is verified
+            if email_verified and not user.is_verified:
+                user.is_verified = True
+            db.commit()
+        else:
+            # Create new user with Google OAuth
+            user = User(
+                email=email,
+                full_name=full_name,
+                oauth_provider="google",
+                oauth_provider_id=google_user_id,
+                avatar_url=avatar_url,
+                is_verified=email_verified,  # Trust Google's verification
+                hashed_password=None,  # No password for OAuth users
+            )
+            db.add(user)
+            db.commit()
+            db.refresh(user)
+        
+        # Generate JWT access token
+        access_token = create_access_token({"sub": str(user.id)})
+        
+        # Redirect to frontend with token
+        redirect_url = f"{settings.FRONTEND_URL}/auth/callback?token={access_token}"
+        
+        from fastapi.responses import RedirectResponse
+        return RedirectResponse(url=redirect_url)
+        
+    except httpx.HTTPStatusError as e:
+        raise HTTPException(status_code=400, detail=f"Failed to exchange code for token: {str(e)}")
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=f"Invalid token: {str(e)}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"OAuth error: {str(e)}")
+

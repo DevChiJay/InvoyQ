@@ -7,8 +7,13 @@ class User(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     email = Column(String, unique=True, index=True, nullable=False)
-    hashed_password = Column(String, nullable=False)
+    hashed_password = Column(String, nullable=True)  # Nullable for OAuth users
     full_name = Column(String, nullable=True)
+    
+    # OAuth fields
+    oauth_provider = Column(String, nullable=True)  # 'google', 'github', etc.
+    oauth_provider_id = Column(String, nullable=True)  # Google's user ID
+    
     is_active = Column(Boolean, default=True)
     
     # Email verification fields

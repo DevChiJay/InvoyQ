@@ -19,6 +19,10 @@ interface AuthState {
   clearError: () => void;
   setHasHydrated: (hasHydrated: boolean) => void;
   initializeAuth: () => void;
+  
+  // OAuth helpers
+  setUser: (user: User) => void;
+  setToken: (token: string) => void;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -162,6 +166,20 @@ export const useAuthStore = create<AuthState>()(
       },
 
       clearError: () => set({ error: null }),
+      
+      // OAuth helpers for setting user and token directly
+      setUser: (user: User) => {
+        setUser(user);
+        set({
+          user,
+          isAuthenticated: true,
+          _hasHydrated: true,
+        });
+      },
+      
+      setToken: (token: string) => {
+        setTokens(token);
+      },
     }),
     {
       name: 'auth-storage',

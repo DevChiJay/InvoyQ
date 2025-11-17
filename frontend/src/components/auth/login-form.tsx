@@ -19,6 +19,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuthStore } from '@/stores/auth-store';
 import { toast } from 'sonner';
+import GoogleOAuthButton from './google-oauth-button';
 
 const loginSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -118,6 +119,19 @@ export default function LoginForm() {
             </Button>
           </form>
         </Form>
+
+        <div className="relative my-4">
+          <div className="absolute inset-0 flex items-center">
+            <span className="w-full border-t" />
+          </div>
+          <div className="relative flex justify-center text-xs uppercase">
+            <span className="bg-white px-2 text-muted-foreground dark:bg-gray-950">
+              Or continue with
+            </span>
+          </div>
+        </div>
+
+        <GoogleOAuthButton className="w-full" />
         
         {unverifiedEmail && (
           <div className="mt-4 p-3 bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 rounded-md">
