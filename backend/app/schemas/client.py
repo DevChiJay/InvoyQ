@@ -20,7 +20,7 @@ class ClientUpdate(BaseModel):
 
 
 class ClientOut(ClientBase):
-    id: int
+    id: str
 
     class Config:
         from_attributes = True

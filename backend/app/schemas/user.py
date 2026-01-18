@@ -31,14 +31,14 @@ class UserUpdate(BaseModel):
     website: Optional[str] = None
 
 class UserOut(UserBase):
-    id: int
+    id: str
     is_verified: bool = False
 
     class Config:
         from_attributes = True
 
 class UserRead(UserBase):
-    id: int
+    id: str
     is_active: bool
     is_verified: bool
     is_pro: bool

@@ -10,11 +10,12 @@ from app.repositories.base import BaseRepository
 from app.schemas.user import UserOut, UserCreate, UserUpdate
 from typing import Optional
 from datetime import datetime
+from pydantic import Field
 
 
 class UserInDB(UserOut):
     """User document model for MongoDB storage."""
-    _id: str
+    id: str = Field(alias="_id")
     hashed_password: Optional[str] = None
     is_active: bool = True
     created_at: datetime

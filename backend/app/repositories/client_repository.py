@@ -9,11 +9,12 @@ from app.repositories.base import BaseRepository
 from app.schemas.client import ClientOut, ClientCreate, ClientUpdate
 from typing import List, Optional
 from datetime import datetime
+from pydantic import Field
 
 
 class ClientInDB(ClientOut):
     """Client document model for MongoDB storage."""
-    _id: str
+    id: str = Field(alias="_id")
     user_id: str  # Reference to user who owns this client
     created_at: datetime
     updated_at: datetime
