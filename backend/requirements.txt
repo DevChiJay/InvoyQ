@@ -2,6 +2,7 @@ fastapi
 uvicorn
 SQLAlchemy
 pydantic
+pydantic-settings
 passlib[bcrypt]
 python-jose[cryptography]
 python-multipart
@@ -12,3 +13,5 @@ stripe
 google-auth
 google-auth-oauthlib
 google-auth-httplib2
+motor==3.3.2
+pymongo==4.6.1

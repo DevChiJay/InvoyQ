@@ -1,0 +1,345 @@
+"""
+Invoice repository for MongoDB operations.
+
+Handles invoice CRUD, product integration,
+event tracking, and date filtering.
+"""
+
+from motor.motor_asyncio import AsyncIOMotorDatabase, AsyncIOMotorClientSession
+from app.repositories.base import BaseRepository
+from app.schemas.invoice_mongo import (
+    InvoiceOut, InvoiceCreate, InvoiceUpdate, InvoiceInDB,
+    InvoiceEvent
+)
+from typing import List, Optional, Dict, Any
+from datetime import datetime
+
+
+class InvoiceRepository(BaseRepository[InvoiceInDB]):
+    """Repository for invoice operations."""
+    
+    def __init__(self, db: AsyncIOMotorDatabase):
+        super().__init__(db, "invoices", InvoiceInDB)
+    
+    async def create_invoice(
+        self,
+        user_id: str,
+        client_id: str,
+        invoice_data: InvoiceCreate,
+        session: Optional[AsyncIOMotorClientSession] = None
+    ) -> InvoiceInDB:
+        """
+        Create a new invoice.
+        
+        Args:
+            user_id: ID of the user creating the invoice
+            client_id: ID of the client
+            invoice_data: Invoice creation data
+            session: Optional MongoDB session for transactions
+            
+        Returns:
+            Created invoice document
+            
+        Example:
+            invoice = await invoice_repo.create_invoice(
+                user_id,
+                client_id,
+                InvoiceCreate(
+                    number="INV-001",
+                    items=[...],
+                    status="draft"
+                )
+            )
+        """
+        doc = invoice_data.model_dump()
+        
+        # Add system fields
+        now = datetime.utcnow()
+        doc.update({
+            "user_id": user_id,
+            "client_id": client_id,
+            "created_at": now,
+            "updated_at": now,
+            "events": [
+                {
+                    "action": "created",
+                    "timestamp": now,
+                    "details": {"created_by": "system"}
+                }
+            ]
+        })
+        
+        result = await self.collection.insert_one(doc, session=session)
+        doc["_id"] = str(result.inserted_id)
+        
+        return InvoiceInDB(**doc)
+    
+    async def get_by_id_and_user(
+        self,
+        invoice_id: str,
+        user_id: str
+    ) -> Optional[InvoiceInDB]:
+        """
+        Get invoice by ID, ensuring it belongs to the user.
+        
+        Args:
+            invoice_id: Invoice ID
+            user_id: User ID (for ownership check)
+            
+        Returns:
+            Invoice document or None if not found or not owned by user
+        """
+        return await self.get_one({
+            "_id": self._to_object_id(invoice_id),
+            "user_id": user_id
+        })
+    
+    async def get_by_number(
+        self,
+        user_id: str,
+        number: str
+    ) -> Optional[InvoiceInDB]:
+        """
+        Get invoice by number for a user.
+        
+        Args:
+            user_id: User ID
+            number: Invoice number
+            
+        Returns:
+            Invoice document or None if not found
+        """
+        return await self.get_one({
+            "user_id": user_id,
+            "number": number
+        })
+    
+    async def list_by_user(
+        self,
+        user_id: str,
+        client_id: Optional[str] = None,
+        status: Optional[str] = None,
+        date_from: Optional[datetime] = None,
+        date_to: Optional[datetime] = None,
+        date_range_query: Optional[Dict[str, Any]] = None,
+        skip: int = 0,
+        limit: int = 50,
+        sort_by: str = "created_at",
+        sort_order: int = -1
+    ) -> List[InvoiceInDB]:
+        """
+        List invoices for a user with filters.
+        
+        Args:
+            user_id: User ID
+            client_id: Filter by client
+            status: Filter by status
+            date_from: Filter from this date
+            date_to: Filter to this date
+            date_range_query: Pre-built date range query
+            skip: Number of records to skip
+            limit: Maximum records to return
+            sort_by: Field to sort by
+            sort_order: Sort direction (1=asc, -1=desc)
+            
+        Returns:
+            List of invoice documents
+            
+        Example:
+            # Filter by status and date range
+            invoices = await invoice_repo.list_by_user(
+                user_id,
+                status="paid",
+                date_from=datetime(2026, 1, 1),
+                date_to=datetime(2026, 1, 31)
+            )
+        """
+        filter_query = {"user_id": user_id}
+        
+        # Client filter
+        if client_id:
+            filter_query["client_id"] = client_id
+        
+        # Status filter
+        if status:
+            filter_query["status"] = status
+        
+        # Date range filter
+        if date_range_query:
+            filter_query["issued_date"] = date_range_query
+        elif date_from or date_to:
+            date_filter = {}
+            if date_from:
+                date_filter["$gte"] = date_from
+            if date_to:
+                date_filter["$lte"] = date_to
+            if date_filter:
+                filter_query["issued_date"] = date_filter
+        
+        return await self.get_many(
+            filter_query,
+            skip=skip,
+            limit=limit,
+            sort=[(sort_by, sort_order)]
+        )
+    
+    async def update_invoice(
+        self,
+        invoice_id: str,
+        user_id: str,
+        update_data: InvoiceUpdate
+    ) -> Optional[InvoiceInDB]:
+        """
+        Update an invoice, ensuring ownership.
+        
+        Args:
+            invoice_id: Invoice ID
+            user_id: User ID (for ownership check)
+            update_data: Fields to update
+            
+        Returns:
+            Updated invoice or None if not found/not owned
+        """
+        # First check ownership
+        existing = await self.get_by_id_and_user(invoice_id, user_id)
+        if not existing:
+            return None
+        
+        # Track status changes
+        update_dict = update_data.model_dump(exclude_unset=True)
+        if "status" in update_dict and update_dict["status"] != existing.status:
+            # Append status change event
+            event = InvoiceEvent(
+                action="status_changed",
+                timestamp=datetime.utcnow(),
+                details={
+                    "old_status": existing.status,
+                    "new_status": update_dict["status"]
+                }
+            )
+            
+            # Use $push to append event
+            await self.collection.update_one(
+                {"_id": self._to_object_id(invoice_id)},
+                {
+                    "$push": {"events": event.model_dump()},
+                    "$set": {"updated_at": datetime.utcnow()}
+                }
+            )
+        
+        return await self.update(invoice_id, update_data)
+    
+    async def add_event(
+        self,
+        invoice_id: str,
+        user_id: str,
+        action: str,
+        details: Optional[Dict[str, Any]] = None
+    ) -> bool:
+        """
+        Add an event to invoice history.
+        
+        Args:
+            invoice_id: Invoice ID
+            user_id: User ID (for ownership check)
+            action: Event action (e.g., "sent", "paid", "viewed")
+            details: Optional event details
+            
+        Returns:
+            True if event added, False if invoice not found/not owned
+            
+        Example:
+            await invoice_repo.add_event(
+                invoice_id,
+                user_id,
+                "sent",
+                {"sent_to": "client@example.com", "method": "email"}
+            )
+        """
+        event = InvoiceEvent(
+            action=action,
+            timestamp=datetime.utcnow(),
+            details=details or {}
+        )
+        
+        result = await self.collection.update_one(
+            {
+                "_id": self._to_object_id(invoice_id),
+                "user_id": user_id
+            },
+            {
+                "$push": {"events": event.model_dump()},
+                "$set": {"updated_at": datetime.utcnow()}
+            }
+        )
+        
+        return result.modified_count > 0
+    
+    async def delete_invoice(
+        self,
+        invoice_id: str,
+        user_id: str
+    ) -> bool:
+        """
+        Delete an invoice, ensuring ownership.
+        
+        Args:
+            invoice_id: Invoice ID
+            user_id: User ID (for ownership check)
+            
+        Returns:
+            True if deleted, False if not found/not owned
+        """
+        result = await self.collection.delete_one({
+            "_id": self._to_object_id(invoice_id),
+            "user_id": user_id
+        })
+        return result.deleted_count > 0
+    
+    async def count_by_user(
+        self,
+        user_id: str,
+        status: Optional[str] = None
+    ) -> int:
+        """
+        Count invoices for a user.
+        
+        Args:
+            user_id: User ID
+            status: Filter by status
+            
+        Returns:
+            Number of invoices
+        """
+        filter_query = {"user_id": user_id}
+        if status:
+            filter_query["status"] = status
+        
+        return await self.count(filter_query)
+    
+    async def number_exists(
+        self,
+        user_id: str,
+        number: str,
+        exclude_id: Optional[str] = None
+    ) -> bool:
+        """
+        Check if invoice number exists for a user.
+        
+        Args:
+            user_id: User ID
+            number: Invoice number to check
+            exclude_id: Optional invoice ID to exclude (for updates)
+            
+        Returns:
+            True if number exists, False otherwise
+        """
+        filter_query = {
+            "user_id": user_id,
+            "number": number
+        }
+        
+        if exclude_id:
+            filter_query["_id"] = {"$ne": self._to_object_id(exclude_id)}
+        
+        return await self.exists(filter_query)

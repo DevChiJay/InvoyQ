@@ -1,4 +1,5 @@
 import os
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
@@ -10,6 +11,8 @@ from app.api.v1.extraction import router as extraction_router
 from app.api.v1.reminders import router as reminders_router
 from app.api.v1.payments import router as payments_router
 from app.db.session import Base, engine
+from app.db.mongo import connect_to_mongo, close_mongo_connection, get_database
+from app.db.indexes import create_all_indexes
 from app.core.config import settings
 
 # Ensure models are imported so SQLAlchemy registers them with Base.metadata
@@ -20,7 +23,38 @@ from app.models import invoice as invoice_model  # noqa: F401
 from app.models import payment as payment_model  # noqa: F401
 from app.models import extraction as extraction_model  # noqa: F401
 
-app = FastAPI(title="InvoYQ API", version="0.1.0")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """
+    Application lifespan manager.
+    Handles startup and shutdown events for both PostgreSQL and MongoDB.
+    """
+    # Startup
+    print("🚀 Starting up InvoYQ API...")
+    
+    # Create PostgreSQL tables (legacy, will be removed in Phase 5)
+    Base.metadata.create_all(bind=engine)
+    
+    # Initialize MongoDB connection and indexes
+    await connect_to_mongo()
+    await create_all_indexes(get_database())
+    
+    print("✅ Application startup complete")
+    
+    yield
+    
+    # Shutdown
+    print("🛑 Shutting down InvoYQ API...")
+    await close_mongo_connection()
+    print("✅ Application shutdown complete")
+
+
+app = FastAPI(
+    title="InvoYQ API",
+    version="0.1.0",
+    lifespan=lifespan
+)
 
 # Add CORS middleware
 app.add_middleware(
@@ -44,7 +78,11 @@ os.makedirs(settings.STORAGE_LOCAL_DIR, exist_ok=True)
 app.mount("/static", StaticFiles(directory=settings.STORAGE_LOCAL_DIR), name="static")
 
 
-@app.on_event("startup")
-def on_startup_create_tables() -> None:
-	"""Create database tables if they do not exist."""
-	Base.metadata.create_all(bind=engine)
+@app.get("/")
+async def root():
+    """API health check endpoint."""
+    return {
+        "message": "InvoYQ API is running",
+        "version": "0.1.0",
+        "status": "ok"
+    }

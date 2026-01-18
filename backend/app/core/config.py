@@ -43,6 +43,12 @@ class Settings(BaseModel):
     GOOGLE_CLIENT_ID: str | None = os.getenv("GOOGLE_CLIENT_ID")
     GOOGLE_CLIENT_SECRET: str | None = os.getenv("GOOGLE_CLIENT_SECRET")
     GOOGLE_REDIRECT_URI: str = os.getenv("GOOGLE_REDIRECT_URI", "http://localhost:8000/v1/auth/google/callback")
+    
+    # MongoDB settings
+    MONGODB_URI: str = os.getenv("MONGODB_URI", "mongodb://localhost:27017")
+    MONGODB_DB_NAME: str = os.getenv("MONGODB_DB_NAME", "invoyq")
+    MONGODB_MAX_POOL_SIZE: int = int(os.getenv("MONGODB_MAX_POOL_SIZE", "50"))
+    MONGODB_MIN_POOL_SIZE: int = int(os.getenv("MONGODB_MIN_POOL_SIZE", "10"))
 
     class Config:
         arbitrary_types_allowed = True
