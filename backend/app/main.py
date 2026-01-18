@@ -10,6 +10,8 @@ from app.api.v1.invoices import router as invoices_router
 from app.api.v1.extraction import router as extraction_router
 from app.api.v1.reminders import router as reminders_router
 from app.api.v1.payments import router as payments_router
+from app.api.v1.products import router as products_router
+from app.api.v1.expenses import router as expenses_router
 from app.db.session import Base, engine
 from app.db.mongo import connect_to_mongo, close_mongo_connection, get_database
 from app.db.indexes import create_all_indexes
@@ -69,6 +71,8 @@ app.include_router(auth_router, prefix="/v1/auth", tags=["auth"])
 app.include_router(users_router, prefix="/v1", tags=["users"]) 
 app.include_router(clients_router, prefix="/v1", tags=["clients"]) 
 app.include_router(invoices_router, prefix="/v1", tags=["invoices"]) 
+app.include_router(products_router, prefix="/v1/products", tags=["products"])
+app.include_router(expenses_router, prefix="/v1/expenses", tags=["expenses"])
 app.include_router(extraction_router, prefix="/v1", tags=["extraction"]) 
 app.include_router(reminders_router, prefix="/v1", tags=["reminders"]) 
 app.include_router(payments_router, prefix="/v1/payments", tags=["payments"]) 
