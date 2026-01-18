@@ -15,7 +15,7 @@ from datetime import datetime
 class UserInDB(UserOut):
     """User document model for MongoDB storage."""
     _id: str
-    hashed_password: str
+    hashed_password: Optional[str] = None
     is_active: bool = True
     created_at: datetime
     updated_at: datetime
@@ -23,6 +23,10 @@ class UserInDB(UserOut):
     # OAuth fields
     oauth_provider: Optional[str] = None
     oauth_provider_id: Optional[str] = None
+    
+    # Email verification
+    verification_token: Optional[str] = None
+    verification_token_expires: Optional[datetime] = None
     
     class Config:
         populate_by_name = True
@@ -72,45 +76,67 @@ class UserRepository(BaseRepository[UserInDB]):
             "oauth_provider_id": provider_id
         })
     
+    async def get_by_verification_token(self, token: str) -> Optional[UserInDB]:
+        """
+        Find user by verification token.
+        
+        Args:
+            token: Email verification token
+            
+        Returns:
+            User document or None if not found
+            
+        Example:
+            user = await user_repo.get_by_verification_token("abc123...")
+        """
+        return await self.get_one({"verification_token": token})
+    
     async def create_user(
         self,
-        user_data: UserCreate,
-        hashed_password: str,
+        email: str,
+        full_name: str,
+        hashed_password: Optional[str] = None,
         oauth_provider: Optional[str] = None,
-        oauth_provider_id: Optional[str] = None
+        oauth_provider_id: Optional[str] = None,
+        avatar_url: Optional[str] = None,
+        is_verified: bool = False
     ) -> UserInDB:
         """
         Create a new user.
         
         Args:
-            user_data: User creation data
-            hashed_password: Hashed password
+            email: User email address
+            full_name: User's full name
+            hashed_password: Hashed password (optional for OAuth users)
             oauth_provider: Optional OAuth provider
             oauth_provider_id: Optional OAuth provider user ID
+            avatar_url: Optional avatar URL
+            is_verified: Email verification status
             
         Returns:
             Created user document
             
         Example:
             user = await user_repo.create_user(
-                UserCreate(email="test@example.com", password="secret"),
+                email="test@example.com",
+                full_name="Test User",
                 hashed_password=hash_password("secret")
             )
         """
-        doc = user_data.model_dump(exclude={"password"})
-        doc.update({
+        doc = {
+            "email": email,
+            "full_name": full_name,
             "hashed_password": hashed_password,
             "is_active": True,
-            "is_verified": False if not oauth_provider else True,  # OAuth users auto-verified
+            "is_verified": is_verified,
             "is_pro": False,
             "subscription_status": None,
+            "oauth_provider": oauth_provider,
+            "oauth_provider_id": oauth_provider_id,
+            "avatar_url": avatar_url,
             "created_at": datetime.utcnow(),
             "updated_at": datetime.utcnow()
-        })
-        
-        if oauth_provider:
-            doc["oauth_provider"] = oauth_provider
-            doc["oauth_provider_id"] = oauth_provider_id
+        }
         
         result = await self.collection.insert_one(doc)
         doc["_id"] = str(result.inserted_id)
@@ -142,7 +168,7 @@ class UserRepository(BaseRepository[UserInDB]):
     
     async def verify_email(self, user_id: str) -> Optional[UserInDB]:
         """
-        Mark user's email as verified.
+        Mark user's email as verified and clear verification token.
         
         Args:
             user_id: User ID
@@ -156,6 +182,10 @@ class UserRepository(BaseRepository[UserInDB]):
                 "$set": {
                     "is_verified": True,
                     "updated_at": datetime.utcnow()
+                },
+                "$unset": {
+                    "verification_token": "",
+                    "verification_token_expires": ""
                 }
             },
             return_document=True

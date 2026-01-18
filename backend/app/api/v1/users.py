@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
-from sqlalchemy.orm import Session
+from motor.motor_asyncio import AsyncIOMotorDatabase
 from app.dependencies.auth import get_current_user
 from app.schemas.user import UserOut, UserRead, UserUpdate
-from app.models.user import User
-from app.db.session import get_db
+from app.repositories.user_repository import UserRepository, UserInDB
+from app.db.mongo import get_database
 from app.services.storage import save_bytes
 import uuid
 from pathlib import Path
@@ -11,36 +11,36 @@ from pathlib import Path
 router = APIRouter()
 
 @router.get("/me", response_model=UserRead)
-def read_me(current_user: User = Depends(get_current_user)):
+async def read_me(current_user: UserInDB = Depends(get_current_user)):
     """Get current authenticated user details"""
     return current_user
 
 @router.patch("/me", response_model=UserRead)
-def update_me(
+async def update_me(
     user_update: UserUpdate,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    current_user: UserInDB = Depends(get_current_user),
+    db: AsyncIOMotorDatabase = Depends(get_database)
 ):
     """Update current user's profile and business details"""
+    user_repo = UserRepository(db)
     
     # Update only the fields that were provided
     update_data = user_update.model_dump(exclude_unset=True)
     
-    for field, value in update_data.items():
-        setattr(current_user, field, value)
+    updated_user = await user_repo.update(current_user.id, update_data)
+    if not updated_user:
+        raise HTTPException(status_code=404, detail="User not found")
     
-    db.commit()
-    db.refresh(current_user)
-    
-    return current_user
+    return updated_user
 
 @router.post("/upload-avatar", response_model=dict)
 async def upload_avatar(
     file: UploadFile = File(...),
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    current_user: UserInDB = Depends(get_current_user),
+    db: AsyncIOMotorDatabase = Depends(get_database)
 ):
     """Upload user avatar image"""
+    user_repo = UserRepository(db)
     
     # Validate file type
     allowed_types = ["image/jpeg", "image/png", "image/jpg", "image/webp"]
@@ -63,19 +63,18 @@ async def upload_avatar(
     abs_path, public_url = save_bytes(unique_filename, contents)
     
     # Update user avatar URL
-    current_user.avatar_url = public_url
-    db.commit()
-    db.refresh(current_user)
+    await user_repo.update(current_user.id, {"avatar_url": public_url})
     
     return {"url": public_url, "message": "Avatar uploaded successfully"}
 
 @router.post("/upload-logo", response_model=dict)
 async def upload_company_logo(
     file: UploadFile = File(...),
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    current_user: UserInDB = Depends(get_current_user),
+    db: AsyncIOMotorDatabase = Depends(get_database)
 ):
     """Upload company logo image"""
+    user_repo = UserRepository(db)
     
     # Validate file type
     allowed_types = ["image/jpeg", "image/png", "image/jpg", "image/webp", "image/svg+xml"]
@@ -98,8 +97,6 @@ async def upload_company_logo(
     abs_path, public_url = save_bytes(unique_filename, contents)
     
     # Update user company logo URL
-    current_user.company_logo_url = public_url
-    db.commit()
-    db.refresh(current_user)
+    await user_repo.update(current_user.id, {"company_logo_url": public_url})
     
     return {"url": public_url, "message": "Company logo uploaded successfully"}

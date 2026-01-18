@@ -5,11 +5,11 @@ import secrets
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import JWTError, jwt
-from sqlalchemy.orm import Session
+from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from app.core.config import settings
-from app.db.session import get_db
-from app.models.user import User
+from app.db.mongo import get_database
+from app.repositories.user_repository import UserRepository
 from app.schemas.auth import Token
 from app.schemas.user import UserCreate, UserOut, EmailVerificationResponse, ResendVerificationRequest
 from app.core.security import verify_password, get_password_hash
@@ -32,44 +32,52 @@ def generate_verification_token() -> str:
     return secrets.token_urlsafe(32)
 
 
-def send_verification_email(user: User, db: Session) -> bool:
+async def send_verification_email(user_id: str, email: str, full_name: str, db: AsyncIOMotorDatabase) -> bool:
     """Generate verification token and send email to user"""
+    user_repo = UserRepository(db)
+    
     # Generate token and set expiry (24 hours)
-    user.verification_token = generate_verification_token()
-    user.verification_token_expires = datetime.utcnow() + timedelta(hours=24)
-    db.commit()
+    verification_token = generate_verification_token()
+    verification_token_expires = datetime.utcnow() + timedelta(hours=24)
+    
+    await user_repo.update(
+        user_id,
+        {
+            "verification_token": verification_token,
+            "verification_token_expires": verification_token_expires
+        }
+    )
     
     # Create verification URL
-    verification_url = f"{settings.FRONTEND_URL}/verify-email?token={user.verification_token}"
+    verification_url = f"{settings.FRONTEND_URL}/verify-email?token={verification_token}"
     
     # Send email
     return email_service.send_verification_email(
-        to_email=user.email,
+        to_email=email,
         verification_url=verification_url,
-        full_name=user.full_name
+        full_name=full_name
     )
 
 
 @router.post("/register", response_model=UserOut, status_code=status.HTTP_201_CREATED)
-def register(user_in: UserCreate, db: Session = Depends(get_db)):
-    existing = db.query(User).filter(User.email == user_in.email).first()
+async def register(user_in: UserCreate, db: AsyncIOMotorDatabase = Depends(get_database)):
+    user_repo = UserRepository(db)
+    
+    existing = await user_repo.get_by_email(user_in.email)
     if existing:
         raise HTTPException(status_code=400, detail="Email already registered")
     
     # Create user (not verified initially)
-    user = User(
-        email=user_in.email, 
-        full_name=user_in.full_name, 
+    user = await user_repo.create_user(
+        email=user_in.email,
+        full_name=user_in.full_name,
         hashed_password=get_password_hash(user_in.password),
         is_verified=False
     )
-    db.add(user)
-    db.commit()
-    db.refresh(user)
     
     # Send verification email (don't fail registration if email fails)
     try:
-        send_verification_email(user, db)
+        await send_verification_email(user.id, user.email, user.full_name, db)
     except Exception as e:
         # Log error but don't fail registration
         print(f"Failed to send verification email: {e}")
@@ -78,9 +86,11 @@ def register(user_in: UserCreate, db: Session = Depends(get_db)):
 
 
 @router.post("/login", response_model=Token)
-def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
-    user: Optional[User] = db.query(User).filter(User.email == form_data.username).first()
-    if not user or not verify_password(form_data.password, user.hashed_password):
+async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: AsyncIOMotorDatabase = Depends(get_database)):
+    user_repo = UserRepository(db)
+    
+    user = await user_repo.get_by_email(form_data.username)
+    if not user or not user.hashed_password or not verify_password(form_data.password, user.hashed_password):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect email or password")
     
     # Check if email is verified
@@ -90,14 +100,16 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
             detail="Email not verified. Please check your email for verification link."
         )
     
-    access_token = create_access_token({"sub": str(user.id)})
+    access_token = create_access_token({"sub": user.id})
     return {"access_token": access_token, "token_type": "bearer"}
 
 
 @router.get("/verify-email", response_model=EmailVerificationResponse)
-def verify_email(token: str, db: Session = Depends(get_db)):
+async def verify_email(token: str, db: AsyncIOMotorDatabase = Depends(get_database)):
     """Verify user's email address using the token from email link"""
-    user = db.query(User).filter(User.verification_token == token).first()
+    user_repo = UserRepository(db)
+    
+    user = await user_repo.get_by_verification_token(token)
     
     if not user:
         raise HTTPException(status_code=400, detail="Invalid verification token")
@@ -107,10 +119,7 @@ def verify_email(token: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=400, detail="Verification token has expired. Please request a new one.")
     
     # Mark user as verified
-    user.is_verified = True
-    user.verification_token = None
-    user.verification_token_expires = None
-    db.commit()
+    await user_repo.verify_email(user.id)
     
     return {
         "message": "Email verified successfully! You can now log in.",
@@ -119,9 +128,11 @@ def verify_email(token: str, db: Session = Depends(get_db)):
 
 
 @router.post("/resend-verification", response_model=dict)
-def resend_verification(request: ResendVerificationRequest, db: Session = Depends(get_db)):
+async def resend_verification(request: ResendVerificationRequest, db: AsyncIOMotorDatabase = Depends(get_database)):
     """Resend verification email to user"""
-    user = db.query(User).filter(User.email == request.email).first()
+    user_repo = UserRepository(db)
+    
+    user = await user_repo.get_by_email(request.email)
     
     if not user:
         # Don't reveal if email exists or not for security
@@ -132,7 +143,7 @@ def resend_verification(request: ResendVerificationRequest, db: Session = Depend
     
     # Send verification email
     try:
-        success = send_verification_email(user, db)
+        success = await send_verification_email(user.id, user.email, user.full_name, db)
         if not success:
             raise HTTPException(status_code=500, detail="Failed to send verification email. Please try again later.")
     except Exception as e:
@@ -168,12 +179,14 @@ def google_login():
 
 
 @router.get("/google/callback")
-async def google_callback(code: str, db: Session = Depends(get_db)):
+async def google_callback(code: str, db: AsyncIOMotorDatabase = Depends(get_database)):
     """Handle Google OAuth callback and create/login user"""
     if not settings.GOOGLE_CLIENT_ID or not settings.GOOGLE_CLIENT_SECRET:
         raise HTTPException(status_code=500, detail="Google OAuth not configured")
     
     try:
+        user_repo = UserRepository(db)
+        
         # Exchange authorization code for access token
         import httpx
         token_url = "https://oauth2.googleapis.com/token"
@@ -207,37 +220,41 @@ async def google_callback(code: str, db: Session = Depends(get_db)):
         if not email:
             raise HTTPException(status_code=400, detail="Email not provided by Google")
         
-        # Check if user exists
-        user = db.query(User).filter(User.email == email).first()
+        # Check if user exists by email or OAuth ID
+        user = await user_repo.get_by_email(email)
+        if not user:
+            user = await user_repo.get_by_oauth(provider="google", provider_id=google_user_id)
         
         if user:
             # Update existing user with Google OAuth info if not already set
+            update_data = {}
             if not user.oauth_provider:
-                user.oauth_provider = "google"
-                user.oauth_provider_id = google_user_id
+                update_data["oauth_provider"] = "google"
+                update_data["oauth_provider_id"] = google_user_id
             if not user.avatar_url and avatar_url:
-                user.avatar_url = avatar_url
+                update_data["avatar_url"] = avatar_url
             # Mark as verified if Google says email is verified
             if email_verified and not user.is_verified:
-                user.is_verified = True
-            db.commit()
+                update_data["is_verified"] = True
+            
+            if update_data:
+                await user_repo.update(user.id, update_data)
+                # Refresh user object
+                user = await user_repo.get_by_id(user.id)
         else:
             # Create new user with Google OAuth
-            user = User(
+            user = await user_repo.create_user(
                 email=email,
                 full_name=full_name,
                 oauth_provider="google",
                 oauth_provider_id=google_user_id,
                 avatar_url=avatar_url,
                 is_verified=email_verified,  # Trust Google's verification
-                hashed_password=None,  # No password for OAuth users
+                hashed_password=None  # No password for OAuth users
             )
-            db.add(user)
-            db.commit()
-            db.refresh(user)
         
         # Generate JWT access token
-        access_token = create_access_token({"sub": str(user.id)})
+        access_token = create_access_token({"sub": user.id})
         
         # Redirect to frontend with token
         redirect_url = f"{settings.FRONTEND_URL}/auth/callback?token={access_token}"

@@ -2,15 +2,18 @@ from typing import Optional
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import jwt, JWTError
-from sqlalchemy.orm import Session
+from motor.motor_asyncio import AsyncIOMotorDatabase
 from app.core.config import settings
-from app.db.session import get_db
-from app.models.user import User
+from app.db.mongo import get_database
+from app.repositories.user_repository import UserRepository, UserInDB
 
 reuse_oauth2 = OAuth2PasswordBearer(tokenUrl="/v1/auth/login")
 
 
-def get_current_user(db: Session = Depends(get_db), token: str = Depends(reuse_oauth2)) -> User:
+async def get_current_user(
+    db: AsyncIOMotorDatabase = Depends(get_database),
+    token: str = Depends(reuse_oauth2)
+) -> UserInDB:
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
@@ -23,7 +26,9 @@ def get_current_user(db: Session = Depends(get_db), token: str = Depends(reuse_o
             raise credentials_exception
     except JWTError:
         raise credentials_exception
-    user = db.get(User, int(user_id))
+    
+    user_repo = UserRepository(db)
+    user = await user_repo.get_by_id(user_id)
     if user is None:
         raise credentials_exception
     return user

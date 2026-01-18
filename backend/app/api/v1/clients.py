@@ -1,11 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
+from motor.motor_asyncio import AsyncIOMotorDatabase
 from typing import List
 
 from app.dependencies.auth import get_current_user
-from app.db.session import get_db
-from app.models.user import User
-from app.models.client import Client
+from app.db.mongo import get_database
+from app.repositories.user_repository import UserInDB
+from app.repositories.client_repository import ClientRepository
 from app.schemas.client import ClientCreate, ClientOut, ClientUpdate
 
 
@@ -13,61 +13,93 @@ router = APIRouter()
 
 
 @router.get("/clients", response_model=List[ClientOut])
-def list_clients(
+async def list_clients(
     limit: int = 50,
     offset: int = 0,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    db: AsyncIOMotorDatabase = Depends(get_database),
+    current_user: UserInDB = Depends(get_current_user),
 ):
+    client_repo = ClientRepository(db)
+    
     if limit <= 0:
         limit = 50
     limit = min(limit, 100)
     if offset < 0:
         offset = 0
-    return (
-        db.query(Client)
-        .filter(Client.user_id == current_user.id)
-        .limit(limit)
-        .offset(offset)
-        .all()
+    
+    clients = await client_repo.list_by_user(
+        user_id=current_user.id,
+        limit=limit,
+        offset=offset
     )
+    return clients
 
 
 @router.post("/clients", response_model=ClientOut, status_code=status.HTTP_201_CREATED)
-def create_client(payload: ClientCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    client = Client(user_id=current_user.id, **payload.dict())
-    db.add(client)
-    db.commit()
-    db.refresh(client)
+async def create_client(
+    payload: ClientCreate,
+    db: AsyncIOMotorDatabase = Depends(get_database),
+    current_user: UserInDB = Depends(get_current_user)
+):
+    client_repo = ClientRepository(db)
+    client = await client_repo.create_client(
+        user_id=current_user.id,
+        client_data=payload
+    )
     return client
 
 
 @router.get("/clients/{client_id}", response_model=ClientOut)
-def get_client(client_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    client = db.get(Client, client_id)
-    if not client or client.user_id != current_user.id:
+async def get_client(
+    client_id: str,
+    db: AsyncIOMotorDatabase = Depends(get_database),
+    current_user: UserInDB = Depends(get_current_user)
+):
+    client_repo = ClientRepository(db)
+    client = await client_repo.get_by_id_and_user(client_id, current_user.id)
+    if not client:
         raise HTTPException(status_code=404, detail="Client not found")
     return client
 
 
 @router.put("/clients/{client_id}", response_model=ClientOut)
-def update_client(client_id: int, payload: ClientUpdate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    client = db.get(Client, client_id)
-    if not client or client.user_id != current_user.id:
+async def update_client(
+    client_id: str,
+    payload: ClientUpdate,
+    db: AsyncIOMotorDatabase = Depends(get_database),
+    current_user: UserInDB = Depends(get_current_user)
+):
+    client_repo = ClientRepository(db)
+    
+    # Verify ownership
+    existing = await client_repo.get_by_id_and_user(client_id, current_user.id)
+    if not existing:
         raise HTTPException(status_code=404, detail="Client not found")
-    for field, value in payload.dict(exclude_unset=True).items():
-        setattr(client, field, value)
-    db.add(client)
-    db.commit()
-    db.refresh(client)
-    return client
+    
+    # Update client
+    update_data = payload.model_dump(exclude_unset=True)
+    updated_client = await client_repo.update_client(
+        client_id=client_id,
+        user_id=current_user.id,
+        update_data=update_data
+    )
+    
+    return updated_client
 
 
 @router.delete("/clients/{client_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_client(client_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    client = db.get(Client, client_id)
-    if not client or client.user_id != current_user.id:
+async def delete_client(
+    client_id: str,
+    db: AsyncIOMotorDatabase = Depends(get_database),
+    current_user: UserInDB = Depends(get_current_user)
+):
+    client_repo = ClientRepository(db)
+    
+    # Verify ownership
+    existing = await client_repo.get_by_id_and_user(client_id, current_user.id)
+    if not existing:
         raise HTTPException(status_code=404, detail="Client not found")
-    db.delete(client)
-    db.commit()
+    
+    # Delete client
+    await client_repo.delete(client_id)
     return None
