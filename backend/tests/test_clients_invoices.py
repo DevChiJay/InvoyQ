@@ -1,112 +1,285 @@
+"""
+Integration tests for Clients and Invoices API endpoints.
+
+Tests CRUD operations for clients and invoices with MongoDB.
+"""
+
 import pytest
-from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from httpx import AsyncClient
+from motor.motor_asyncio import AsyncIOMotorDatabase
 
-from app.main import app
-from app.db.session import Base, get_db
+from app.repositories.user_repository import UserInDB
 
 
-@pytest.fixture()
-def client_app():
-    # Use a separate SQLite DB for tests with transaction rollback
-    SQLALCHEMY_DATABASE_URL = "sqlite:///./test_ci.db"
-    engine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False})
-    Base.metadata.create_all(bind=engine)
+@pytest.mark.integration
+class TestClientsAPI:
+    """Test suite for /v1/clients endpoints."""
+    
+    @pytest.mark.asyncio
+    async def test_create_client(
+        self,
+        client: AsyncClient,
+        auth_headers: dict,
+        test_user: UserInDB
+    ):
+        """Test creating a new client."""
+        response = await client.post(
+            "/v1/clients",
+            json={
+                "name": "Acme Corp",
+                "email": "billing@acme.test",
+                "phone": "123-456-7890",
+                "address": "123 Main St"
+            },
+            headers=auth_headers
+        )
+        
+        assert response.status_code == 201
+        data = response.json()
+        assert data["name"] == "Acme Corp"
+        assert data["email"] == "billing@acme.test"
+        assert data["user_id"] == test_user.id
+        assert "id" in data
+    
+    @pytest.mark.asyncio
+    async def test_list_clients(
+        self,
+        client: AsyncClient,
+        auth_headers: dict,
+        test_client_data
+    ):
+        """Test listing clients."""
+        response = await client.get(
+            "/v1/clients",
+            headers=auth_headers
+        )
+        
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data) >= 1
+        assert any(c["name"] == test_client_data["name"] for c in data)
+    
+    @pytest.mark.asyncio
+    async def test_get_client(
+        self,
+        client: AsyncClient,
+        auth_headers: dict,
+        test_db: AsyncIOMotorDatabase,
+        test_user: UserInDB
+    ):
+        """Test retrieving a single client."""
+        from app.repositories.client_repository import ClientRepository
+        from app.schemas.client import ClientCreate
+        
+        # Create test client
+        client_repo = ClientRepository(test_db)
+        test_client = await client_repo.create_client(
+            user_id=test_user.id,
+            client_data=ClientCreate(
+                name="Test Client",
+                email="test@client.com",
+                phone="555-0100",
+                address="Test Address"
+            )
+        )
+        
+        response = await client.get(
+            f"/v1/clients/{test_client.id}",
+            headers=auth_headers
+        )
+        
+        assert response.status_code == 200
+        data = response.json()
+        assert data["id"] == test_client.id
+        assert data["name"] == "Test Client"
+    
+    @pytest.mark.asyncio
+    async def test_update_client(
+        self,
+        client: AsyncClient,
+        auth_headers: dict,
+        test_db: AsyncIOMotorDatabase,
+        test_user: UserInDB
+    ):
+        """Test updating client details."""
+        from app.repositories.client_repository import ClientRepository
+        from app.schemas.client import ClientCreate
+        
+        # Create test client
+        client_repo = ClientRepository(test_db)
+        test_client = await client_repo.create_client(
+            user_id=test_user.id,
+            client_data=ClientCreate(
+                name="Original Name",
+                email="original@test.com"
+            )
+        )
+        
+        response = await client.put(
+            f"/v1/clients/{test_client.id}",
+            json={
+                "name": "Updated Name",
+                "email": "updated@test.com"
+            },
+            headers=auth_headers
+        )
+        
+        assert response.status_code == 200
+        data = response.json()
+        assert data["name"] == "Updated Name"
+        assert data["email"] == "updated@test.com"
+    
+    @pytest.mark.asyncio
+    async def test_delete_client(
+        self,
+        client: AsyncClient,
+        auth_headers: dict,
+        test_db: AsyncIOMotorDatabase,
+        test_user: UserInDB
+    ):
+        """Test deleting a client."""
+        from app.repositories.client_repository import ClientRepository
+        from app.schemas.client import ClientCreate
+        
+        # Create test client
+        client_repo = ClientRepository(test_db)
+        test_client = await client_repo.create_client(
+            user_id=test_user.id,
+            client_data=ClientCreate(
+                name="To Delete",
+                email="delete@test.com"
+            )
+        )
+        
+        response = await client.delete(
+            f"/v1/clients/{test_client.id}",
+            headers=auth_headers
+        )
+        
+        assert response.status_code == 204
+    
+    @pytest.mark.asyncio
+    async def test_clients_require_auth(
+        self,
+        client: AsyncClient
+    ):
+        """Test client endpoints require authentication."""
+        response = await client.get("/v1/clients")
+        assert response.status_code == 401
 
-    connection = engine.connect()
-    transaction = connection.begin()
-    TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=connection)
 
-    def override_get_db():
-        db = TestingSessionLocal()
-        try:
-            yield db
-            db.flush()
-        finally:
-            db.close()
-
-    app.dependency_overrides[get_db] = override_get_db
-    client = TestClient(app)
-
-    try:
-        yield client
-    finally:
-        transaction.rollback()
-        connection.close()
-
-
-def auth_headers(client: TestClient):
-    # Register and login
-    r = client.post("/v1/auth/register", json={
-        "email": "ciuser@example.com",
-        "full_name": "CI User",
-        "password": "secret123",
-    })
-    assert r.status_code in (201, 400)  # allow already exists if reused within same test process
-    r = client.post(
-        "/v1/auth/login",
-        data={"username": "ciuser@example.com", "password": "secret123"},
-        headers={"Content-Type": "application/x-www-form-urlencoded"},
-    )
-    assert r.status_code == 200, r.text
-    token = r.json()["access_token"]
-    return {"Authorization": f"Bearer {token}"}
-
-
-def test_clients_and_invoices_crud_flow(client_app: TestClient):
-    headers = auth_headers(client_app)
-
-    # Create client
-    r = client_app.post(
-        "/v1/clients",
-        json={"name": "Acme Corp", "email": "billing@acme.test", "phone": "123", "address": "Road 1"},
-        headers=headers,
-    )
-    assert r.status_code == 201, r.text
-    client = r.json()
-    assert client["name"] == "Acme Corp"
-    client_id = client["id"]
-
-    # List clients
-    r = client_app.get("/v1/clients", headers=headers)
-    assert r.status_code == 200
-    assert len(r.json()) >= 1
-
-    # Create invoice
-    inv_payload = {
-        "client_id": client_id,
-        "number": "INV-001",
-        "status": "draft",
-        "items": [
-            {"description": "Design work", "quantity": 10, "unit_price": 50},
-            {"description": "Hosting", "quantity": 12, "unit_price": 10},
-        ],
-        "subtotal": 0,
-        "tax": 0,
-        "total": 0,
-    }
-    r = client_app.post("/v1/invoices", json=inv_payload, headers=headers)
-    assert r.status_code == 201, r.text
-    invoice = r.json()
-    assert invoice["number"] == "INV-001"
-    assert len(invoice["items"]) == 2
-
-    # Get invoice
-    invoice_id = invoice["id"]
-    r = client_app.get(f"/v1/invoices/{invoice_id}", headers=headers)
-    assert r.status_code == 200
-    assert r.json()["id"] == invoice_id
-
-    # List invoices
-    r = client_app.get("/v1/invoices", headers=headers)
-    assert r.status_code == 200
-    assert any(inv["id"] == invoice_id for inv in r.json())
-
-
-def test_requires_auth(client_app: TestClient):
-    # No auth should be 401
-    r = client_app.get("/v1/clients")
-    assert r.status_code == 401
-    r = client_app.get("/v1/invoices")
-    assert r.status_code == 401
+@pytest.mark.integration
+class TestInvoicesAPI:
+    """Test suite for /v1/invoices endpoints."""
+    
+    @pytest.mark.asyncio
+    async def test_create_invoice(
+        self,
+        client: AsyncClient,
+        auth_headers: dict,
+        test_db: AsyncIOMotorDatabase,
+        test_user: UserInDB
+    ):
+        """Test creating an invoice."""
+        from app.repositories.client_repository import ClientRepository
+        from app.schemas.client import ClientCreate
+        
+        # Create client first
+        client_repo = ClientRepository(test_db)
+        test_client = await client_repo.create_client(
+            user_id=test_user.id,
+            client_data=ClientCreate(
+                name="Invoice Client",
+                email="invoiceclient@test.com"
+            )
+        )
+        
+        response = await client.post(
+            "/v1/invoices",
+            json={
+                "client_id": test_client.id,
+                "number": "INV-001",
+                "status": "draft",
+                "items": [
+                    {
+                        "description": "Design work",
+                        "quantity": 10,
+                        "unit_price": 50.00
+                    },
+                    {
+                        "description": "Hosting",
+                        "quantity": 12,
+                        "unit_price": 10.00
+                    }
+                ],
+                "subtotal": 620.00,
+                "tax": 0.00,
+                "total": 620.00
+            },
+            headers=auth_headers
+        )
+        
+        assert response.status_code == 201
+        data = response.json()
+        assert data["number"] == "INV-001"
+        assert len(data["items"]) == 2
+        assert data["client_id"] == test_client.id
+    
+    @pytest.mark.asyncio
+    async def test_list_invoices(
+        self,
+        client: AsyncClient,
+        auth_headers: dict,
+        test_db: AsyncIOMotorDatabase,
+        test_user: UserInDB
+    ):
+        """Test listing invoices."""
+        from app.repositories.client_repository import ClientRepository
+        from app.repositories.invoice_repository import InvoiceRepository
+        from app.schemas.client import ClientCreate
+        from app.schemas.invoice import InvoiceCreate, InvoiceItemCreate
+        
+        # Create client and invoice
+        client_repo = ClientRepository(test_db)
+        test_client = await client_repo.create_client(
+            user_id=test_user.id,
+            client_data=ClientCreate(name="List Test", email="list@test.com")
+        )
+        
+        invoice_repo = InvoiceRepository(test_db)
+        await invoice_repo.create_invoice(
+            user_id=test_user.id,
+            invoice_data=InvoiceCreate(
+                client_id=test_client.id,
+                number="INV-LIST-001",
+                status="draft",
+                items=[
+                    InvoiceItemCreate(
+                        description="Test item",
+                        quantity=1,
+                        unit_price=100.00
+                    )
+                ],
+                subtotal=100.00,
+                tax=0.00,
+                total=100.00
+            )
+        )
+        
+        response = await client.get(
+            "/v1/invoices",
+            headers=auth_headers
+        )
+        
+        assert response.status_code == 200
+        data = response.json()
+        assert any(inv["number"] == "INV-LIST-001" for inv in data)
+    
+    @pytest.mark.asyncio
+    async def test_invoices_require_auth(
+        self,
+        client: AsyncClient
+    ):
+        """Test invoice endpoints require authentication."""
+        response = await client.get("/v1/invoices")
+        assert response.status_code == 401

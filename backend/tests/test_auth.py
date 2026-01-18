@@ -1,60 +1,143 @@
+"""
+Integration tests for authentication endpoints.
+
+Tests registration, login, email verification, and OAuth flows.
+"""
+
 import pytest
-from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from httpx import AsyncClient
+from motor.motor_asyncio import AsyncIOMotorDatabase
 
-from app.main import app
-from app.db.session import Base, get_db
-
-# Use a separate SQLite DB for tests
-SQLALCHEMY_DATABASE_URL = "sqlite:///./test_test.db"
-engine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False})
-TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
-# Create tables
-Base.metadata.create_all(bind=engine)
+from app.repositories.user_repository import UserInDB, UserRepository
 
 
-def override_get_db():
-    db = TestingSessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
-app.dependency_overrides[get_db] = override_get_db
-
-client = TestClient(app)
-
-
-def test_register_and_login_flow():
-    # Register a new user
-    r = client.post("/v1/auth/register", json={
-        "email": "user@example.com",
-        "full_name": "Test User",
-        "password": "secret123"
-    })
-    assert r.status_code == 201, r.text
-    data = r.json()
-    assert data["email"] == "user@example.com"
-    assert "id" in data
-
-    # Login with the same user
-    r = client.post("/v1/auth/login", data={
-        "username": "user@example.com",
-        "password": "secret123"
-    }, headers={"Content-Type": "application/x-www-form-urlencoded"})
-    assert r.status_code == 200, r.text
-    token = r.json()["access_token"]
-    assert token
-
-    # Access protected route
-    r = client.get("/v1/me", headers={"Authorization": f"Bearer {token}"})
-    assert r.status_code == 200, r.text
-    me = r.json()
-    assert me["email"] == "user@example.com"
-
-
-def test_protected_requires_auth():
-    r = client.get("/v1/me")
-    assert r.status_code == 401
+@pytest.mark.integration
+class TestAuthAPI:
+    """Test suite for /v1/auth endpoints."""
+    
+    @pytest.mark.asyncio
+    async def test_register_user(
+        self,
+        client: AsyncClient,
+        test_db: AsyncIOMotorDatabase
+    ):
+        """Test user registration."""
+        response = await client.post(
+            "/v1/auth/register",
+            json={
+                "email": "newuser@example.com",
+                "full_name": "New User",
+                "password": "securepassword123"
+            }
+        )
+        
+        assert response.status_code == 201
+        data = response.json()
+        assert data["email"] == "newuser@example.com"
+        assert data["full_name"] == "New User"
+        assert "id" in data
+        assert "password" not in data
+        assert "hashed_password" not in data
+    
+    @pytest.mark.asyncio
+    async def test_register_duplicate_email(
+        self,
+        client: AsyncClient,
+        test_user: UserInDB
+    ):
+        """Test registration with existing email fails."""
+        response = await client.post(
+            "/v1/auth/register",
+            json={
+                "email": test_user.email,
+                "full_name": "Another User",
+                "password": "password123"
+            }
+        )
+        
+        assert response.status_code == 400
+        assert "email already registered" in response.json()["detail"].lower()
+    
+    @pytest.mark.asyncio
+    async def test_login_success(
+        self,
+        client: AsyncClient,
+        test_user: UserInDB
+    ):
+        """Test successful login with valid credentials."""
+        response = await client.post(
+            "/v1/auth/login",
+            data={
+                "username": test_user.email,
+                "password": "testpassword"  # Password from fixture
+            },
+            headers={"Content-Type": "application/x-www-form-urlencoded"}
+        )
+        
+        assert response.status_code == 200
+        data = response.json()
+        assert "access_token" in data
+        assert data["token_type"] == "bearer"
+    
+    @pytest.mark.asyncio
+    async def test_login_invalid_credentials(
+        self,
+        client: AsyncClient,
+        test_user: UserInDB
+    ):
+        """Test login with invalid password fails."""
+        response = await client.post(
+            "/v1/auth/login",
+            data={
+                "username": test_user.email,
+                "password": "wrongpassword"
+            },
+            headers={"Content-Type": "application/x-www-form-urlencoded"}
+        )
+        
+        assert response.status_code == 401
+    
+    @pytest.mark.asyncio
+    async def test_login_nonexistent_user(
+        self,
+        client: AsyncClient
+    ):
+        """Test login with non-existent email fails."""
+        response = await client.post(
+            "/v1/auth/login",
+            data={
+                "username": "nobody@example.com",
+                "password": "password123"
+            },
+            headers={"Content-Type": "application/x-www-form-urlencoded"}
+        )
+        
+        assert response.status_code == 401
+    
+    @pytest.mark.asyncio
+    async def test_get_current_user(
+        self,
+        client: AsyncClient,
+        auth_headers: dict,
+        test_user: UserInDB
+    ):
+        """Test retrieving current authenticated user."""
+        response = await client.get(
+            "/v1/users/me",
+            headers=auth_headers
+        )
+        
+        assert response.status_code == 200
+        data = response.json()
+        assert data["email"] == test_user.email
+        assert data["id"] == test_user.id
+    
+    @pytest.mark.asyncio
+    async def test_protected_route_requires_auth(
+        self,
+        client: AsyncClient
+    ):
+        """Test protected routes require authentication."""
+        response = await client.get("/v1/users/me")
+        
+        assert response.status_code == 401
