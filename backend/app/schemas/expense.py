@@ -2,8 +2,8 @@
 Expense schemas for MongoDB-based expense tracking.
 Handles business expense management with categories and date filtering.
 """
-from datetime import date, datetime
-from typing import Optional
+from datetime import date as DateType, datetime
+from typing import Optional, List
 from pydantic import BaseModel, Field, field_validator
 from decimal import Decimal
 
@@ -15,9 +15,9 @@ class ExpenseBase(BaseModel):
     amount: Decimal = Field(..., gt=0, description="Expense amount")
     currency: str = Field(default="NGN", min_length=3, max_length=3, description="ISO 4217 currency code")
     vendor: Optional[str] = Field(None, max_length=255, description="Vendor/supplier name")
-    date: date = Field(..., description="Date of expense")
+    expense_date: DateType = Field(..., description="Date of expense")
     receipt_url: Optional[str] = Field(None, max_length=500, description="URL to receipt image/document")
-    tags: list[str] = Field(default_factory=list, description="Tags for categorization")
+    tags: List[str] = Field(default_factory=list, description="Tags for categorization")
 
     @field_validator('currency')
     @classmethod
@@ -36,7 +36,7 @@ class ExpenseBase(BaseModel):
 
     @field_validator('tags')
     @classmethod
-    def validate_tags(cls, v: list[str]) -> list[str]:
+    def validate_tags(cls, v: List[str]) -> List[str]:
         """Trim, lowercase, and deduplicate tags"""
         if v:
             # Remove empty strings, trim, lowercase, and deduplicate
@@ -57,9 +57,9 @@ class ExpenseUpdate(BaseModel):
     amount: Optional[Decimal] = Field(None, gt=0)
     currency: Optional[str] = Field(None, min_length=3, max_length=3)
     vendor: Optional[str] = Field(None, max_length=255)
-    date: Optional[date] = None
+    expense_date: Optional[DateType] = None
     receipt_url: Optional[str] = Field(None, max_length=500)
-    tags: Optional[list[str]] = None
+    tags: Optional[List[str]] = None
 
     @field_validator('currency')
     @classmethod
@@ -79,7 +79,7 @@ class ExpenseUpdate(BaseModel):
 
     @field_validator('tags')
     @classmethod
-    def validate_tags(cls, v: Optional[list[str]]) -> Optional[list[str]]:
+    def validate_tags(cls, v: Optional[List[str]]) -> Optional[List[str]]:
         """Trim, lowercase, and deduplicate tags"""
         if v is not None:
             cleaned = list(set(tag.strip().lower() for tag in v if tag and tag.strip()))
@@ -118,7 +118,7 @@ class ExpenseInDB(ExpenseOut):
 
 class ExpenseListResponse(BaseModel):
     """Paginated list response for expenses"""
-    items: list[ExpenseOut]
+    items: List[ExpenseOut]
     total: int
     limit: int
     offset: int
@@ -140,10 +140,10 @@ class ExpenseSummary(BaseModel):
 
 class ExpenseSummaryResponse(BaseModel):
     """Response for expense summary endpoint"""
-    summaries: list[ExpenseSummary]
+    summaries: List[ExpenseSummary]
     grand_total: Decimal
-    period_start: Optional[date] = None
-    period_end: Optional[date] = None
+    period_start: Optional[DateType] = None
+    period_end: Optional[DateType] = None
 
     class Config:
         json_encoders = {

@@ -12,7 +12,7 @@ from app.schemas.invoice_mongo import (
     InvoiceEvent
 )
 from typing import List, Optional, Dict, Any
-from datetime import datetime
+from datetime import datetime, date
 
 
 class InvoiceRepository(BaseRepository[InvoiceInDB]):
@@ -119,6 +119,8 @@ class InvoiceRepository(BaseRepository[InvoiceInDB]):
         user_id: str,
         client_id: Optional[str] = None,
         status: Optional[str] = None,
+        due_from: Optional[date] = None,
+        due_to: Optional[date] = None,
         date_from: Optional[datetime] = None,
         date_to: Optional[datetime] = None,
         date_range_query: Optional[Dict[str, Any]] = None,
@@ -134,8 +136,10 @@ class InvoiceRepository(BaseRepository[InvoiceInDB]):
             user_id: User ID
             client_id: Filter by client
             status: Filter by status
-            date_from: Filter from this date
-            date_to: Filter to this date
+            due_from: Filter by due date (from)
+            due_to: Filter by due date (to)
+            date_from: Filter issued date (from)
+            date_to: Filter issued date (to)
             date_range_query: Pre-built date range query
             skip: Number of records to skip
             limit: Maximum records to return
@@ -150,8 +154,8 @@ class InvoiceRepository(BaseRepository[InvoiceInDB]):
             invoices = await invoice_repo.list_by_user(
                 user_id,
                 status="paid",
-                date_from=datetime(2026, 1, 1),
-                date_to=datetime(2026, 1, 31)
+                due_from=date(2026, 1, 1),
+                due_to=date(2026, 1, 31)
             )
         """
         filter_query = {"user_id": user_id}
@@ -164,7 +168,17 @@ class InvoiceRepository(BaseRepository[InvoiceInDB]):
         if status:
             filter_query["status"] = status
         
-        # Date range filter
+        # Due date range filter
+        if due_from or due_to:
+            due_date_filter = {}
+            if due_from:
+                due_date_filter["$gte"] = due_from
+            if due_to:
+                due_date_filter["$lte"] = due_to
+            if due_date_filter:
+                filter_query["due_date"] = due_date_filter
+        
+        # Issued date range filter
         if date_range_query:
             filter_query["issued_date"] = date_range_query
         elif date_from or date_to:
@@ -187,7 +201,7 @@ class InvoiceRepository(BaseRepository[InvoiceInDB]):
         self,
         invoice_id: str,
         user_id: str,
-        update_data: InvoiceUpdate
+        invoice_data: InvoiceUpdate
     ) -> Optional[InvoiceInDB]:
         """
         Update an invoice, ensuring ownership.
@@ -195,7 +209,7 @@ class InvoiceRepository(BaseRepository[InvoiceInDB]):
         Args:
             invoice_id: Invoice ID
             user_id: User ID (for ownership check)
-            update_data: Fields to update
+            invoice_data: Fields to update
             
         Returns:
             Updated invoice or None if not found/not owned
@@ -206,7 +220,7 @@ class InvoiceRepository(BaseRepository[InvoiceInDB]):
             return None
         
         # Track status changes
-        update_dict = update_data.model_dump(exclude_unset=True)
+        update_dict = invoice_data.model_dump(exclude_unset=True)
         if "status" in update_dict and update_dict["status"] != existing.status:
             # Append status change event
             event = InvoiceEvent(
@@ -227,7 +241,7 @@ class InvoiceRepository(BaseRepository[InvoiceInDB]):
                 }
             )
         
-        return await self.update(invoice_id, update_data)
+        return await self.update(invoice_id, invoice_data)
     
     async def add_event(
         self,
@@ -314,6 +328,37 @@ class InvoiceRepository(BaseRepository[InvoiceInDB]):
         filter_query = {"user_id": user_id}
         if status:
             filter_query["status"] = status
+        
+        return await self.count(filter_query)
+    
+    async def count_by_user_and_date(
+        self,
+        user_id: str,
+        issued_date: date
+    ) -> int:
+        """
+        Count invoices for a user on a specific date.
+        
+        Args:
+            user_id: User ID
+            issued_date: Date to filter by
+            
+        Returns:
+            Number of invoices issued on that date
+        """
+        from datetime import datetime as dt_module
+        
+        # Convert date to datetime range for the entire day
+        start_of_day = dt_module.combine(issued_date, dt_module.min.time())
+        end_of_day = dt_module.combine(issued_date, dt_module.max.time())
+        
+        filter_query = {
+            "user_id": user_id,
+            "issued_date": {
+                "$gte": start_of_day,
+                "$lte": end_of_day
+            }
+        }
         
         return await self.count(filter_query)
     

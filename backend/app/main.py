@@ -9,21 +9,12 @@ from app.api.v1.clients import router as clients_router
 from app.api.v1.invoices import router as invoices_router
 from app.api.v1.extraction import router as extraction_router
 from app.api.v1.reminders import router as reminders_router
-from app.api.v1.payments import router as payments_router
 from app.api.v1.products import router as products_router
 from app.api.v1.expenses import router as expenses_router
-from app.db.session import Base, engine
 from app.db.mongo import connect_to_mongo, close_mongo_connection, get_database
 from app.db.indexes import create_all_indexes
 from app.core.config import settings
 
-# Ensure models are imported so SQLAlchemy registers them with Base.metadata
-# Routers import models already, but this import path makes the intent explicit.
-from app.models import user as user_model  # noqa: F401
-from app.models import client as client_model  # noqa: F401
-from app.models import invoice as invoice_model  # noqa: F401
-from app.models import payment as payment_model  # noqa: F401
-from app.models import extraction as extraction_model  # noqa: F401
 
 
 @asynccontextmanager
@@ -35,8 +26,6 @@ async def lifespan(app: FastAPI):
     # Startup
     print("🚀 Starting up InvoYQ API...")
     
-    # Create PostgreSQL tables (legacy, will be removed in Phase 5)
-    Base.metadata.create_all(bind=engine)
     
     # Initialize MongoDB connection and indexes
     await connect_to_mongo()
@@ -75,7 +64,6 @@ app.include_router(products_router, prefix="/v1/products", tags=["products"])
 app.include_router(expenses_router, prefix="/v1/expenses", tags=["expenses"])
 app.include_router(extraction_router, prefix="/v1", tags=["extraction"]) 
 app.include_router(reminders_router, prefix="/v1", tags=["reminders"]) 
-app.include_router(payments_router, prefix="/v1/payments", tags=["payments"]) 
 
 # Serve generated files via /static for local/dev usage
 os.makedirs(settings.STORAGE_LOCAL_DIR, exist_ok=True)

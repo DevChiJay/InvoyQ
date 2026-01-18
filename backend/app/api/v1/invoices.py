@@ -1,17 +1,18 @@
-from typing import List
+from typing import List, Optional
 from decimal import Decimal, ROUND_HALF_UP
 from datetime import date
 import datetime as dt
-from fastapi import APIRouter, Depends, HTTPException, status, Response
-from sqlalchemy.orm import Session
-from sqlalchemy.exc import IntegrityError
+from fastapi import APIRouter, Depends, HTTPException, status, Response, Query
+from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from app.dependencies.auth import get_current_user
-from app.db.session import get_db
-from app.models.user import User
-from app.models.client import Client
-from app.models.invoice import Invoice, InvoiceItem
-from app.schemas.invoice import InvoiceCreate, InvoiceOut, InvoiceUpdate, InvoiceItemCreate, UserBusinessInfo
+from app.db.mongo import get_database
+from app.repositories.user_repository import UserInDB
+from app.repositories.client_repository import ClientRepository
+from app.repositories.invoice_repository import InvoiceRepository
+from app.schemas.invoice_mongo import (
+    InvoiceCreate, InvoiceOut, InvoiceUpdate, UserBusinessInfo
+)
 
 
 router = APIRouter()
@@ -19,201 +20,205 @@ router = APIRouter()
 TWO_PLACES = Decimal("0.01")
 
 
-def _enrich_invoice_with_user_info(invoice: Invoice, user: User) -> Invoice:
-    """Add user business information to invoice for display purposes"""
-    invoice.user_business_info = UserBusinessInfo(
+def _create_user_business_info(user: UserInDB) -> UserBusinessInfo:
+    """Create user business info from user document."""
+    return UserBusinessInfo(
         full_name=user.full_name,
         email=user.email,
-        phone=user.phone,
-        company_name=user.company_name,
-        company_logo_url=user.company_logo_url,
-        company_address=user.company_address,
-        tax_id=user.tax_id,
-        website=user.website,
+        phone=getattr(user, 'phone', None),
+        company_name=getattr(user, 'company_name', None),
+        company_logo_url=getattr(user, 'company_logo_url', None),
+        company_address=getattr(user, 'company_address', None),
+        tax_id=getattr(user, 'tax_id', None),
+        website=getattr(user, 'website', None),
     )
-    return invoice
-
-
-def _get_owned_invoice(db: Session, current_user: User, invoice_id: int) -> Invoice:
-    invoice = db.get(Invoice, invoice_id)
-    if not invoice or invoice.user_id != current_user.id:
-        raise HTTPException(status_code=404, detail="Invoice not found")
-    return invoice
 
 
 @router.get("/invoices", response_model=List[InvoiceOut])
-def list_invoices(
-    limit: int = 50,
-    offset: int = 0,
-    status: str | None = None,
-    client_id: int | None = None,
-    due_from: date | None = None,
-    due_to: date | None = None,
-    cursor: int | None = None,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
-    response: Response = None,
+async def list_invoices(
+    limit: int = Query(50, ge=1, le=100),
+    offset: int = Query(0, ge=0),
+    status: Optional[str] = Query(None),
+    client_id: Optional[str] = Query(None),
+    due_from: Optional[date] = Query(None),
+    due_to: Optional[date] = Query(None),
+    db: AsyncIOMotorDatabase = Depends(get_database),
+    current_user: UserInDB = Depends(get_current_user),
 ):
-    # Sanitize pagination
-    if limit <= 0:
-        limit = 50
-    limit = min(limit, 100)
-    if offset < 0:
-        offset = 0
-    q = db.query(Invoice).filter(Invoice.user_id == current_user.id)
-    if status:
-        q = q.filter(Invoice.status == status)
-    if client_id:
-        q = q.filter(Invoice.client_id == client_id)
-    if due_from:
-        q = q.filter(Invoice.due_date >= due_from)
-    if due_to:
-        q = q.filter(Invoice.due_date <= due_to)
-    if cursor:
-        q = q.filter(Invoice.id > cursor)
-
-    q = q.order_by(Invoice.id.asc()).limit(limit).offset(offset)
-    rows = q.all()
-
-    # Enrich invoices with user business info
-    for invoice in rows:
-        _enrich_invoice_with_user_info(invoice, current_user)
-
-    # Expose a simple cursor in header if more results likely exist
-    if rows:
-        response.headers["X-Next-Cursor"] = str(rows[-1].id)
-    return rows
+    """
+    List invoices for the authenticated user.
+    
+    Supports filtering by status, client, and due date range.
+    Returns paginated results.
+    """
+    repo = InvoiceRepository(db)
+    
+    invoices = await repo.list_by_user(
+        user_id=str(current_user.id),
+        status=status,
+        client_id=client_id,
+        due_from=due_from,
+        due_to=due_to,
+        skip=offset,
+        limit=limit
+    )
+    
+    # Add user business info to each invoice
+    result = []
+    for invoice in invoices:
+        invoice_out = InvoiceOut(**invoice.model_dump())
+        invoice_out.user_business_info = _create_user_business_info(current_user)
+        result.append(invoice_out)
+    
+    return result
 
 
 @router.post("/invoices", response_model=InvoiceOut, status_code=status.HTTP_201_CREATED)
-def create_invoice(payload: InvoiceCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+async def create_invoice(
+    payload: InvoiceCreate,
+    db: AsyncIOMotorDatabase = Depends(get_database),
+    current_user: UserInDB = Depends(get_current_user)
+):
+    """
+    Create a new invoice.
+    
+    - Validates client ownership
+    - Auto-generates invoice number if not provided
+    - Supports both manual items and product-based items
+    """
+    client_repo = ClientRepository(db)
+    invoice_repo = InvoiceRepository(db)
+    
     # Ensure client belongs to current user
-    client = db.get(Client, payload.client_id)
-    if not client or client.user_id != current_user.id:
+    client = await client_repo.get_by_id_and_user(
+        client_id=payload.client_id,
+        user_id=str(current_user.id)
+    )
+    if not client:
         raise HTTPException(status_code=404, detail="Client not found")
-
+    
     # Generate invoice number if not provided
     number = payload.number
     if not number:
         today = dt.date.today()
         # Count existing invoices issued today for sequence
-        count_today = (
-            db.query(Invoice)
-            .filter(Invoice.user_id == current_user.id, Invoice.issued_date == today)
-            .count()
+        count_today = await invoice_repo.count_by_user_and_date(
+            user_id=str(current_user.id),
+            issued_date=today
         )
         number = f"INV-{today:%Y%m%d}-{count_today + 1:03d}"
-
+    
     # Check for existing invoice with same number
-    existing_invoice = (
-        db.query(Invoice)
-        .filter(Invoice.user_id == current_user.id, Invoice.number == number)
-        .first()
+    existing_invoice = await invoice_repo.get_by_number(
+        user_id=str(current_user.id),
+        number=number
     )
     if existing_invoice:
         raise HTTPException(
             status_code=400,
             detail=f"Invoice number '{number}' already exists. Please use a different number."
         )
-
-    invoice = Invoice(
-        user_id=current_user.id,
+    
+    # Create invoice with auto-generated number
+    payload.number = number
+    invoice = await invoice_repo.create_invoice(
+        user_id=str(current_user.id),
         client_id=payload.client_id,
-        number=number,
-        status=payload.status or "draft",
-        issued_date=payload.issued_date,
-        due_date=payload.due_date,
-        currency=payload.currency or "NGN",  # Use provided currency or default to NGN
-        subtotal=payload.subtotal,
-        tax=payload.tax,
-        total=payload.total,
-        notes=payload.notes,
+        invoice_data=payload
     )
     
-    try:
-        db.add(invoice)
-        db.flush()  # get invoice.id before adding items
-    except IntegrityError:
-        db.rollback()
-        raise HTTPException(
-            status_code=400,
-            detail=f"Invoice number '{number}' already exists. Please use a different number."
-        )
-
-    if payload.items:
-        for item in payload.items:
-            _add_item(db, invoice, item)
-
-    db.commit()
-    db.refresh(invoice)
+    # Add user business info
+    invoice_out = InvoiceOut(**invoice.model_dump())
+    invoice_out.user_business_info = _create_user_business_info(current_user)
     
-    # Enrich with user business info
-    _enrich_invoice_with_user_info(invoice, current_user)
-    
-    return invoice
-
-
-def _quantize(value: Decimal | None) -> Decimal:
-    if value is None:
-        return Decimal("0.00")
-    if not isinstance(value, Decimal):
-        value = Decimal(value)
-    return value.quantize(TWO_PLACES, rounding=ROUND_HALF_UP)
-
-
-def _add_item(db: Session, invoice: Invoice, item: InvoiceItemCreate) -> InvoiceItem:
-    amount = item.amount
-    if amount is None:
-        amount = _quantize(item.quantity) * _quantize(item.unit_price)
-        amount = _quantize(amount)
-    inv_item = InvoiceItem(
-        invoice_id=invoice.id,
-        description=item.description,
-        quantity=_quantize(item.quantity),
-        unit_price=_quantize(item.unit_price),
-        amount=_quantize(amount),
-    )
-    db.add(inv_item)
-    return inv_item
+    return invoice_out
 
 
 @router.get("/invoices/{invoice_id}", response_model=InvoiceOut)
-def get_invoice(invoice_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    invoice = _get_owned_invoice(db, current_user, invoice_id)
-    _enrich_invoice_with_user_info(invoice, current_user)
-    return invoice
+async def get_invoice(
+    invoice_id: str,
+    db: AsyncIOMotorDatabase = Depends(get_database),
+    current_user: UserInDB = Depends(get_current_user)
+):
+    """
+    Get a single invoice by ID.
+    
+    Returns 404 if invoice doesn't exist or doesn't belong to the user.
+    """
+    repo = InvoiceRepository(db)
+    
+    invoice = await repo.get_by_id_and_user(
+        invoice_id=invoice_id,
+        user_id=str(current_user.id)
+    )
+    
+    if not invoice:
+        raise HTTPException(status_code=404, detail="Invoice not found")
+    
+    # Add user business info
+    invoice_out = InvoiceOut(**invoice.model_dump())
+    invoice_out.user_business_info = _create_user_business_info(current_user)
+    
+    return invoice_out
 
 
 @router.put("/invoices/{invoice_id}", response_model=InvoiceOut)
-def update_invoice(invoice_id: int, payload: InvoiceUpdate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    invoice = _get_owned_invoice(db, current_user, invoice_id)
-
-    # Update scalar fields
-    for field, value in payload.dict(exclude_unset=True, exclude={"items"}).items():
-        setattr(invoice, field, value)
-
-    # Replace items if provided
-    if payload.items is not None:
-        # Delete existing items - use query to avoid session tracking issues
-        db.query(InvoiceItem).filter(InvoiceItem.invoice_id == invoice_id).delete()
-        db.flush()
-        
-        # Add new items
-        for item in payload.items:
-            _add_item(db, invoice, item)
-
-    db.commit()
-    db.refresh(invoice)
+async def update_invoice(
+    invoice_id: str,
+    payload: InvoiceUpdate,
+    db: AsyncIOMotorDatabase = Depends(get_database),
+    current_user: UserInDB = Depends(get_current_user)
+):
+    """
+    Update an existing invoice.
     
-    # Enrich with user business info
-    _enrich_invoice_with_user_info(invoice, current_user)
+    Only fields provided in the request will be updated.
+    Returns 404 if invoice doesn't exist or doesn't belong to the user.
+    """
+    repo = InvoiceRepository(db)
     
-    return invoice
+    # Check if invoice exists and belongs to user
+    existing_invoice = await repo.get_by_id_and_user(
+        invoice_id=invoice_id,
+        user_id=str(current_user.id)
+    )
+    
+    if not existing_invoice:
+        raise HTTPException(status_code=404, detail="Invoice not found")
+    
+    # Update invoice
+    invoice = await repo.update_invoice(
+        invoice_id=invoice_id,
+        user_id=str(current_user.id),
+        invoice_data=payload
+    )
+    
+    # Add user business info
+    invoice_out = InvoiceOut(**invoice.model_dump())
+    invoice_out.user_business_info = _create_user_business_info(current_user)
+    
+    return invoice_out
 
 
 @router.delete("/invoices/{invoice_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_invoice(invoice_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    invoice = _get_owned_invoice(db, current_user, invoice_id)
-    db.delete(invoice)
-    db.commit()
+async def delete_invoice(
+    invoice_id: str,
+    db: AsyncIOMotorDatabase = Depends(get_database),
+    current_user: UserInDB = Depends(get_current_user)
+):
+    """
+    Delete an invoice.
+    
+    Returns 404 if invoice doesn't exist or doesn't belong to the user.
+    """
+    repo = InvoiceRepository(db)
+    
+    deleted = await repo.delete_invoice(
+        invoice_id=invoice_id,
+        user_id=str(current_user.id)
+    )
+    
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Invoice not found")
+    
     return None

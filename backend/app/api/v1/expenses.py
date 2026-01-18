@@ -17,7 +17,7 @@ from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from app.db.mongo import get_database
 from app.dependencies.auth import get_current_user
-from app.models.user import User
+from app.repositories.user_repository import UserInDB
 from app.repositories.expense_repository import ExpenseRepository
 from app.schemas.expense import (
     ExpenseCreate,
@@ -43,7 +43,7 @@ router = APIRouter()
 async def create_expense(
     expense_data: ExpenseCreate,
     db: AsyncIOMotorDatabase = Depends(get_database),
-    current_user: User = Depends(get_current_user)
+    current_user: UserInDB = Depends(get_current_user)
 ):
     """
     Create a new expense record.
@@ -92,7 +92,7 @@ async def list_expenses(
     sort_by: str = Query("date", description="Field to sort by"),
     sort_order: int = Query(-1, description="Sort order: 1=asc, -1=desc"),
     db: AsyncIOMotorDatabase = Depends(get_database),
-    current_user: User = Depends(get_current_user)
+    current_user: UserInDB = Depends(get_current_user)
 ):
     """
     List all expenses for the authenticated user.
@@ -161,7 +161,7 @@ async def list_expenses(
 )
 async def get_expense_categories(
     db: AsyncIOMotorDatabase = Depends(get_database),
-    current_user: User = Depends(get_current_user)
+    current_user: UserInDB = Depends(get_current_user)
 ):
     """
     Get all unique expense categories used by the authenticated user.
@@ -188,7 +188,7 @@ async def get_expense_summary(
     period: Optional[str] = Query(None, description="Period filter: 'week', 'month', or 'year'"),
     reference_date: Optional[date] = Query(None, description="Reference date for period filter"),
     db: AsyncIOMotorDatabase = Depends(get_database),
-    current_user: User = Depends(get_current_user)
+    current_user: UserInDB = Depends(get_current_user)
 ):
     """
     Get expense summary grouped by category.
@@ -257,7 +257,7 @@ async def get_expense_summary(
 async def get_expense(
     expense_id: str,
     db: AsyncIOMotorDatabase = Depends(get_database),
-    current_user: User = Depends(get_current_user)
+    current_user: UserInDB = Depends(get_current_user)
 ):
     """
     Get a single expense by ID.
@@ -289,7 +289,7 @@ async def update_expense(
     expense_id: str,
     expense_data: ExpenseUpdate,
     db: AsyncIOMotorDatabase = Depends(get_database),
-    current_user: User = Depends(get_current_user)
+    current_user: UserInDB = Depends(get_current_user)
 ):
     """
     Update an existing expense.
@@ -323,8 +323,27 @@ async def update_expense(
 async def delete_expense(
     expense_id: str,
     db: AsyncIOMotorDatabase = Depends(get_database),
-    current_user: User = Depends(get_current_user)
+    current_user: UserInDB = Depends(get_current_user)
 ):
+    """
+    Delete an expense.
+    
+    Returns 404 if expense doesn't exist or doesn't belong to the user.
+    """
+    repo = ExpenseRepository(db)
+    
+    deleted = await repo.delete_expense(
+        expense_id=expense_id,
+        user_id=str(current_user.id)
+    )
+    
+    if not deleted:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Expense not found"
+        )
+    
+    return None
     """
     Delete an expense permanently.
     

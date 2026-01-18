@@ -14,7 +14,7 @@ from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from app.db.mongo import get_database
 from app.dependencies.auth import get_current_user
-from app.models.user import User
+from app.repositories.user_repository import UserInDB
 from app.repositories.product_repository import ProductRepository
 from app.schemas.product import (
     ProductCreate,
@@ -38,7 +38,7 @@ router = APIRouter()
 async def create_product(
     product_data: ProductCreate,
     db: AsyncIOMotorDatabase = Depends(get_database),
-    current_user: User = Depends(get_current_user)
+    current_user: UserInDB = Depends(get_current_user)
 ):
     """
     Create a new product in the catalog.
@@ -83,7 +83,7 @@ async def list_products(
     sort_by: str = Query("created_at", description="Field to sort by"),
     sort_order: int = Query(-1, description="Sort order: 1=asc, -1=desc"),
     db: AsyncIOMotorDatabase = Depends(get_database),
-    current_user: User = Depends(get_current_user)
+    current_user: UserInDB = Depends(get_current_user)
 ):
     """
     List all products for the authenticated user.
@@ -131,7 +131,7 @@ async def list_products(
 async def get_product(
     product_id: str,
     db: AsyncIOMotorDatabase = Depends(get_database),
-    current_user: User = Depends(get_current_user)
+    current_user: UserInDB = Depends(get_current_user)
 ):
     """
     Get a single product by ID.
@@ -163,7 +163,7 @@ async def update_product(
     product_id: str,
     product_data: ProductUpdate,
     db: AsyncIOMotorDatabase = Depends(get_database),
-    current_user: User = Depends(get_current_user)
+    current_user: UserInDB = Depends(get_current_user)
 ):
     """
     Update an existing product.
@@ -205,7 +205,7 @@ async def update_product(
 async def delete_product(
     product_id: str,
     db: AsyncIOMotorDatabase = Depends(get_database),
-    current_user: User = Depends(get_current_user)
+    current_user: UserInDB = Depends(get_current_user)
 ):
     """
     Soft delete a product by setting is_active to false.
@@ -240,7 +240,7 @@ async def adjust_product_quantity(
     product_id: str,
     adjustment_data: ProductQuantityAdjustment,
     db: AsyncIOMotorDatabase = Depends(get_database),
-    current_user: User = Depends(get_current_user)
+    current_user: UserInDB = Depends(get_current_user)
 ):
     """
     Adjust product quantity by a positive or negative amount.

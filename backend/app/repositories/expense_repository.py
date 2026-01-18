@@ -87,7 +87,7 @@ class ExpenseRepository(BaseRepository[ExpenseInDB]):
         tags: Optional[List[str]] = None,
         skip: int = 0,
         limit: int = 50,
-        sort_by: str = "date",
+        sort_by: str = "expense_date",
         sort_order: int = -1
     ) -> List[ExpenseInDB]:
         """
@@ -137,7 +137,7 @@ class ExpenseRepository(BaseRepository[ExpenseInDB]):
         
         # Date range filter (explicit or from period)
         if date_range_query:
-            filter_query["date"] = date_range_query
+            filter_query["expense_date"] = date_range_query
         elif date_from or date_to:
             date_filter = {}
             if date_from:
@@ -145,7 +145,7 @@ class ExpenseRepository(BaseRepository[ExpenseInDB]):
             if date_to:
                 date_filter["$lte"] = datetime.combine(date_to, datetime.max.time())
             if date_filter:
-                filter_query["date"] = date_filter
+                filter_query["expense_date"] = date_filter
         
         # Tags filter (match any tag)
         if tags:

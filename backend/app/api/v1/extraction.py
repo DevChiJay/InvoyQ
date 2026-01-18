@@ -1,9 +1,9 @@
 from typing import Optional, Dict, Any
 from fastapi import APIRouter, Depends, UploadFile, File, Form, HTTPException, status, Request
-from sqlalchemy.orm import Session
+from motor.motor_asyncio import AsyncIOMotorDatabase
 
-from app.db.session import get_db
-from app.models.extraction import Extraction
+from app.db.mongo import get_database
+from app.repositories.extraction_repository import ExtractionRepository
 from app.core.config import settings
 from app.services.openai_extractor import OpenAIExtractor
 from app.core.rate_limiter import extraction_rate_limiter
@@ -17,9 +17,9 @@ def get_extractor(provider: Optional[str] = None):
 
 
 @router.post("/extract-job-details")
-def extract_job_details(
+async def extract_job_details(
     request: Request,
-    db: Session = Depends(get_db),
+    db: AsyncIOMotorDatabase = Depends(get_database),
     provider: Optional[str] = None,
     text: Optional[str] = Form(default=None),
     file: Optional[UploadFile] = File(default=None),
@@ -46,16 +46,14 @@ def extract_job_details(
         raise HTTPException(status_code=500, detail=f"Extraction failed: {e}")
 
     # Persist extraction (anonymous, no user required)
-    ext = Extraction(
+    repo = ExtractionRepository(db)
+    extraction = await repo.create_extraction(
         user_id=None,  # Anonymous extraction
         source_type="screenshot" if file is not None else "text",
-        source_url=None,
         raw_text=raw_text,
         parsed=parsed,
         confidence=int(parsed.get("confidence") or 0),
+        source_url=None
     )
-    db.add(ext)
-    db.commit()
-    db.refresh(ext)
 
-    return {"extraction_id": ext.id, "parsed": parsed}
+    return {"extraction_id": extraction.id, "parsed": parsed}
