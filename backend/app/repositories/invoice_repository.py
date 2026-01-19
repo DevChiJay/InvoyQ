@@ -51,6 +51,8 @@ class InvoiceRepository(BaseRepository[InvoiceInDB]):
                 )
             )
         """
+        from app.repositories.base import _serialize_for_mongo
+        
         doc = invoice_data.model_dump()
         
         # Add system fields
@@ -68,6 +70,9 @@ class InvoiceRepository(BaseRepository[InvoiceInDB]):
                 }
             ]
         })
+        
+        # Serialize Decimal and other non-BSON types
+        doc = _serialize_for_mongo(doc)
         
         result = await self.collection.insert_one(doc, session=session)
         doc["_id"] = str(result.inserted_id)
@@ -214,6 +219,8 @@ class InvoiceRepository(BaseRepository[InvoiceInDB]):
         Returns:
             Updated invoice or None if not found/not owned
         """
+        from app.repositories.base import _serialize_for_mongo
+        
         # First check ownership
         existing = await self.get_by_id_and_user(invoice_id, user_id)
         if not existing:
@@ -232,11 +239,14 @@ class InvoiceRepository(BaseRepository[InvoiceInDB]):
                 }
             )
             
+            # Serialize event data
+            event_data = _serialize_for_mongo(event.model_dump())
+            
             # Use $push to append event
             await self.collection.update_one(
                 {"_id": self._to_object_id(invoice_id)},
                 {
-                    "$push": {"events": event.model_dump()},
+                    "$push": {"events": event_data},
                     "$set": {"updated_at": datetime.utcnow()}
                 }
             )
@@ -270,11 +280,16 @@ class InvoiceRepository(BaseRepository[InvoiceInDB]):
                 {"sent_to": "client@example.com", "method": "email"}
             )
         """
+        from app.repositories.base import _serialize_for_mongo
+        
         event = InvoiceEvent(
             action=action,
             timestamp=datetime.utcnow(),
             details=details or {}
         )
+        
+        # Serialize event data
+        event_data = _serialize_for_mongo(event.model_dump())
         
         result = await self.collection.update_one(
             {
@@ -282,7 +297,7 @@ class InvoiceRepository(BaseRepository[InvoiceInDB]):
                 "user_id": user_id
             },
             {
-                "$push": {"events": event.model_dump()},
+                "$push": {"events": event_data},
                 "$set": {"updated_at": datetime.utcnow()}
             }
         )

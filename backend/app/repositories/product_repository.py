@@ -50,12 +50,17 @@ class ProductRepository(BaseRepository[ProductInDB]):
         if exists:
             raise ValueError(f"Product with SKU '{product_data.sku}' already exists")
         
+        from app.repositories.base import _serialize_for_mongo
+        
         doc = product_data.model_dump()
         doc.update({
             "user_id": user_id,
             "created_at": datetime.utcnow(),
             "updated_at": datetime.utcnow()
         })
+        
+        # Serialize Decimal and other non-BSON types
+        doc = _serialize_for_mongo(doc)
         
         result = await self.collection.insert_one(doc)
         doc["_id"] = str(result.inserted_id)

@@ -45,12 +45,17 @@ class ExpenseRepository(BaseRepository[ExpenseInDB]):
                 )
             )
         """
+        from app.repositories.base import _serialize_for_mongo
+        
         doc = expense_data.model_dump()
         doc.update({
             "user_id": user_id,
             "created_at": datetime.utcnow(),
             "updated_at": datetime.utcnow()
         })
+        
+        # Serialize Decimal and other non-BSON types
+        doc = _serialize_for_mongo(doc)
         
         result = await self.collection.insert_one(doc)
         doc["_id"] = str(result.inserted_id)

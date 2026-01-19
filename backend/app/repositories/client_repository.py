@@ -50,12 +50,17 @@ class ClientRepository(BaseRepository[ClientInDB]):
                 ClientCreate(name="Acme Corp", email="contact@acme.com")
             )
         """
+        from app.repositories.base import _serialize_for_mongo
+        
         doc = client_data.model_dump()
         doc.update({
             "user_id": user_id,
             "created_at": datetime.utcnow(),
             "updated_at": datetime.utcnow()
         })
+        
+        # Serialize Decimal and other non-BSON types (for future-proofing)
+        doc = _serialize_for_mongo(doc)
         
         result = await self.collection.insert_one(doc)
         doc["_id"] = str(result.inserted_id)

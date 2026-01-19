@@ -9,10 +9,32 @@ from typing import TypeVar, Generic, Optional, List, Dict, Any, Type
 from motor.motor_asyncio import AsyncIOMotorDatabase, AsyncIOMotorCollection
 from pydantic import BaseModel
 from bson import ObjectId
-from datetime import datetime
+from datetime import datetime, date
+from decimal import Decimal
 
 
 T = TypeVar('T', bound=BaseModel)
+
+
+def _serialize_for_mongo(obj: Any) -> Any:
+    """
+    Recursively convert Python types to MongoDB-compatible types.
+    
+    - Decimal → str (preserves precision)
+    - date → datetime (BSON only supports datetime)
+    - dict → recursively serialize values
+    - list → recursively serialize elements
+    """
+    if isinstance(obj, Decimal):
+        return str(obj)
+    elif isinstance(obj, date) and not isinstance(obj, datetime):
+        # Convert date to datetime (BSON doesn't support date-only)
+        return datetime.combine(obj, datetime.min.time())
+    elif isinstance(obj, dict):
+        return {k: _serialize_for_mongo(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [_serialize_for_mongo(item) for item in obj]
+    return obj
 
 
 class BaseRepository(Generic[T]):
@@ -91,6 +113,9 @@ class BaseRepository(Generic[T]):
         now = datetime.utcnow()
         doc.setdefault("created_at", now)
         doc.setdefault("updated_at", now)
+        
+        # Serialize Decimal and other non-BSON types
+        doc = _serialize_for_mongo(doc)
         
         result = await self.collection.insert_one(doc)
         doc["_id"] = str(result.inserted_id)
@@ -205,6 +230,9 @@ class BaseRepository(Generic[T]):
             update_dict = update_data
         else:
             update_dict = update_data.model_dump(exclude_unset=True)
+        # Serialize Decimal and other non-BSON types
+        update_dict = _serialize_for_mongo(update_dict)
+        
         update_dict.update(extra_fields)
         update_dict["updated_at"] = datetime.utcnow()
         
