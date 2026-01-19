@@ -25,7 +25,7 @@ interface InvoiceFormProps {
   onSubmit: (data: InvoiceCreate | InvoiceUpdate) => void;
   isLoading?: boolean;
   isEdit?: boolean;
-  preselectedClientId?: number;
+  preselectedClientId?: string;
 }
 
 // Calculate default due date (30 days from now)
@@ -78,7 +78,7 @@ export function InvoiceForm({
   }, [extractedData, clients]);
 
   const [formData, setFormData] = useState({
-    client_id: invoice?.client_id || matchedClient?.id || preselectedClientId || 0,
+    client_id: invoice?.client_id || matchedClient?.id || preselectedClientId || '',
     issued_date: invoice?.issued_date
       ? new Date(invoice.issued_date).toISOString().split('T')[0]
       : extractedData?.invoice_details?.issued_date || new Date().toISOString().split('T')[0],
@@ -235,10 +235,10 @@ export function InvoiceForm({
               id="client_id"
               className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
               value={formData.client_id}
-              onChange={(e) => handleChange('client_id', parseInt(e.target.value))}
+              onChange={(e) => handleChange('client_id', e.target.value)}
               disabled={isLoading}
             >
-              <option value={0}>Select a client</option>
+              <option value="">Select a client</option>
               {clients?.map((client) => (
                 <option key={client.id} value={client.id}>
                   {client.name}

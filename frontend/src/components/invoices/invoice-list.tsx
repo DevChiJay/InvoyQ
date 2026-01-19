@@ -21,7 +21,7 @@ import type { Invoice } from '@/types/api';
 interface InvoiceListProps {
   invoices: Invoice[];
   isLoading?: boolean;
-  onDelete?: (id: number, number: string) => void;
+  onDelete?: (id: string, number: string) => void;
 }
 
 export function InvoiceList({ invoices, isLoading, onDelete }: InvoiceListProps) {

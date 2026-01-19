@@ -13,9 +13,9 @@ export default function InvoicesPage() {
   const { data: invoices, isLoading } = useInvoices();
   const deleteInvoice = useDeleteInvoice();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [invoiceToDelete, setInvoiceToDelete] = useState<{ id: number; number: string } | null>(null);
+  const [invoiceToDelete, setInvoiceToDelete] = useState<{ id: string; number: string } | null>(null);
 
-  const handleDeleteClick = (id: number, number: string) => {
+  const handleDeleteClick = (id: string, number: string) => {
     setInvoiceToDelete({ id, number });
     setDeleteDialogOpen(true);
   };

@@ -71,7 +71,7 @@ export function useVerifyPayment() {
 
 // Send invoice reminder
 export function useSendReminder() {
-  return useMutation<{ status: string; invoice_id: number }, Error, number>({
+  return useMutation<{ status: string; invoice_id: string }, Error, string>({
     mutationFn: async (invoiceId) => {
       const response = await paymentsAPI.sendReminder(invoiceId);
       return response.data;

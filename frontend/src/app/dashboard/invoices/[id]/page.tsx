@@ -20,9 +20,9 @@ import { toast } from 'sonner';
 export default function InvoiceDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const invoiceId = parseInt(params.id as string);
+  const invoiceId = params.id as string;
   const { data: invoice, isLoading } = useInvoice(invoiceId);
-  const { data: client } = useClient(invoice?.client_id || 0);
+  const { data: client } = useClient(invoice?.client_id || '');
   const deleteInvoice = useDeleteInvoice();
   const sendReminder = useSendReminder();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);

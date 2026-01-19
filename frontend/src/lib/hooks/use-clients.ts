@@ -14,7 +14,7 @@ export const useClients = (limit?: number, offset?: number) => {
   });
 };
 
-export const useClient = (id: number) => {
+export const useClient = (id: string) => {
   return useQuery({
     queryKey: ['clients', id],
     queryFn: async () => {
@@ -43,7 +43,7 @@ export const useCreateClient = () => {
   });
 };
 
-export const useUpdateClient = (id: number) => {
+export const useUpdateClient = (id: string) => {
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -65,7 +65,7 @@ export const useDeleteClient = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (id: number) => clientsAPI.delete(id),
+    mutationFn: (id: string) => clientsAPI.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['clients'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });

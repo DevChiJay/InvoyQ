@@ -14,7 +14,7 @@ export const useInvoices = (params?: InvoiceListParams) => {
   });
 };
 
-export const useInvoice = (id: number) => {
+export const useInvoice = (id: string) => {
   return useQuery({
     queryKey: ['invoices', id],
     queryFn: async () => {
@@ -44,7 +44,7 @@ export const useCreateInvoice = () => {
   });
 };
 
-export const useUpdateInvoice = (id: number) => {
+export const useUpdateInvoice = (id: string) => {
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -68,7 +68,7 @@ export const useDeleteInvoice = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (id: number) => invoicesAPI.delete(id),
+    mutationFn: (id: string) => invoicesAPI.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['invoices'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });

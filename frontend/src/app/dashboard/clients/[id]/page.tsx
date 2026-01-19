@@ -12,7 +12,7 @@ import { toast } from 'sonner';
 export default function ClientDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const clientId = parseInt(params.id as string);
+  const clientId = params.id as string;
   const { data: client, isLoading } = useClient(clientId);
   const deleteClient = useDeleteClient();
 

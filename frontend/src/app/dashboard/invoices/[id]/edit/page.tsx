@@ -11,7 +11,7 @@ import type { InvoiceUpdate, InvoiceCreate } from '@/types/api';
 export default function EditInvoicePage() {
   const params = useParams();
   const router = useRouter();
-  const invoiceId = parseInt(params.id as string);
+  const invoiceId = params.id as string;
   const { data: invoice, isLoading: invoiceLoading } = useInvoice(invoiceId);
   const updateInvoice = useUpdateInvoice(invoiceId);
 

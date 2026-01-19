@@ -11,7 +11,7 @@ import type { ClientUpdate } from '@/types/api';
 export default function EditClientPage() {
   const params = useParams();
   const router = useRouter();
-  const clientId = parseInt(params.id as string);
+  const clientId = params.id as string;
   const { data: client, isLoading: clientLoading } = useClient(clientId);
   const updateClient = useUpdateClient(clientId);
 

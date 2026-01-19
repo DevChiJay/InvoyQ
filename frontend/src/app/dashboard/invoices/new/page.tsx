@@ -8,9 +8,7 @@ import type { InvoiceCreate, InvoiceUpdate } from '@/types/api';
 export default function NewInvoicePage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const preselectedClientId = searchParams.get('client')
-    ? parseInt(searchParams.get('client')!)
-    : undefined;
+  const preselectedClientId = searchParams.get('client') || undefined;
 
   const createInvoice = useCreateInvoice();
 
