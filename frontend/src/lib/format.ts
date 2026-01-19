@@ -46,13 +46,43 @@ export const formatISODate = (dateString: string | undefined | null): string => 
 };
 
 /**
- * Formats a currency value
+ * Formats a currency value (accepts string or number)
+ * Handles decimal strings from backend
  */
-export const formatCurrency = (amount: number, currency: string = 'USD'): string => {
+export const formatCurrency = (amount: number | string, currency: string = 'USD'): string => {
+  const numericAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
+  
+  if (isNaN(numericAmount)) {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency,
+    }).format(0);
+  }
+  
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency,
-  }).format(amount);
+  }).format(numericAmount);
+};
+
+/**
+ * Safely parses a decimal string to number for calculations
+ * Returns 0 if invalid
+ */
+export const parseDecimal = (value: string | number | null | undefined): number => {
+  if (value === null || value === undefined) return 0;
+  if (typeof value === 'number') return value;
+  
+  const parsed = parseFloat(value);
+  return isNaN(parsed) ? 0 : parsed;
+};
+
+/**
+ * Formats a number/string as a decimal string (for display)
+ */
+export const formatDecimal = (value: number | string | null | undefined, decimals: number = 2): string => {
+  const num = parseDecimal(value);
+  return num.toFixed(decimals);
 };
 
 /**

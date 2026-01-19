@@ -39,3 +39,48 @@ export function formatErrorMessage(detail: unknown, fallback: string): string {
   // Fallback to default message
   return fallback;
 }
+
+/**
+ * Formats a date string (ISO datetime or YYYY-MM-DD) to YYYY-MM-DD format
+ * Handles both datetime strings (2026-01-19T10:30:00) and date strings (2026-01-19)
+ * Returns empty string if invalid
+ */
+export function formatDateToYYYYMMDD(dateString: string | null | undefined): string {
+  if (!dateString) return '';
+  
+  try {
+    // Handle both ISO datetime and YYYY-MM-DD formats
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return '';
+    
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    
+    return `${year}-${month}-${day}`;
+  } catch {
+    return '';
+  }
+}
+
+/**
+ * Parses a date string (ISO datetime or YYYY-MM-DD) to Date object
+ * Returns null if invalid
+ */
+export function parseDate(dateString: string | null | undefined): Date | null {
+  if (!dateString) return null;
+  
+  try {
+    const date = new Date(dateString);
+    return isNaN(date.getTime()) ? null : date;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Checks if a date string is valid
+ */
+export function isValidDate(dateString: string | null | undefined): boolean {
+  return parseDate(dateString) !== null;
+}
