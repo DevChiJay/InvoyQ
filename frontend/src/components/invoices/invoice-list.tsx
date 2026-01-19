@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,24 +16,39 @@ import {
 import { Search, Eye, Pencil, Trash2, FileText } from 'lucide-react';
 import Link from 'next/link';
 import { formatRelativeDate, formatSimpleDate, formatCurrency } from '@/lib/format';
-import type { Invoice } from '@/types/api';
+import type { Invoice, InvoiceListParams } from '@/types/api';
 
 interface InvoiceListProps {
   invoices: Invoice[];
   isLoading?: boolean;
   onDelete?: (id: string, number: string) => void;
+  filters?: InvoiceListParams;
+  onFilterChange?: (filters: Partial<InvoiceListParams>) => void;
 }
 
-export function InvoiceList({ invoices, isLoading, onDelete }: InvoiceListProps) {
-  const [searchTerm, setSearchTerm] = useState('');
+export function InvoiceList({ invoices, isLoading, onDelete, filters, onFilterChange }: InvoiceListProps) {
+  const [searchInput, setSearchInput] = useState(filters?.search || '');
   const [statusFilter, setStatusFilter] = useState<Invoice['status'] | 'all'>('all');
 
+  // Debounced search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (searchInput !== filters?.search && onFilterChange) {
+        onFilterChange({ search: searchInput });
+      }
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchInput, filters?.search, onFilterChange]);
+
+  const handleSort = (field: InvoiceListParams['sort_by']) => {
+    if (!onFilterChange || !field) return;
+    const newOrder = filters?.sort_by === field && filters?.sort_order === -1 ? 1 : -1;
+    onFilterChange({ sort_by: field, sort_order: newOrder });
+  };
+
   const filteredInvoices = invoices.filter((invoice) => {
-    const matchesSearch =
-      invoice.number.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      invoice.client?.name.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'all' || invoice.status === statusFilter;
-    return matchesSearch && matchesStatus;
+    return matchesStatus;
   });
 
   const getStatusBadgeVariant = (status: Invoice['status']) => {
@@ -99,9 +114,9 @@ export function InvoiceList({ invoices, isLoading, onDelete }: InvoiceListProps)
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Search by invoice number or client..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="Search by invoice number or client name..."
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
             className="pl-10"
           />
         </div>
@@ -149,12 +164,37 @@ export function InvoiceList({ invoices, isLoading, onDelete }: InvoiceListProps)
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Invoice #</TableHead>
+              <TableHead
+                className="cursor-pointer hover:bg-muted/50"
+                onClick={() => handleSort('number')}
+              >
+                Invoice # {filters?.sort_by === 'number' && (filters?.sort_order === -1 ? '↓' : '↑')}
+              </TableHead>
               <TableHead>Client</TableHead>
-              <TableHead>Issued</TableHead>
-              <TableHead>Due Date</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="text-right">Amount</TableHead>
+              <TableHead
+                className="cursor-pointer hover:bg-muted/50"
+                onClick={() => handleSort('issued_date')}
+              >
+                Issued {filters?.sort_by === 'issued_date' && (filters?.sort_order === -1 ? '↓' : '↑')}
+              </TableHead>
+              <TableHead
+                className="cursor-pointer hover:bg-muted/50"
+                onClick={() => handleSort('due_date')}
+              >
+                Due Date {filters?.sort_by === 'due_date' && (filters?.sort_order === -1 ? '↓' : '↑')}
+              </TableHead>
+              <TableHead
+                className="cursor-pointer hover:bg-muted/50"
+                onClick={() => handleSort('status')}
+              >
+                Status {filters?.sort_by === 'status' && (filters?.sort_order === -1 ? '↓' : '↑')}
+              </TableHead>
+              <TableHead
+                className="text-right cursor-pointer hover:bg-muted/50"
+                onClick={() => handleSort('total')}
+              >
+                Amount {filters?.sort_by === 'total' && (filters?.sort_order === -1 ? '↓' : '↑')}
+              </TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>

@@ -25,14 +25,32 @@ export const useDashboardStats = () => {
       const [clientsResponse, invoicesResponse, productsResponse, expensesResponse] = await Promise.all([
         clientsAPI.getAll(),
         invoicesAPI.getAll(),
-        productsAPI.getAll({ is_active: true, limit: 1000 }).catch(() => ({ data: { items: [], total: 0, has_more: false, limit: 0, offset: 0 } })),
-        expensesAPI.getSummary({ period: 'month', reference_date: formatDateToYYYYMMDD(new Date()) }).catch(() => ({ data: { summaries: [], grand_total: '0.00', period_start: null, period_end: null } })),
+        productsAPI.getAll({ is_active: true, limit: 100 }).catch((err) => {
+          console.error('Failed to fetch products:', err);
+          return { data: { items: [], total: 0, has_more: false, limit: 0, offset: 0 } };
+        }),
+        expensesAPI.getSummary({ 
+          period: 'month', 
+          reference_date: formatDateToYYYYMMDD(new Date()) 
+        }).catch((err) => {
+          console.error('Failed to fetch expense summary:', err);
+          return { data: { summaries: [], grand_total: '0.00', period_start: null, period_end: null } };
+        }),
       ]);
 
       const clients = clientsResponse.data;
       const invoices = invoicesResponse.data;
       const products = productsResponse.data.items || [];
       const expenseSummary = expensesResponse.data;
+
+      console.log('Dashboard Stats Debug:', {
+        clientsCount: clients.length,
+        invoicesCount: invoices.length,
+        productsResponse: productsResponse.data,
+        productsCount: products.length,
+        expenseSummary,
+        expenseSummaryGrandTotal: expenseSummary.grand_total,
+      });
 
       // Calculate invoice stats
       const totalRevenue = invoices
@@ -52,12 +70,19 @@ export const useDashboardStats = () => {
         0
       );
 
-      // Calculate expense stats
-      const monthlyExpenses = parseDecimal(expenseSummary.grand_total || '0.00');
+      // Calculate expense stats - parse the decimal string correctly
+      const monthlyExpenses = parseDecimal(expenseSummary.grand_total);
       const monthlyExpenseCount = expenseSummary.summaries?.reduce(
         (sum, summary) => sum + summary.count,
         0
       ) || 0;
+
+      console.log('Calculated Stats:', {
+        totalProducts,
+        totalInventoryValue,
+        monthlyExpenses,
+        monthlyExpenseCount,
+      });
 
       return {
         totalClients: clients.length,

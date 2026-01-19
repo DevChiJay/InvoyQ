@@ -8,12 +8,21 @@ import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Plus } from 'lucide-react';
 import Link from 'next/link';
 import { toast } from 'sonner';
+import type { InvoiceListParams } from '@/types/api';
 
 export default function InvoicesPage() {
-  const { data: invoices, isLoading } = useInvoices();
+  const [filters, setFilters] = useState<InvoiceListParams>({
+    sort_by: 'created_at',
+    sort_order: -1,
+  });
+  const { data: invoices, isLoading } = useInvoices(filters);
   const deleteInvoice = useDeleteInvoice();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [invoiceToDelete, setInvoiceToDelete] = useState<{ id: string; number: string } | null>(null);
+
+  const handleFilterChange = (newFilters: Partial<InvoiceListParams>) => {
+    setFilters((prev) => ({ ...prev, ...newFilters }));
+  };
 
   const handleDeleteClick = (id: string, number: string) => {
     setInvoiceToDelete({ id, number });
@@ -59,6 +68,8 @@ export default function InvoicesPage() {
         invoices={invoices || []}
         isLoading={isLoading}
         onDelete={handleDeleteClick}
+        filters={filters}
+        onFilterChange={handleFilterChange}
       />
 
       {/* Delete Confirmation Dialog */}

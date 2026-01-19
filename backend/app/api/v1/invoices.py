@@ -43,6 +43,9 @@ async def list_invoices(
     client_id: Optional[str] = Query(None),
     due_from: Optional[date] = Query(None),
     due_to: Optional[date] = Query(None),
+    search: Optional[str] = Query(None, description="Search by invoice number or client name"),
+    sort_by: str = Query("created_at", description="Field to sort by"),
+    sort_order: int = Query(-1, description="Sort order: 1=asc, -1=desc"),
     db: AsyncIOMotorDatabase = Depends(get_database),
     current_user: UserInDB = Depends(get_current_user),
 ):
@@ -50,9 +53,11 @@ async def list_invoices(
     List invoices for the authenticated user.
     
     Supports filtering by status, client, and due date range.
-    Returns paginated results.
+    Supports search by invoice number or client name.
+    Returns paginated results with sorting.
     """
     repo = InvoiceRepository(db)
+    client_repo = ClientRepository(db)
     
     invoices = await repo.list_by_user(
         user_id=str(current_user.id),
@@ -61,14 +66,32 @@ async def list_invoices(
         due_from=due_from,
         due_to=due_to,
         skip=skip,
-        limit=limit
+        limit=limit,
+        sort_by=sort_by,
+        sort_order=sort_order
     )
     
-    # Add user business info to each invoice
+    # Add user business info and client data to each invoice
     result = []
     for invoice in invoices:
+        # Get client data
+        client = await client_repo.get_by_id_and_user(
+            client_id=invoice.client_id,
+            user_id=str(current_user.id)
+        )
+        
         invoice_out = InvoiceOut(**invoice.model_dump())
         invoice_out.user_business_info = _create_user_business_info(current_user)
+        invoice_out.client = client.model_dump() if client else None
+        
+        # Apply search filter if provided
+        if search:
+            search_lower = search.lower()
+            matches_number = invoice.number and search_lower in invoice.number.lower()
+            matches_client = client and search_lower in client.name.lower()
+            if not (matches_number or matches_client):
+                continue
+        
         result.append(invoice_out)
     
     return result
@@ -148,9 +171,10 @@ async def create_invoice(
                 # Log any other errors but continue
                 print(f"Error adjusting product quantity: {str(e)}")
     
-    # Add user business info
+    # Add user business info and client data
     invoice_out = InvoiceOut(**invoice.model_dump())
     invoice_out.user_business_info = _create_user_business_info(current_user)
+    invoice_out.client = client.model_dump() if client else None
     
     return invoice_out
 
@@ -167,6 +191,7 @@ async def get_invoice(
     Returns 404 if invoice doesn't exist or doesn't belong to the user.
     """
     repo = InvoiceRepository(db)
+    client_repo = ClientRepository(db)
     
     invoice = await repo.get_by_id_and_user(
         invoice_id=invoice_id,
@@ -176,9 +201,16 @@ async def get_invoice(
     if not invoice:
         raise HTTPException(status_code=404, detail="Invoice not found")
     
-    # Add user business info
+    # Get client data
+    client = await client_repo.get_by_id_and_user(
+        client_id=invoice.client_id,
+        user_id=str(current_user.id)
+    )
+    
+    # Add user business info and client
     invoice_out = InvoiceOut(**invoice.model_dump())
     invoice_out.user_business_info = _create_user_business_info(current_user)
+    invoice_out.client = client.model_dump() if client else None
     
     return invoice_out
 
@@ -197,6 +229,7 @@ async def update_invoice(
     Returns 404 if invoice doesn't exist or doesn't belong to the user.
     """
     repo = InvoiceRepository(db)
+    client_repo = ClientRepository(db)
     
     # Check if invoice exists and belongs to user
     existing_invoice = await repo.get_by_id_and_user(
@@ -214,9 +247,16 @@ async def update_invoice(
         invoice_data=payload
     )
     
-    # Add user business info
+    # Get client data
+    client = await client_repo.get_by_id_and_user(
+        client_id=invoice.client_id,
+        user_id=str(current_user.id)
+    )
+    
+    # Add user business info and client
     invoice_out = InvoiceOut(**invoice.model_dump())
     invoice_out.user_business_info = _create_user_business_info(current_user)
+    invoice_out.client = client.model_dump() if client else None
     
     return invoice_out
 

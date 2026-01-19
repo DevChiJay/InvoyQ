@@ -163,6 +163,9 @@ export interface InvoiceListParams {
   offset?: number;
   due_from?: string;
   due_to?: string;
+  search?: string;  // Search by invoice number or client name
+  sort_by?: 'number' | 'issued_date' | 'due_date' | 'total' | 'status' | 'created_at';
+  sort_order?: 1 | -1;  // 1=ascending, -1=descending
 }
 
 // Extraction Types - Backend Response Format

@@ -248,7 +248,7 @@ class ExpenseRepository(BaseRepository[ExpenseInDB]):
             filter_query["category"] = category.lower()
         
         if date_range_query:
-            filter_query["date"] = date_range_query
+            filter_query["expense_date"] = date_range_query
         elif date_from or date_to:
             date_filter = {}
             if date_from:
@@ -256,7 +256,7 @@ class ExpenseRepository(BaseRepository[ExpenseInDB]):
             if date_to:
                 date_filter["$lte"] = datetime.combine(date_to, datetime.max.time())
             if date_filter:
-                filter_query["date"] = date_filter
+                filter_query["expense_date"] = date_filter
         
         # Aggregation pipeline
         pipeline = [
@@ -267,7 +267,7 @@ class ExpenseRepository(BaseRepository[ExpenseInDB]):
                         "category": "$category",
                         "currency": "$currency"
                     },
-                    "total_amount": {"$sum": "$amount"},
+                    "total_amount": {"$sum": {"$toDouble": "$amount"}},
                     "count": {"$sum": 1}
                 }
             },
@@ -319,7 +319,7 @@ class ExpenseRepository(BaseRepository[ExpenseInDB]):
             if date_to:
                 date_filter["$lte"] = datetime.combine(date_to, datetime.max.time())
             if date_filter:
-                filter_query["date"] = date_filter
+                filter_query["expense_date"] = date_filter
         
         return await self.count(filter_query)
     

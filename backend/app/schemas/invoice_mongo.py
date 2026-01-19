@@ -139,6 +139,7 @@ class InvoiceOut(InvoiceBase):
     items: List[InvoiceItemOut] = Field(default_factory=list)
     events: List[InvoiceEvent] = Field(default_factory=list, description="Invoice event history")
     user_business_info: Optional[UserBusinessInfo] = Field(None, description="Business details for invoice display")
+    client: Optional[dict] = Field(None, description="Client details (populated from client_id)")
     created_at: datetime
     updated_at: datetime
 
