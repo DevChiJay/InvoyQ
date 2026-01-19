@@ -13,6 +13,8 @@ import {
   CreditCard,
   Settings,
   Scan,
+  Package,
+  Receipt,
   X,
 } from 'lucide-react';
 
@@ -20,6 +22,8 @@ const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Clients', href: '/dashboard/clients', icon: Users },
   { name: 'Invoices', href: '/dashboard/invoices', icon: FileText },
+  { name: 'Products', href: '/dashboard/products', icon: Package },
+  { name: 'Expenses', href: '/dashboard/expenses', icon: Receipt },
   { name: 'Extract Data', href: '/dashboard/extract', icon: Scan },
   { name: 'Payments', href: '/dashboard/payments', icon: CreditCard },
   { name: 'Settings', href: '/dashboard/settings', icon: Settings },

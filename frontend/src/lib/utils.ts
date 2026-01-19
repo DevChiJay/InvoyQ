@@ -41,21 +41,21 @@ export function formatErrorMessage(detail: unknown, fallback: string): string {
 }
 
 /**
- * Formats a date string (ISO datetime or YYYY-MM-DD) to YYYY-MM-DD format
- * Handles both datetime strings (2026-01-19T10:30:00) and date strings (2026-01-19)
+ * Formats a date to YYYY-MM-DD format
+ * Accepts both Date objects and ISO datetime/date strings
  * Returns empty string if invalid
  */
-export function formatDateToYYYYMMDD(dateString: string | null | undefined): string {
-  if (!dateString) return '';
+export function formatDateToYYYYMMDD(date: string | Date | null | undefined): string {
+  if (!date) return '';
   
   try {
     // Handle both ISO datetime and YYYY-MM-DD formats
-    const date = new Date(dateString);
-    if (isNaN(date.getTime())) return '';
+    const dateObj = typeof date === 'string' ? new Date(date) : date;
+    if (isNaN(dateObj.getTime())) return '';
     
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
+    const year = dateObj.getFullYear();
+    const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+    const day = String(dateObj.getDate()).padStart(2, '0');
     
     return `${year}-${month}-${day}`;
   } catch {
