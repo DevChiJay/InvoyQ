@@ -131,6 +131,9 @@ export interface InvoiceCreate {
   issued_date?: string;
   due_date?: string;
   currency?: string;
+  subtotal?: string;  // Decimal as string
+  tax?: string;  // Decimal as string
+  total?: string;  // Decimal as string
   notes?: string;
   payment_link?: string;
   items?: InvoiceItem[];  // manual items

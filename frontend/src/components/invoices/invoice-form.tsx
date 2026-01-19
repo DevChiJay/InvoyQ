@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -13,12 +13,25 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Loader2, Plus, Trash2, UserPlus } from 'lucide-react';
+import { Loader2, Plus, Trash2, UserPlus, Package, AlertCircle } from 'lucide-react';
 import { ClientFormModal } from '@/components/clients/client-form-modal';
 import type { Invoice, InvoiceCreate, InvoiceUpdate, InvoiceItem, Client } from '@/types/api';
 import { useClients } from '@/lib/hooks/use-clients';
+import { useProductStore } from '@/stores/product-store';
 import { CURRENCIES, DEFAULT_CURRENCY } from '@/lib/currency';
 import { formatCurrency } from '@/lib/format';
+import Link from 'next/link';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+
+// Local type for form state (using numbers for easier calculations)
+interface InvoiceItemForm {
+  product_id: string | null;
+  description: string;
+  quantity: number;
+  unit_price: number;
+  tax_rate: number;
+  amount: number;
+}
 
 interface InvoiceFormProps {
   invoice?: Invoice;
@@ -44,6 +57,15 @@ export function InvoiceForm({
 }: InvoiceFormProps) {
   const { data: clients } = useClients();
   const [isClientModalOpen, setIsClientModalOpen] = useState(false);
+  
+  // Fetch active products
+  const { products, isLoading: productsLoading, fetchProducts } = useProductStore();
+  
+  useEffect(() => {
+    fetchProducts({ is_active: true });
+  }, [fetchProducts]);
+  
+  const activeProducts = products.filter(p => p.is_active);
 
   // Load extraction data from session storage
   const extractedData = useMemo(() => {
@@ -84,28 +106,32 @@ export function InvoiceForm({
       : extractedData?.invoice_details?.issued_date || new Date().toISOString().split('T')[0],
     due_date: invoice?.due_date
       ? new Date(invoice.due_date).toISOString().split('T')[0]
-      : extractedData?.invoice_details?.due_date || getDefaultDueDate(),
+      : extractedData?.invoice_details?.due_date || new Date().toISOString().split('T')[0],
     currency: invoice?.currency || DEFAULT_CURRENCY,
     tax: invoice?.tax ?? extractedData?.financial?.tax ?? 0,
-    status: invoice?.status || 'draft' as const,
+    status: invoice?.status || 'paid' as const,
     notes: invoice?.notes || extractedData?.notes || '',
   });
 
-  const [items, setItems] = useState<InvoiceItem[]>(
+  const [items, setItems] = useState<InvoiceItemForm[]>(
     invoice?.items.map(item => ({
-      ...item,
+      product_id: item.product_id,
+      description: item.description,
       quantity: Number(item.quantity),
       unit_price: Number(item.unit_price),
+      tax_rate: Number(item.tax_rate),
       amount: Number(item.amount),
     })) || 
     (extractedData?.line_items && Array.isArray(extractedData.line_items) && extractedData.line_items.length > 0 
       ? extractedData.line_items.map((item: InvoiceItem) => ({
+          product_id: item.product_id || null,
           description: item.description || '',
           quantity: Number(item.quantity) || 1,
           unit_price: Number(item.unit_price) || 0,
+          tax_rate: Number(item.tax_rate) || 0,
           amount: Number(item.amount) || Number(item.quantity || 1) * Number(item.unit_price || 0),
         }))
-      : [{ description: '', quantity: 1, unit_price: 0, amount: 0 }])
+      : [{ product_id: null, description: '', quantity: 1, unit_price: 0, tax_rate: 0, amount: 0 }])
   );
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -115,8 +141,40 @@ export function InvoiceForm({
   const taxAmount = (subtotal * formData.tax) / 100;
   const total = subtotal + taxAmount;
 
+  // Handle product selection
+  const handleProductSelect = (index: number, productId: string) => {
+    if (!productId || productId === 'none') {
+      // Clear product selection - reset to custom item
+      const newItems = [...items];
+      newItems[index] = {
+        ...newItems[index],
+        product_id: null,
+      };
+      setItems(newItems);
+      return;
+    }
+    
+    const product = activeProducts.find(p => p.id === productId);
+    if (!product) return;
+
+    const newItems = [...items];
+    const quantity = newItems[index].quantity || 1;
+    const unitPrice = parseFloat(product.unit_price);
+    
+    newItems[index] = {
+      product_id: product.id,
+      description: product.name + (product.description ? ` - ${product.description}` : ''),
+      quantity,
+      unit_price: unitPrice,
+      tax_rate: parseFloat(product.tax_rate || '0'),
+      amount: quantity * unitPrice,
+    };
+    
+    setItems(newItems);
+  };
+
   // Update item amount when quantity or unit_price changes
-  const updateItem = (index: number, field: keyof InvoiceItem, value: string | number) => {
+  const updateItem = (index: number, field: keyof InvoiceItemForm, value: string | number | null) => {
     const newItems = [...items];
     newItems[index] = { ...newItems[index], [field]: value };
 
@@ -129,7 +187,7 @@ export function InvoiceForm({
   };
 
   const addItem = () => {
-    setItems([...items, { description: '', quantity: 1, unit_price: 0, amount: 0 }]);
+    setItems([...items, { product_id: null, description: '', quantity: 1, unit_price: 0, tax_rate: 0, amount: 0 }]);
   };
 
   const removeItem = (index: number) => {
@@ -165,15 +223,36 @@ export function InvoiceForm({
     e.preventDefault();
 
     if (validate()) {
+      // Convert numbers to strings for API
+      const formattedItems: InvoiceItem[] = items
+        .filter((item) => item.description.trim())
+        .map(item => ({
+          product_id: item.product_id,
+          description: item.description,
+          quantity: item.quantity.toString(),
+          unit_price: item.unit_price.toFixed(2),
+          tax_rate: item.tax_rate.toFixed(2),
+          amount: item.amount.toFixed(2),
+        }));
+
+      // Extract product items for inventory reduction
+      const productItems = items
+        .filter((item) => item.product_id && item.description.trim())
+        .map(item => ({
+          product_id: item.product_id!,
+          quantity: item.quantity.toString(),
+        }));
+
       const submitData: InvoiceCreate = {
         client_id: formData.client_id,
         issued_date: formData.issued_date,
         due_date: formData.due_date,
         currency: formData.currency,
-        items: items.filter((item) => item.description.trim()),
-        subtotal: subtotal,
-        tax: formData.tax,
-        total: total,
+        items: formattedItems,
+        product_items: productItems.length > 0 ? productItems : undefined,
+        subtotal: subtotal.toFixed(2),
+        tax: formData.tax.toString(),
+        total: total.toFixed(2),
         status: formData.status,
         notes: formData.notes || undefined,
       };
@@ -360,71 +439,128 @@ export function InvoiceForm({
           <div className="flex items-center justify-between">
             <div>
               <CardTitle>Line Items</CardTitle>
-              <CardDescription>Add products or services</CardDescription>
+              <CardDescription>Select from your products or add custom items</CardDescription>
             </div>
-            <Button type="button" variant="outline" size="sm" onClick={addItem}>
-              <Plus className="mr-2 h-4 w-4" />
-              Add Item
-            </Button>
+            <div className="flex gap-2">
+              {activeProducts.length === 0 && (
+                <Link href="/dashboard/products/new">
+                  <Button type="button" variant="outline" size="sm">
+                    <Package className="mr-2 h-4 w-4" />
+                    Add Products
+                  </Button>
+                </Link>
+              )}
+              <Button type="button" variant="outline" size="sm" onClick={addItem}>
+                <Plus className="mr-2 h-4 w-4" />
+                Add Item
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
+          {activeProducts.length === 0 && items.length === 1 && !items[0].description && (
+            <Alert>
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                No products available. You can{' '}
+                <Link href="/dashboard/products/new" className="font-medium underline">
+                  add products
+                </Link>{' '}
+                to your catalog for faster invoicing, or add custom line items below.
+              </AlertDescription>
+            </Alert>
+          )}
+          
           {items.map((item, index) => (
             <div
               key={index}
-              className="flex flex-col md:flex-row gap-4 pb-4 border-b last:border-0"
+              className="space-y-4 pb-4 border-b last:border-0"
             >
-              <div className="flex-1 space-y-2">
-                <Label htmlFor={`item-description-${index}`}>Description</Label>
-                <Input
-                  id={`item-description-${index}`}
-                  value={item.description}
-                  onChange={(e) => updateItem(index, 'description', e.target.value)}
-                  placeholder="Product or service description"
-                  disabled={isLoading}
-                />
-              </div>
-              <div className="w-full md:w-24 space-y-2">
-                <Label htmlFor={`item-quantity-${index}`}>Qty</Label>
-                <Input
-                  id={`item-quantity-${index}`}
-                  type="number"
-                  min="1"
-                  value={item.quantity}
-                  onChange={(e) => updateItem(index, 'quantity', parseInt(e.target.value) || 1)}
-                  disabled={isLoading}
-                />
-              </div>
-              <div className="w-full md:w-32 space-y-2">
-                <Label htmlFor={`item-price-${index}`}>Unit Price</Label>
-                <Input
-                  id={`item-price-${index}`}
-                  type="number"
-                  min="0"
+              {/* Product Selection Row */}
+              {activeProducts.length > 0 && (
+                <div className="flex gap-4">
+                  <div className="flex-1 space-y-2">
+                    <Label htmlFor={`item-product-${index}`}>Select Product (Optional)</Label>
+                    <Select
+                      value={item.product_id || 'none'}
+                      onValueChange={(value) => handleProductSelect(index, value)}
+                      disabled={isLoading}
+                    >
+                      <SelectTrigger id={`item-product-${index}`}>
+                        <SelectValue placeholder="Choose a product or add custom item" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">Custom item (no product)</SelectItem>
+                        {activeProducts.map((product) => (
+                          <SelectItem key={product.id} value={product.id}>
+                            <div className="flex items-center justify-between gap-4">
+                              <span className="font-medium">{product.name}</span>
+                              <span className="text-muted-foreground text-sm">
+                                {formatCurrency(parseFloat(product.unit_price), product.currency)}
+                              </span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              )}
+              
+              {/* Item Details Row */}
+              <div className="flex flex-col md:flex-row gap-4">
+                <div className="flex-1 space-y-2">
+                  <Label htmlFor={`item-description-${index}`}>Description</Label>
+                  <Input
+                    id={`item-description-${index}`}
+                    value={item.description}
+                    onChange={(e) => updateItem(index, 'description', e.target.value)}
+                    placeholder="Product or service description"
+                    disabled={isLoading}
+                  />
+                </div>
+                <div className="w-full md:w-24 space-y-2">
+                  <Label htmlFor={`item-quantity-${index}`}>Qty</Label>
+                  <Input
+                    id={`item-quantity-${index}`}
+                    type="number"
+                    min="1"
+                    value={item.quantity}
+                    onChange={(e) => updateItem(index, 'quantity', parseInt(e.target.value) || 1)}
+                    disabled={isLoading}
+                  />
+                </div>
+                <div className="w-full md:w-32 space-y-2">
+                  <Label htmlFor={`item-price-${index}`}>Unit Price</Label>
+                  <Input
+                    id={`item-price-${index}`}
+                    type="number"
+                    min="0"
                   step="0.01"
-                  value={item.unit_price}
-                  onChange={(e) => updateItem(index, 'unit_price', parseFloat(e.target.value) || 0)}
-                  disabled={isLoading}
-                />
-              </div>
-              <div className="w-full md:w-32 space-y-2">
-                <Label>Amount</Label>
-                <Input
-                  value={Number(item.amount).toFixed(2)}
-                  disabled
-                  className="bg-muted"
-                />
-              </div>
-              <div className="flex items-end">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => removeItem(index)}
-                  disabled={items.length === 1 || isLoading}
-                >
-                  <Trash2 className="h-4 w-4 text-destructive" />
-                </Button>
+                    value={item.unit_price}
+                    onChange={(e) => updateItem(index, 'unit_price', parseFloat(e.target.value) || 0)}
+                    disabled={isLoading}
+                  />
+                </div>
+                <div className="w-full md:w-32 space-y-2">
+                  <Label>Amount</Label>
+                  <Input
+                    value={Number(item.amount).toFixed(2)}
+                    disabled
+                    className="bg-muted"
+                  />
+                </div>
+                <div className="flex items-end">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => removeItem(index)}
+                    disabled={items.length === 1 || isLoading}
+                  >
+                    <Trash2 className="h-4 w-4 text-destructive" />
+                  </Button>
+                </div>
               </div>
             </div>
           ))}

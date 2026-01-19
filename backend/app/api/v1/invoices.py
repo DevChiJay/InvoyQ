@@ -10,6 +10,7 @@ from app.db.mongo import get_database
 from app.repositories.user_repository import UserInDB
 from app.repositories.client_repository import ClientRepository
 from app.repositories.invoice_repository import InvoiceRepository
+from app.repositories.product_repository import ProductRepository
 from app.schemas.invoice_mongo import (
     InvoiceCreate, InvoiceOut, InvoiceUpdate, UserBusinessInfo
 )
@@ -126,6 +127,26 @@ async def create_invoice(
         client_id=payload.client_id,
         invoice_data=payload
     )
+    
+    # Reduce product quantities if product_items are provided
+    if payload.product_items:
+        product_repo = ProductRepository(db)
+        for product_item in payload.product_items:
+            try:
+                # Adjust quantity (negative to reduce)
+                quantity_to_reduce = -int(Decimal(product_item.quantity))
+                await product_repo.adjust_quantity(
+                    product_id=product_item.product_id,
+                    user_id=str(current_user.id),
+                    adjustment=quantity_to_reduce
+                )
+            except ValueError as e:
+                # If insufficient quantity, log warning but don't fail invoice creation
+                # The invoice is already created, so we just warn about inventory issue
+                print(f"Warning: Could not reduce quantity for product {product_item.product_id}: {str(e)}")
+            except Exception as e:
+                # Log any other errors but continue
+                print(f"Error adjusting product quantity: {str(e)}")
     
     # Add user business info
     invoice_out = InvoiceOut(**invoice.model_dump())
