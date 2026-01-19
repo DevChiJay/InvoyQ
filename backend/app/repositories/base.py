@@ -180,7 +180,7 @@ class BaseRepository(Generic[T]):
     async def update(
         self,
         id: str,
-        update_data: BaseModel,
+        update_data: BaseModel | Dict[str, Any],
         **extra_fields
     ) -> Optional[T]:
         """
@@ -188,7 +188,7 @@ class BaseRepository(Generic[T]):
         
         Args:
             id: Document ID
-            update_data: Pydantic model with fields to update
+            update_data: Pydantic model or dict with fields to update
             **extra_fields: Additional fields to update
             
         Returns:
@@ -201,7 +201,10 @@ class BaseRepository(Generic[T]):
                 updated_at=datetime.utcnow()
             )
         """
-        update_dict = update_data.model_dump(exclude_unset=True)
+        if isinstance(update_data, dict):
+            update_dict = update_data
+        else:
+            update_dict = update_data.model_dump(exclude_unset=True)
         update_dict.update(extra_fields)
         update_dict["updated_at"] = datetime.utcnow()
         

@@ -37,7 +37,7 @@ def _create_user_business_info(user: UserInDB) -> UserBusinessInfo:
 @router.get("/invoices", response_model=List[InvoiceOut])
 async def list_invoices(
     limit: int = Query(50, ge=1, le=100),
-    offset: int = Query(0, ge=0),
+    skip: int = Query(0, ge=0),
     status: Optional[str] = Query(None),
     client_id: Optional[str] = Query(None),
     due_from: Optional[date] = Query(None),
@@ -59,7 +59,7 @@ async def list_invoices(
         client_id=client_id,
         due_from=due_from,
         due_to=due_to,
-        skip=offset,
+        skip=skip,
         limit=limit
     )
     

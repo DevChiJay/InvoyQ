@@ -15,7 +15,7 @@ router = APIRouter()
 @router.get("/clients", response_model=List[ClientOut])
 async def list_clients(
     limit: int = 50,
-    offset: int = 0,
+    skip: int = 0,
     db: AsyncIOMotorDatabase = Depends(get_database),
     current_user: UserInDB = Depends(get_current_user),
 ):
@@ -24,13 +24,13 @@ async def list_clients(
     if limit <= 0:
         limit = 50
     limit = min(limit, 100)
-    if offset < 0:
-        offset = 0
+    if skip < 0:
+        skip = 0
     
     clients = await client_repo.list_by_user(
         user_id=current_user.id,
         limit=limit,
-        offset=offset
+        skip=skip
     )
     return clients
 

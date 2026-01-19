@@ -18,6 +18,23 @@ class UserInDB(UserOut):
     id: str = Field(alias="_id")
     hashed_password: Optional[str] = None
     is_active: bool = True
+    is_pro: bool = False
+    subscription_status: Optional[str] = None
+    subscription_provider: Optional[str] = None
+    subscription_provider_id: Optional[str] = None
+    subscription_start_date: Optional[datetime] = None
+    subscription_end_date: Optional[datetime] = None
+    subscription_updated_at: Optional[datetime] = None
+    
+    # Business/Profile details
+    avatar_url: Optional[str] = None
+    phone: Optional[str] = None
+    company_name: Optional[str] = None
+    company_logo_url: Optional[str] = None
+    company_address: Optional[str] = None
+    tax_id: Optional[str] = None
+    website: Optional[str] = None
+    
     created_at: datetime
     updated_at: datetime
     
