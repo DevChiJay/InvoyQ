@@ -84,7 +84,14 @@ export const productCreateSchema = z.object({
     return num >= 0 && num <= 100;
   }, 'Tax rate must be between 0 and 100').optional(),
   currency: z.string().length(3, 'Currency must be 3 characters').toUpperCase().optional(),
-  quantity_available: z.number().int().min(0, 'Quantity must be positive').optional(),
+  quantity_available: z.preprocess(
+    (val) => {
+      if (val === '' || val === null || val === undefined) return undefined;
+      const parsed = typeof val === 'string' ? parseInt(val, 10) : val;
+      return isNaN(parsed as number) ? undefined : parsed;
+    },
+    z.number().int().min(0, 'Quantity must be positive').optional()
+  ),
   is_active: z.boolean().optional(),
 });
 

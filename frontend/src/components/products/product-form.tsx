@@ -45,18 +45,14 @@ export function ProductForm({ product, onSubmit, isSubmitting }: ProductFormProp
       unit_price: product?.unit_price || '',
       tax_rate: product?.tax_rate || '0.00',
       currency: product?.currency || 'NGN',
-      quantity_available: product?.quantity_available || 0,
+      quantity_available: product?.quantity_available?.toString() || '',
       is_active: product?.is_active ?? true,
     },
   });
 
   const handleSubmit = async (data: any) => {
-    // Convert quantity to number
-    const submitData = {
-      ...data,
-      quantity_available: parseInt(data.quantity_available, 10),
-    };
-    await onSubmit(submitData);
+    // Schema already handles quantity_available conversion via preprocess
+    await onSubmit(data);
   };
 
   return (

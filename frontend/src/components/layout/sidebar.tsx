@@ -16,9 +16,9 @@ import {
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-  { name: 'Clients', href: '/dashboard/clients', icon: Users },
-  { name: 'Invoices', href: '/dashboard/invoices', icon: FileText },
   { name: 'Products', href: '/dashboard/products', icon: Package },
+  { name: 'Invoices', href: '/dashboard/invoices', icon: FileText },
+  { name: 'Clients', href: '/dashboard/clients', icon: Users },
   { name: 'Expenses', href: '/dashboard/expenses', icon: Receipt },
   { name: 'Extract Data', href: '/dashboard/extract', icon: Scan },
   { name: 'Payments', href: '/dashboard/payments', icon: CreditCard },
