@@ -13,6 +13,16 @@ import type {
   SubscriptionStatus,
   Payment,
   AuthResponse,
+  Product,
+  ProductCreate,
+  ProductUpdate,
+  ProductQuantityAdjustment,
+  ProductListResponse,
+  Expense,
+  ExpenseCreate,
+  ExpenseUpdate,
+  ExpenseListResponse,
+  ExpenseSummaryResponse,
 } from '@/types/api';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
@@ -77,11 +87,25 @@ export const authAPI = {
   register: (email: string, password: string, full_name: string) =>
     api.post<User>('/v1/auth/register', { email, password, full_name }),
   
+  // Email verification (NEW)
+  verifyEmail: (token: string) =>
+    api.get<{ message: string; email: string }>('/v1/auth/verify-email', { params: { token } }),
+  
+  resendVerification: (email: string) =>
+    api.post<{ message: string }>('/v1/auth/resend-verification', { email }),
+  
+  // Google OAuth (NEW)
+  googleAuth: (token: string) =>
+    api.post<AuthResponse>('/v1/auth/google', { token }),
+  
   getCurrentUser: () =>
     api.get<User>('/v1/me'),
 };
 
 export const usersAPI = {
+  getMe: () =>
+    api.get<User>('/v1/me'),
+  
   updateProfile: (data: UserUpdate) =>
     api.patch<User>('/v1/me', data),
   
@@ -110,16 +134,16 @@ export const clientsAPI = {
   getAll: (limit?: number, offset?: number) =>
     api.get<Client[]>('/v1/clients', { params: { limit, offset } }),
   
-  getById: (id: number) =>
+  getById: (id: string) =>
     api.get<Client>(`/v1/clients/${id}`),
   
   create: (data: ClientCreate) =>
     api.post<Client>('/v1/clients', data),
   
-  update: (id: number, data: ClientUpdate) =>
+  update: (id: string, data: ClientUpdate) =>
     api.put<Client>(`/v1/clients/${id}`, data),
   
-  delete: (id: number) =>
+  delete: (id: string) =>
     api.delete(`/v1/clients/${id}`),
 };
 
@@ -127,34 +151,34 @@ export const invoicesAPI = {
   getAll: (params?: InvoiceListParams) =>
     api.get<Invoice[]>('/v1/invoices', { params }),
   
-  getById: (id: number) =>
+  getById: (id: string) =>
     api.get<Invoice>(`/v1/invoices/${id}`),
   
   create: (data: InvoiceCreate) =>
     api.post<Invoice>('/v1/invoices', data),
   
-  update: (id: number, data: InvoiceUpdate) =>
+  update: (id: string, data: InvoiceUpdate) =>
     api.put<Invoice>(`/v1/invoices/${id}`, data),
   
-  delete: (id: number) =>
+  delete: (id: string) =>
     api.delete(`/v1/invoices/${id}`),
 };
 
 export const generateAPI = {
   generateInvoice: (data: {
-    client_id: number;
-    extraction_id?: number;
+    client_id: string;
+    extraction_id?: string;
     items?: Array<{
       description: string;
-      quantity: number;
-      unit_price: number;
-      amount?: number;
+      quantity: string;
+      unit_price: string;
+      amount?: string;
     }>;
     issued_date?: string;
     due_date?: string;
-    subtotal?: number;
-    tax?: number;
-    total?: number;
+    subtotal?: string;
+    tax?: string;
+    total?: string;
     number?: string;
     payment_provider?: 'paystack' | 'stripe';
     payment_link?: string;
@@ -183,8 +207,89 @@ export const paymentsAPI = {
   getPaymentHistory: (limit?: number, offset?: number) =>
     api.get<Payment[]>('/v1/payments/history', { params: { limit, offset } }),
   
-  sendReminder: (invoice_id: number) =>
-    api.post<{ status: string; invoice_id: number }>('/v1/send-reminder', null, { params: { invoice_id } }),
+  sendReminder: (invoice_id: string) =>
+    api.post<{ status: string; invoice_id: string }>('/v1/send-reminder', null, { params: { invoice_id } }),
+};
+
+// Products API (NEW)
+export const productsAPI = {
+  getAll: (params?: {
+    is_active?: boolean;
+    search?: string;
+    skip?: number;
+    limit?: number;
+    sort_by?: string;
+    sort_order?: 1 | -1;
+  }) =>
+    api.get<ProductListResponse>('/v1/products', { params }),
+  
+  getById: (id: string) =>
+    api.get<Product>(`/v1/products/${id}`),
+  
+  create: (data: ProductCreate) =>
+    api.post<Product>('/v1/products', data),
+  
+  update: (id: string, data: ProductUpdate) =>
+    api.put<Product>(`/v1/products/${id}`, data),
+  
+  delete: (id: string) =>
+    api.delete(`/v1/products/${id}`),
+  
+  adjustQuantity: (id: string, data: ProductQuantityAdjustment) =>
+    api.patch<Product>(`/v1/products/${id}/adjust-quantity`, data),
+};
+
+// Expenses API (NEW)
+export const expensesAPI = {
+  getAll: (params?: {
+    category?: string;
+    date_from?: string;
+    date_to?: string;
+    period?: 'week' | 'month' | 'year';
+    reference_date?: string;
+    tags?: string[];
+    skip?: number;
+    limit?: number;
+    sort_by?: string;
+    sort_order?: 1 | -1;
+  }) => {
+    // Handle tags array - backend accepts repeated params
+    const queryParams = new URLSearchParams();
+    if (params) {
+      Object.entries(params).forEach(([key, value]) => {
+        if (key === 'tags' && Array.isArray(value)) {
+          value.forEach(tag => queryParams.append('tags', tag));
+        } else if (value !== undefined && value !== null) {
+          queryParams.append(key, String(value));
+        }
+      });
+    }
+    return api.get<ExpenseListResponse>(`/v1/expenses?${queryParams.toString()}`);
+  },
+  
+  getById: (id: string) =>
+    api.get<Expense>(`/v1/expenses/${id}`),
+  
+  create: (data: ExpenseCreate) =>
+    api.post<Expense>('/v1/expenses', data),
+  
+  update: (id: string, data: ExpenseUpdate) =>
+    api.put<Expense>(`/v1/expenses/${id}`, data),
+  
+  delete: (id: string) =>
+    api.delete(`/v1/expenses/${id}`),
+  
+  getCategories: () =>
+    api.get<string[]>('/v1/expenses/categories'),
+  
+  getSummary: (params?: {
+    category?: string;
+    date_from?: string;
+    date_to?: string;
+    period?: 'week' | 'month' | 'year';
+    reference_date?: string;
+  }) =>
+    api.get<ExpenseSummaryResponse>('/v1/expenses/summary', { params }),
 };
 
 // Demo extraction helper - uses the same endpoint as authenticated extraction
