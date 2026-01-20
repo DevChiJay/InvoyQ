@@ -26,4 +26,14 @@ export const tokenStorage = {
       console.error('Error removing token:', error);
     }
   },
+
+  async hasToken(): Promise<boolean> {
+    try {
+      const token = await SecureStore.getItemAsync(STORAGE_KEYS.AUTH_TOKEN);
+      return !!token;
+    } catch (error) {
+      console.error('Error checking token:', error);
+      return false;
+    }
+  },
 };

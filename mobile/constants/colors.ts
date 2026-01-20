@@ -9,6 +9,7 @@ export const Colors = {
     gold: '#FACC15',           // Gold
     background: '#F8FAFC',     // Soft gray background
     surface: '#FFFFFF',        // Card/surface background
+    inputBackground: '#FFFFFF',// Input background
     text: '#0F172A',
     textSecondary: '#64748B',
     textTertiary: '#94A3B8',
@@ -34,6 +35,7 @@ export const Colors = {
     gold: '#FACC15',
     background: '#0F172A',     // Deep navy background
     surface: '#1E293B',        // Elevated surface
+    inputBackground: '#1E293B',// Input background
     text: '#F1F5F9',
     textSecondary: '#94A3B8',
     textTertiary: '#64748B',
