@@ -5,6 +5,31 @@ const BASE_URL = ENV === 'production'
   ? process.env.EXPO_PUBLIC_API_BASE_URL_PROD 
   : process.env.EXPO_PUBLIC_API_BASE_URL_DEV;
 
+/**
+ * Validate API URL for security
+ */
+export function validateApiUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    // In production, enforce HTTPS
+    if (ENV === 'production' && parsed.protocol !== 'https:') {
+      return false;
+    }
+    // Check for valid protocols
+    return ['http:', 'https:'].includes(parsed.protocol);
+  } catch {
+    return false;
+  }
+}
+
+// Validate base URL on startup
+if (!BASE_URL || !validateApiUrl(BASE_URL)) {
+  if (!__DEV__) {
+    throw new Error('Invalid API URL configuration. HTTPS required in production.');
+  }
+  console.warn('⚠️ Invalid API URL configuration:', BASE_URL);
+}
+
 export const API_CONFIG = {
   BASE_URL: `${BASE_URL}/v1`,
   TIMEOUT: 30000,

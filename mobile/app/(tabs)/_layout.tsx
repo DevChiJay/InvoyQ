@@ -30,7 +30,7 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="clients"
+        name="clients/index"
         options={{
           title: 'Clients',
           tabBarIcon: ({ color, size }) => (
@@ -39,7 +39,7 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="products"
+        name="products/index"
         options={{
           title: 'Products',
           tabBarIcon: ({ color, size }) => (
@@ -48,7 +48,7 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="invoices"
+        name="invoices/index"
         options={{
           title: 'Invoices',
           tabBarIcon: ({ color, size }) => (
@@ -57,7 +57,7 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="expenses"
+        name="expenses/index"
         options={{
           title: 'Expenses',
           tabBarIcon: ({ color, size }) => (
@@ -66,7 +66,7 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="settings"
+        name="settings/index"
         options={{
           title: 'Settings',
           tabBarIcon: ({ color, size }) => (

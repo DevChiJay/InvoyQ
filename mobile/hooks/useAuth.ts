@@ -34,7 +34,7 @@ export function useAuth() {
     mutationFn: authApi.login,
     onSuccess: async (data) => {
       await tokenStorage.setToken(data.access_token);
-      await queryClient.refetchQueries({ queryKey: AUTH_KEYS.currentUser });
+      queryClient.invalidateQueries({ queryKey: AUTH_KEYS.currentUser });
       router.replace('/(tabs)');
     },
   });

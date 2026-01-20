@@ -189,8 +189,8 @@ export default function DashboardScreen() {
 
       {/* Alerts */}
       {lowStockProducts > 0 && (
-        <Card variant="elevated" style={[styles.alertCard, { backgroundColor: colors.warningLight }]}>
-          <View style={styles.alertContent}>
+        <Card variant="elevated" style={styles.alertCard}>
+          <View style={[styles.alertContent, { backgroundColor: colors.warningLight }]}>
             <Ionicons name="warning" size={24} color={colors.warning} />
             <View style={styles.alertText}>
               <Text style={[styles.alertTitle, { color: colors.text }]}>

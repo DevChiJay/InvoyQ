@@ -5,3 +5,5 @@ export * from './ProgressBar';
 export * from './IconBadge';
 export * from './Button';
 export * from './Badge';
+export * from './OfflineBanner';
+export * from './OptimizedImage';

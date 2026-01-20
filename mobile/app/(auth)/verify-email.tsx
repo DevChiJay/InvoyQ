@@ -78,7 +78,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   title: {
-    fontSize: Typography.sizes.xxl,
+    fontSize: Typography.sizes['2xl'],
     fontWeight: Typography.weights.bold,
     marginBottom: Spacing.md,
     textAlign: 'center',
