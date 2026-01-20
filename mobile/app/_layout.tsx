@@ -2,9 +2,10 @@ import { useEffect, useState } from 'react';
 import { Slot, useRouter, useSegments } from 'expo-router';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from '@/utils/queryClient';
+import { setupNetworkManager } from '@/utils/offline';
 import { tokenStorage } from '@/services/storage/tokenStorage';
 import { ActivityIndicator, View } from 'react-native';
-import { useTheme } from '@/hooks/useTheme';
+import { OfflineBanner } from '@/components/ui/OfflineBanner';
 
 export default function RootLayout() {
   const [isReady, setIsReady] = useState(false);
@@ -13,6 +14,9 @@ export default function RootLayout() {
   const router = useRouter();
 
   useEffect(() => {
+    // Setup network manager for offline-first
+    setupNetworkManager();
+
     const checkAuth = async () => {
       const token = await tokenStorage.hasToken();
       setHasToken(token);
@@ -53,6 +57,7 @@ export default function RootLayout() {
 
   return (
     <QueryClientProvider client={queryClient}>
+      <OfflineBanner />
       <Slot />
     </QueryClientProvider>
   );
