@@ -1,22 +1,45 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, FlatList, Modal } from 'react-native';
-import { Stack, router } from 'expo-router';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Modal,
+  FlatList,
+  Alert,
+} from 'react-native';
+import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useTheme } from '@/hooks/useTheme';
-import { useCreateInvoice } from '@/hooks/useInvoices';
-import { useClients } from '@/hooks/useClients';
-import { useProducts } from '@/hooks/useProducts';
-import { FormField, Input, TextArea, NumberInput, Select, DatePicker, Button, SelectOption, Card } from '@/components/ui';
-import { validateForm, hasErrors, getFieldError } from '@/utils/formHelpers';
-import { showError } from '@/utils/alerts';
-import { formatCurrency } from '@/utils/formatters';
 import { z } from 'zod';
 
-const stepOneSchema = z.object({
+import { useTheme } from '@/hooks/useTheme';
+import { useClients, useCreateClient } from '@/hooks/useClients';
+import { useProducts } from '@/hooks/useProducts';
+import { useCreateInvoice } from '@/hooks/useInvoices';
+import { Card } from '@/components/ui/Card';
+import { Button } from '@/components/ui/Button';
+import { FormField } from '@/components/ui/FormField';
+import { Input } from '@/components/ui/Input';
+import { TextArea } from '@/components/ui/TextArea';
+import { Select, SelectOption } from '@/components/ui/Select';
+import { DatePicker } from '@/components/ui/DatePicker';
+import { NumberInput } from '@/components/ui/NumberInput';
+import { formatCurrency } from '@/utils/formatters';
+
+// Validation schema
+const invoiceSchema = z.object({
   client_id: z.string().min(1, 'Client is required'),
   issued_date: z.date({ required_error: 'Issue date is required' }),
   due_date: z.date({ required_error: 'Due date is required' }),
   currency: z.string().min(1, 'Currency is required'),
+});
+
+const clientSchema = z.object({
+  name: z.string().min(1, 'Name is required'),
+  email: z.string().email('Invalid email').optional().or(z.literal('')),
+  phone: z.string().optional(),
+  address: z.string().optional(),
 });
 
 const currencyOptions: SelectOption[] = [
@@ -26,9 +49,18 @@ const currencyOptions: SelectOption[] = [
   { label: 'GBP - British Pound', value: 'GBP' },
 ];
 
-interface LineItem {
+interface ProductItem {
   id: string;
-  product_id?: string;
+  product_id: string;
+  name: string;
+  quantity: number;
+  unit_price: number;
+  tax_rate: number;
+  amount: number;
+}
+
+interface CustomItem {
+  id: string;
   description: string;
   quantity: number;
   unit_price: number;
@@ -36,13 +68,20 @@ interface LineItem {
   amount: number;
 }
 
+type LineItem = ProductItem | CustomItem;
+
+function isProductItem(item: LineItem): item is ProductItem {
+  return 'product_id' in item;
+}
+
 export default function CreateInvoiceScreen() {
   const { colors } = useTheme();
   const createInvoice = useCreateInvoice();
+  const createClient = useCreateClient();
   const { data: clientsData } = useClients();
   const { data: productsData } = useProducts();
 
-  const [currentStep, setCurrentStep] = useState(1);
+  // Form state
   const [formData, setFormData] = useState({
     client_id: '',
     issued_date: new Date(),
@@ -53,15 +92,41 @@ export default function CreateInvoiceScreen() {
 
   const [lineItems, setLineItems] = useState<LineItem[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Modal states
+  const [showClientModal, setShowClientModal] = useState(false);
   const [showProductModal, setShowProductModal] = useState(false);
+  const [showCustomItemModal, setShowCustomItemModal] = useState(false);
+  const [showCreateClientModal, setShowCreateClientModal] = useState(false);
+
+  // New client form
+  const [newClient, setNewClient] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    address: '',
+  });
+  const [clientErrors, setClientErrors] = useState<Record<string, string>>({});
+
+  // Custom item form
+  const [customItem, setCustomItem] = useState({
+    description: '',
+    quantity: '1',
+    unit_price: '0',
+    tax_rate: '0',
+  });
+  const [customItemErrors, setCustomItemErrors] = useState<Record<string, string>>({});
 
   const clients = clientsData || [];
-  const products = productsData?.pages?.flatMap(page => page.items) || [];
+  const products = productsData?.pages?.flatMap((page) => page.items) || [];
 
-  const clientOptions: SelectOption[] = clients.map((client) => ({
-    label: client.name,
-    value: client.id,
-  }));
+  const clientOptions: SelectOption[] = [
+    { label: '+ Create New Client', value: '__create_new__' },
+    ...clients.map((client) => ({
+      label: client.name,
+      value: client.id,
+    })),
+  ];
 
   const handleChange = (field: string, value: string | Date) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -74,35 +139,52 @@ export default function CreateInvoiceScreen() {
     }
   };
 
-  const handleNextStep = () => {
-    if (currentStep === 1) {
-      const validationErrors = validateForm(stepOneSchema, formData);
-      if (hasErrors(validationErrors)) {
-        setErrors(validationErrors);
-        return;
-      }
+  const handleClientSelect = (value: string) => {
+    if (value === '__create_new__') {
+      setShowCreateClientModal(true);
+    } else {
+      handleChange('client_id', value);
     }
-
-    if (currentStep === 2 && lineItems.length === 0) {
-      showError('Please add at least one item');
-      return;
-    }
-
-    setCurrentStep((prev) => Math.min(prev + 1, 3));
   };
 
-  const handlePreviousStep = () => {
-    setCurrentStep((prev) => Math.max(prev - 1, 1));
+  const handleCreateClient = async () => {
+    try {
+      const validated = clientSchema.parse(newClient);
+      
+      const result = await createClient.mutateAsync(validated as any);
+      
+      // Set the newly created client as selected
+      handleChange('client_id', result.id);
+      
+      // Reset and close modal
+      setNewClient({ name: '', email: '', phone: '', address: '' });
+      setClientErrors({});
+      setShowCreateClientModal(false);
+      
+      Alert.alert('Success', 'Client created successfully!');
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        const fieldErrors: Record<string, string> = {};
+        error.errors.forEach((err) => {
+          if (err.path[0]) {
+            fieldErrors[err.path[0].toString()] = err.message;
+          }
+        });
+        setClientErrors(fieldErrors);
+      } else {
+        Alert.alert('Error', error.message || 'Failed to create client');
+      }
+    }
   };
 
   const addProductItem = (productId: string) => {
     const product = products.find((p) => p.id === productId);
     if (!product) return;
 
-    const newItem: LineItem = {
+    const newItem: ProductItem = {
       id: Date.now().toString(),
       product_id: product.id,
-      description: product.name,
+      name: product.name,
       quantity: 1,
       unit_price: parseFloat(product.unit_price),
       tax_rate: parseFloat(product.tax_rate || '0'),
@@ -110,32 +192,56 @@ export default function CreateInvoiceScreen() {
     };
 
     setLineItems((prev) => [...prev, newItem]);
+    setShowProductModal(false);
   };
 
-  const addManualItem = () => {
-    const newItem: LineItem = {
+  const handleAddCustomItem = () => {
+    // Validate custom item
+    if (!customItem.description.trim()) {
+      setCustomItemErrors({ description: 'Description is required' });
+      return;
+    }
+
+    const quantity = parseFloat(customItem.quantity) || 0;
+    const unitPrice = parseFloat(customItem.unit_price) || 0;
+    const taxRate = parseFloat(customItem.tax_rate) || 0;
+
+    if (quantity <= 0) {
+      setCustomItemErrors({ quantity: 'Quantity must be greater than 0' });
+      return;
+    }
+
+    const amount = quantity * unitPrice;
+
+    const newItem: CustomItem = {
       id: Date.now().toString(),
-      description: '',
-      quantity: 1,
-      unit_price: 0,
-      tax_rate: 0,
-      amount: 0,
+      description: customItem.description,
+      quantity,
+      unit_price: unitPrice,
+      tax_rate: taxRate,
+      amount,
     };
 
     setLineItems((prev) => [...prev, newItem]);
+    
+    // Reset form and close modal
+    setCustomItem({ description: '', quantity: '1', unit_price: '0', tax_rate: '0' });
+    setCustomItemErrors({});
+    setShowCustomItemModal(false);
   };
 
-  const updateLineItem = (id: string, field: keyof LineItem, value: string | number) => {
+  const updateLineItem = (id: string, field: string, value: string | number) => {
     setLineItems((prev) =>
       prev.map((item) => {
         if (item.id !== id) return item;
 
-        const updated = { ...item, [field]: value };
-        const qty = typeof updated.quantity === 'number' ? updated.quantity : parseFloat(updated.quantity as string) || 0;
-        const price = typeof updated.unit_price === 'number' ? updated.unit_price : parseFloat(updated.unit_price as string) || 0;
-        const tax = typeof updated.tax_rate === 'number' ? updated.tax_rate : parseFloat(updated.tax_rate as string) || 0;
+        const updated = { ...item, [field]: typeof value === 'string' ? parseFloat(value) || 0 : value };
+        
+        // Recalculate amount
+        const quantity = typeof updated.quantity === 'number' ? updated.quantity : parseFloat(updated.quantity as any) || 0;
+        const unitPrice = typeof updated.unit_price === 'number' ? updated.unit_price : parseFloat(updated.unit_price as any) || 0;
+        updated.amount = quantity * unitPrice;
 
-        updated.amount = qty * price * (1 + tax / 100);
         return updated;
       })
     );
@@ -146,358 +252,322 @@ export default function CreateInvoiceScreen() {
   };
 
   const calculateTotals = () => {
-    const subtotal = lineItems.reduce((sum, item) => {
-      const amount = item.quantity * item.unit_price;
-      return sum + amount;
-    }, 0);
-
+    const subtotal = lineItems.reduce((sum, item) => sum + item.amount, 0);
     const tax = lineItems.reduce((sum, item) => {
-      const amount = item.quantity * item.unit_price;
-      const taxAmount = (amount * item.tax_rate) / 100;
+      const taxAmount = (item.amount * item.tax_rate) / 100;
       return sum + taxAmount;
     }, 0);
-
     const total = subtotal + tax;
 
     return { subtotal, tax, total };
   };
 
   const handleSubmit = async () => {
+    if (createInvoice.isPending) return;
+
     try {
-      const items = lineItems.map((item) => ({
-        product_id: item.product_id || null,
-        description: item.description,
-        quantity: item.quantity,
-        unit_price: item.unit_price,
-        tax_rate: item.tax_rate,
-      }));
+      // Validate basic form
+      const validated = invoiceSchema.parse(formData);
 
-      const { subtotal, tax, total } = calculateTotals();
+      // Check if we have line items
+      if (lineItems.length === 0) {
+        Alert.alert('Error', 'Please add at least one item to the invoice');
+        return;
+      }
 
-      const apiData = {
-        client_id: formData.client_id,
-        issued_date: formData.issued_date.toISOString().split('T')[0],
-        due_date: formData.due_date.toISOString().split('T')[0],
-        currency: formData.currency,
-        subtotal: parseFloat(subtotal.toFixed(2)),
-        tax: parseFloat(tax.toFixed(2)),
-        total: parseFloat(total.toFixed(2)),
-        notes: formData.notes || undefined,
-        items,
+      // Separate product items from custom items
+      const productItems: Array<{ product_id: string; quantity: number }> = [];
+      const customItems: Array<{
+        description: string;
+        quantity: number;
+        unit_price: number;
+        tax_rate: number;
+        amount: number;
+      }> = [];
+
+      lineItems.forEach((item) => {
+        if (isProductItem(item)) {
+          // This is a product from catalog - add to product_items for backend quantity update
+          productItems.push({
+            product_id: item.product_id,
+            quantity: item.quantity,
+          });
+        } else {
+          // This is a custom item - add to items array
+          customItems.push({
+            description: item.description,
+            quantity: item.quantity,
+            unit_price: item.unit_price,
+            tax_rate: item.tax_rate,
+            amount: item.amount,
+          });
+        }
+      });
+
+      const totals = calculateTotals();
+
+      const payload = {
+        client_id: validated.client_id,
+        issued_date: validated.issued_date.toISOString().split('T')[0],
+        due_date: validated.due_date.toISOString().split('T')[0],
+        currency: validated.currency,
+        notes: formData.notes,
+        subtotal: totals.subtotal.toString(),
+        tax: totals.tax.toString(),
+        total: totals.total.toString(),
+        status: 'draft',
+        // Send product_items for catalog products (backend will update quantities)
+        product_items: productItems.length > 0 ? productItems : undefined,
+        // Send items for custom line items
+        items: customItems.length > 0 ? customItems : undefined,
       };
 
-      await createInvoice.mutateAsync(apiData);
-      router.back();
+      await createInvoice.mutateAsync(payload as any);
+
+      Alert.alert('Success', 'Invoice created successfully!', [
+        {
+          text: 'OK',
+          onPress: () => router.back(),
+        },
+      ]);
     } catch (error: any) {
-      showError(error.response?.data?.detail || 'Failed to create invoice');
+      if (error instanceof z.ZodError) {
+        const fieldErrors: Record<string, string> = {};
+        error.errors.forEach((err) => {
+          if (err.path[0]) {
+            fieldErrors[err.path[0].toString()] = err.message;
+          }
+        });
+        setErrors(fieldErrors);
+      } else {
+        Alert.alert('Error', error.message || 'Failed to create invoice');
+      }
     }
   };
 
   const totals = calculateTotals();
 
+  const selectedClient = clients.find((c) => c.id === formData.client_id);
+
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <Stack.Screen
-        options={{
-          title: 'New Invoice',
-          headerStyle: { backgroundColor: colors.surface },
-          headerTintColor: colors.text,
-          headerLeft: () => (
-            <TouchableOpacity onPress={() => router.back()} style={styles.headerButton}>
-              <Ionicons name="close" size={24} color={colors.text} />
-            </TouchableOpacity>
-          ),
-        }}
-      />
+      <ScrollView style={styles.content} contentContainerStyle={styles.contentContainer}>
+        {/* Client Selection */}
+        <Card style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Client Information</Text>
+          
+          <FormField label="Client" error={errors.client_id} required>
+            <Select
+              value={formData.client_id}
+              onChange={handleClientSelect}
+              options={clientOptions}
+              placeholder="Select a client"
+              error={!!errors.client_id}
+            />
+          </FormField>
 
-      {/* Step Indicator */}
-      <View style={[styles.stepIndicator, { borderBottomColor: colors.border }]}>
-        {[1, 2, 3].map((step) => (
-          <View key={step} style={styles.stepItem}>
-            <View
-              style={[
-                styles.stepCircle,
-                {
-                  backgroundColor: currentStep >= step ? colors.primary : colors.border,
-                },
-              ]}
-            >
-              <Text style={[styles.stepNumber, { color: currentStep >= step ? '#FFFFFF' : colors.textSecondary }]}>
-                {step}
-              </Text>
+          {selectedClient && (
+            <View style={[styles.clientPreview, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+              <Text style={[styles.clientName, { color: colors.text }]}>{selectedClient.name}</Text>
+              {selectedClient.email && (
+                <Text style={[styles.clientDetail, { color: colors.textSecondary }]}>{selectedClient.email}</Text>
+              )}
+              {selectedClient.phone && (
+                <Text style={[styles.clientDetail, { color: colors.textSecondary }]}>{selectedClient.phone}</Text>
+              )}
             </View>
-            <Text style={[styles.stepLabel, { color: currentStep === step ? colors.text : colors.textSecondary }]}>
-              {step === 1 ? 'Details' : step === 2 ? 'Items' : 'Review'}
+          )}
+        </Card>
+
+        {/* Invoice Details */}
+        <Card style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Invoice Details</Text>
+
+          <FormField label="Issue Date" error={errors.issued_date} required>
+            <DatePicker
+              value={formData.issued_date}
+              onChange={(date) => handleChange('issued_date', date)}
+              mode="date"
+              error={!!errors.issued_date}
+            />
+          </FormField>
+
+          <FormField label="Due Date" error={errors.due_date} required>
+            <DatePicker
+              value={formData.due_date}
+              onChange={(date) => handleChange('due_date', date)}
+              mode="date"
+              error={!!errors.due_date}
+            />
+          </FormField>
+
+          <FormField label="Currency" error={errors.currency} required>
+            <Select
+              value={formData.currency}
+              onChange={(value) => handleChange('currency', value)}
+              options={currencyOptions}
+              placeholder="Select currency"
+              error={!!errors.currency}
+            />
+          </FormField>
+
+          <FormField label="Notes">
+            <TextArea
+              value={formData.notes}
+              onChangeText={(value) => handleChange('notes', value)}
+              placeholder="Additional notes or payment instructions..."
+              numberOfLines={3}
+            />
+          </FormField>
+        </Card>
+
+        {/* Line Items */}
+        <Card style={styles.section}>
+          <View style={styles.itemsHeader}>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>Items</Text>
+            <Text style={[styles.itemCount, { color: colors.textSecondary }]}>
+              {lineItems.length} {lineItems.length === 1 ? 'item' : 'items'}
             </Text>
           </View>
-        ))}
-      </View>
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {/* Step 1: Invoice Details */}
-        {currentStep === 1 && (
-          <>
-            <FormField label="Client" required error={getFieldError(errors, 'client_id')}>
-              <Select
-                value={formData.client_id}
-                onChange={(value) => handleChange('client_id', value)}
-                options={clientOptions}
-                placeholder="Select client"
-                error={!!errors.client_id}
-              />
-            </FormField>
+          <View style={styles.addButtonsRow}>
+            <Button
+              title="Add Product"
+              onPress={() => setShowProductModal(true)}
+              variant="outline"
+              style={styles.addButton}
+              icon={<Ionicons name="cube-outline" size={18} color={colors.primary} />}
+            />
+            <Button
+              title="Add Custom"
+              onPress={() => setShowCustomItemModal(true)}
+              variant="outline"
+              style={styles.addButton}
+              icon={<Ionicons name="add-outline" size={18} color={colors.primary} />}
+            />
+          </View>
 
-            <FormField label="Issue Date" required error={getFieldError(errors, 'issued_date')}>
-              <DatePicker
-                value={formData.issued_date}
-                onChange={(value) => handleChange('issued_date', value)}
-                mode="date"
-                error={!!errors.issued_date}
-              />
-            </FormField>
+          {lineItems.length === 0 ? (
+            <View style={styles.emptyItems}>
+              <Ionicons name="receipt-outline" size={48} color={colors.textSecondary} />
+              <Text style={[styles.emptyText, { color: colors.textSecondary }]}>No items added</Text>
+              <Text style={[styles.emptySubtext, { color: colors.textSecondary }]}>
+                Add products or custom items to your invoice
+              </Text>
+            </View>
+          ) : (
+            <>
+              {lineItems.map((item, index) => (
+                <Card key={item.id} style={[styles.lineItemCard, { backgroundColor: colors.surface }]}>
+                  <View style={styles.lineItemHeader}>
+                    <View style={styles.itemBadge}>
+                      <Ionicons
+                        name={isProductItem(item) ? 'cube' : 'document-text'}
+                        size={14}
+                        color={colors.primary}
+                      />
+                      <Text style={[styles.itemType, { color: colors.primary }]}>
+                        {isProductItem(item) ? 'Product' : 'Custom'}
+                      </Text>
+                    </View>
+                    <TouchableOpacity onPress={() => removeLineItem(item.id)}>
+                      <Ionicons name="trash-outline" size={20} color={colors.error} />
+                    </TouchableOpacity>
+                  </View>
 
-            <FormField label="Due Date" required error={getFieldError(errors, 'due_date')}>
-              <DatePicker
-                value={formData.due_date}
-                onChange={(value) => handleChange('due_date', value)}
-                mode="date"
-                error={!!errors.due_date}
-              />
-            </FormField>
+                  <Text style={[styles.itemName, { color: colors.text }]}>
+                    {isProductItem(item) ? item.name : item.description}
+                  </Text>
 
-            <FormField label="Currency" required error={getFieldError(errors, 'currency')}>
-              <Select
-                value={formData.currency}
-                onChange={(value) => handleChange('currency', value)}
-                options={currencyOptions}
-                placeholder="Select currency"
-                error={!!errors.currency}
-              />
-            </FormField>
+                  <View style={styles.row}>
+                    <View style={styles.halfField}>
+                      <FormField label="Quantity">
+                        <NumberInput
+                          value={item.quantity.toString()}
+                          onChange={(value) => updateLineItem(item.id, 'quantity', value)}
+                          placeholder="0"
+                          decimals={2}
+                        />
+                      </FormField>
+                    </View>
+                    <View style={styles.halfField}>
+                      <FormField label="Unit Price">
+                        <NumberInput
+                          value={item.unit_price.toString()}
+                          onChange={(value) => updateLineItem(item.id, 'unit_price', value)}
+                          placeholder="0.00"
+                          decimals={2}
+                        />
+                      </FormField>
+                    </View>
+                  </View>
 
-            <FormField label="Notes (Optional)">
-              <TextArea
-                value={formData.notes}
-                onChangeText={(value) => handleChange('notes', value)}
-                placeholder="Add any additional notes"
-                numberOfLines={4}
-              />
-            </FormField>
-          </>
-        )}
+                  <View style={styles.row}>
+                    <View style={styles.halfField}>
+                      <FormField label="Tax Rate (%)">
+                        <NumberInput
+                          value={item.tax_rate.toString()}
+                          onChange={(value) => updateLineItem(item.id, 'tax_rate', value)}
+                          placeholder="0"
+                          decimals={2}
+                        />
+                      </FormField>
+                    </View>
+                    <View style={styles.halfField}>
+                      <Text style={[styles.amountLabel, { color: colors.textSecondary }]}>Amount</Text>
+                      <Text style={[styles.amountValue, { color: colors.text }]}>
+                        {formatCurrency(item.amount, formData.currency)}
+                      </Text>
+                    </View>
+                  </View>
+                </Card>
+              ))}
+            </>
+          )}
+        </Card>
 
-        {/* Step 2: Line Items */}
-        {currentStep === 2 && (
-          <>
-            <View style={styles.itemsActions}>
-              <Button
-                title="Add from Products"
-                onPress={() => {
-                  if (products.length === 0) {
-                    showError('No products available');
-                    return;
-                  }
-                  setShowProductModal(true);
-                }}
-                variant="outline"
-                icon="cube-outline"
-                style={styles.actionButton}
-              />
-              <Button
-                title="Add Manual Item"
-                onPress={addManualItem}
-                variant="outline"
-                icon="add-outline"
-                style={styles.actionButton}
-              />
+        {/* Totals */}
+        {lineItems.length > 0 && (
+          <Card style={styles.section}>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>Summary</Text>
+
+            <View style={styles.totalRow}>
+              <Text style={[styles.totalLabel, { color: colors.textSecondary }]}>Subtotal</Text>
+              <Text style={[styles.totalValue, { color: colors.text }]}>
+                {formatCurrency(totals.subtotal, formData.currency)}
+              </Text>
             </View>
 
-            {lineItems.map((item, index) => (
-              <Card key={item.id} style={styles.lineItemCard}>
-                <View style={styles.lineItemHeader}>
-                  <Text style={[styles.lineItemTitle, { color: colors.text }]}>Item {index + 1}</Text>
-                  <TouchableOpacity onPress={() => removeLineItem(item.id)}>
-                    <Ionicons name="trash-outline" size={20} color={colors.error} />
-                  </TouchableOpacity>
-                </View>
+            <View style={styles.totalRow}>
+              <Text style={[styles.totalLabel, { color: colors.textSecondary }]}>Tax</Text>
+              <Text style={[styles.totalValue, { color: colors.text }]}>
+                {formatCurrency(totals.tax, formData.currency)}
+              </Text>
+            </View>
 
-                <FormField label="Description" required>
-                  <Input
-                    value={item.description}
-                    onChangeText={(value) => updateLineItem(item.id, 'description', value)}
-                    placeholder="Item description"
-                  />
-                </FormField>
-
-                <View style={styles.row}>
-                  <FormField label="Quantity" required style={styles.halfField}>
-                    <NumberInput
-                      value={item.quantity.toString()}
-                      onChangeValue={(value) => updateLineItem(item.id, 'quantity', parseFloat(value) || 0)}
-                      placeholder="1"
-                      decimals={0}
-                      min={0}
-                    />
-                  </FormField>
-
-                  <FormField label="Unit Price" required style={styles.halfField}>
-                    <NumberInput
-                      value={item.unit_price.toString()}
-                      onChangeValue={(value) => updateLineItem(item.id, 'unit_price', parseFloat(value) || 0)}
-                      placeholder="0.00"
-                      decimals={2}
-                      min={0}
-                    />
-                  </FormField>
-                </View>
-
-                <View style={styles.row}>
-                  <FormField label="Tax Rate %" style={styles.halfField}>
-                    <NumberInput
-                      value={item.tax_rate.toString()}
-                      onChangeValue={(value) => updateLineItem(item.id, 'tax_rate', parseFloat(value) || 0)}
-                      placeholder="0"
-                      decimals={2}
-                      min={0}
-                      max={100}
-                    />
-                  </FormField>
-
-                  <View style={styles.halfField}>
-                    <Text style={[styles.amountLabel, { color: colors.textSecondary }]}>Amount</Text>
-                    <Text style={[styles.amountValue, { color: colors.text }]}>
-                      {formatCurrency(item.amount, formData.currency)}
-                    </Text>
-                  </View>
-                </View>
-              </Card>
-            ))}
-
-            {lineItems.length === 0 && (
-              <View style={styles.emptyItems}>
-                <Ionicons name="document-text-outline" size={48} color={colors.textSecondary} />
-                <Text style={[styles.emptyText, { color: colors.textSecondary }]}>No items added</Text>
-                <Text style={[styles.emptySubtext, { color: colors.textTertiary }]}>
-                  Add items from products or create manual entries
-                </Text>
-              </View>
-            )}
-          </>
-        )}
-
-        {/* Step 3: Review */}
-        {currentStep === 3 && (
-          <>
-            <Card style={styles.reviewCard}>
-              <Text style={[styles.reviewTitle, { color: colors.text }]}>Invoice Summary</Text>
-
-              <View style={styles.reviewRow}>
-                <Text style={[styles.reviewLabel, { color: colors.textSecondary }]}>Client</Text>
-                <Text style={[styles.reviewValue, { color: colors.text }]}>
-                  {clients.find((c) => c.id === formData.client_id)?.name || 'N/A'}
-                </Text>
-              </View>
-
-              <View style={styles.reviewRow}>
-                <Text style={[styles.reviewLabel, { color: colors.textSecondary }]}>Issue Date</Text>
-                <Text style={[styles.reviewValue, { color: colors.text }]}>
-                  {formData.issued_date.toLocaleDateString()}
-                </Text>
-              </View>
-
-              <View style={styles.reviewRow}>
-                <Text style={[styles.reviewLabel, { color: colors.textSecondary }]}>Due Date</Text>
-                <Text style={[styles.reviewValue, { color: colors.text }]}>
-                  {formData.due_date.toLocaleDateString()}
-                </Text>
-              </View>
-
-              <View style={styles.reviewRow}>
-                <Text style={[styles.reviewLabel, { color: colors.textSecondary }]}>Currency</Text>
-                <Text style={[styles.reviewValue, { color: colors.text }]}>{formData.currency}</Text>
-              </View>
-            </Card>
-
-            <Card style={styles.reviewCard}>
-              <Text style={[styles.reviewTitle, { color: colors.text }]}>Items ({lineItems.length})</Text>
-
-              {lineItems.map((item, index) => (
-                <View key={item.id} style={styles.reviewItem}>
-                  <Text style={[styles.reviewItemName, { color: colors.text }]}>
-                    {index + 1}. {item.description}
-                  </Text>
-                  <Text style={[styles.reviewItemDetails, { color: colors.textSecondary }]}>
-                    {item.quantity} × {formatCurrency(item.unit_price, formData.currency)}
-                    {item.tax_rate > 0 && ` (+${item.tax_rate}% tax)`}
-                  </Text>
-                  <Text style={[styles.reviewItemAmount, { color: colors.text }]}>
-                    {formatCurrency(item.amount, formData.currency)}
-                  </Text>
-                </View>
-              ))}
-            </Card>
-
-            <Card style={styles.totalsCard}>
-              <View style={styles.totalRow}>
-                <Text style={[styles.totalLabel, { color: colors.textSecondary }]}>Subtotal</Text>
-                <Text style={[styles.totalValue, { color: colors.text }]}>
-                  {formatCurrency(totals.subtotal, formData.currency)}
-                </Text>
-              </View>
-
-              <View style={styles.totalRow}>
-                <Text style={[styles.totalLabel, { color: colors.textSecondary }]}>Tax</Text>
-                <Text style={[styles.totalValue, { color: colors.text }]}>
-                  {formatCurrency(totals.tax, formData.currency)}
-                </Text>
-              </View>
-
-              <View style={[styles.totalRow, styles.grandTotalRow, { borderTopColor: colors.border }]}>
-                <Text style={[styles.grandTotalLabel, { color: colors.text }]}>Total</Text>
-                <Text style={[styles.grandTotalValue, { color: colors.primary }]}>
-                  {formatCurrency(totals.total, formData.currency)}
-                </Text>
-              </View>
-            </Card>
-          </>
+            <View style={[styles.totalRow, styles.grandTotalRow, { borderTopColor: colors.border }]}>
+              <Text style={[styles.grandTotalLabel, { color: colors.text }]}>Total</Text>
+              <Text style={[styles.grandTotalValue, { color: colors.primary }]}>
+                {formatCurrency(totals.total, formData.currency)}
+              </Text>
+            </View>
+          </Card>
         )}
       </ScrollView>
 
-      {/* Footer Actions */}
-      <View style={[styles.footer, { borderTopColor: colors.border }]}>
-        {currentStep > 1 && (
-          <Button
-            title="Back"
-            onPress={handlePreviousStep}
-            variant="outline"
-            style={styles.button}
-          />
-        )}
-        {currentStep < 3 ? (
-          <Button
-            title="Next"
-            onPress={handleNextStep}
-            variant="primary"
-            style={[styles.button, currentStep === 1 && styles.fullButton]}
-          />
-        ) : (
-          <Button
-            title={createInvoice.isPending ? 'Creating...' : 'Create Invoice'}
-            onPress={handleSubmit}
-            variant="primary"
-            disabled={createInvoice.isPending}
-            style={styles.button}
-          />
-        )}
+      {/* Footer Buttons */}
+      <View style={[styles.footer, { backgroundColor: colors.surface, borderTopColor: colors.border }]}>
+        <Button title="Cancel" onPress={() => router.back()} variant="outline" style={styles.button} />
+        <Button
+          title="Create Invoice"
+          onPress={handleSubmit}
+          loading={createInvoice.isPending}
+          style={styles.button}
+        />
       </View>
 
-      {/* Product Selector Modal */}
-      <Modal
-        visible={showProductModal}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setShowProductModal(false)}
-      >
+      {/* Product Selection Modal */}
+      <Modal visible={showProductModal} animationType="slide" transparent>
         <View style={styles.modalOverlay}>
           <View style={[styles.modalContent, { backgroundColor: colors.surface }]}>
             <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
@@ -507,37 +577,167 @@ export default function CreateInvoiceScreen() {
               </TouchableOpacity>
             </View>
 
-            <FlatList
-              data={products}
-              keyExtractor={(item) => item.id}
-              style={styles.productList}
-              renderItem={({ item }) => (
-                <TouchableOpacity
-                  style={[styles.productItem, { borderBottomColor: colors.border }]}
-                  onPress={() => {
-                    addProductItem(item.id);
-                    setShowProductModal(false);
-                  }}
-                >
-                  <View style={styles.productInfo}>
-                    <Text style={[styles.productName, { color: colors.text }]}>{item.name}</Text>
-                    <Text style={[styles.productPrice, { color: colors.textSecondary }]}>
-                      {formatCurrency(parseFloat(item.unit_price), formData.currency)}
-                    </Text>
-                  </View>
-                  {item.quantity_in_stock !== undefined && (
-                    <Text style={[styles.productStock, { color: colors.textSecondary }]}>
-                      Stock: {item.quantity_in_stock}
-                    </Text>
-                  )}
-                </TouchableOpacity>
-              )}
-              ListEmptyComponent={
-                <View style={styles.emptyContainer}>
-                  <Text style={[styles.emptyText, { color: colors.textSecondary }]}>No products available</Text>
+            {products.length === 0 ? (
+              <View style={styles.emptyContainer}>
+                <Ionicons name="cube-outline" size={48} color={colors.textSecondary} />
+                <Text style={[styles.emptyText, { color: colors.textSecondary }]}>No products available</Text>
+              </View>
+            ) : (
+              <FlatList
+                data={products}
+                keyExtractor={(item) => item.id}
+                style={styles.productList}
+                renderItem={({ item }) => (
+                  <TouchableOpacity
+                    style={[styles.productItem, { borderBottomColor: colors.border }]}
+                    onPress={() => addProductItem(item.id)}
+                  >
+                    <View style={styles.productInfo}>
+                      <Text style={[styles.productName, { color: colors.text }]}>{item.name}</Text>
+                      <Text style={[styles.productPrice, { color: colors.textSecondary }]}>
+                        {formatCurrency(parseFloat(item.unit_price), formData.currency)} • Tax: {item.tax_rate}%
+                      </Text>
+                      {item.sku && (
+                        <Text style={[styles.productSku, { color: colors.textSecondary }]}>SKU: {item.sku}</Text>
+                      )}
+                    </View>
+                    <Ionicons name="add-circle-outline" size={24} color={colors.primary} />
+                  </TouchableOpacity>
+                )}
+              />
+            )}
+          </View>
+        </View>
+      </Modal>
+
+      {/* Custom Item Modal */}
+      <Modal visible={showCustomItemModal} animationType="slide" transparent>
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { backgroundColor: colors.surface }]}>
+            <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
+              <Text style={[styles.modalTitle, { color: colors.text }]}>Add Custom Item</Text>
+              <TouchableOpacity onPress={() => setShowCustomItemModal(false)}>
+                <Ionicons name="close" size={24} color={colors.text} />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView style={styles.modalBody}>
+              <FormField label="Description" error={customItemErrors.description} required>
+                <Input
+                  value={customItem.description}
+                  onChangeText={(value) => setCustomItem((prev) => ({ ...prev, description: value }))}
+                  placeholder="Item description"
+                  error={!!customItemErrors.description}
+                />
+              </FormField>
+
+              <View style={styles.row}>
+                <View style={styles.halfField}>
+                  <FormField label="Quantity" error={customItemErrors.quantity} required>
+                    <NumberInput
+                      value={customItem.quantity}
+                      onChange={(value) => setCustomItem((prev) => ({ ...prev, quantity: value }))}
+                      placeholder="1"
+                      decimals={2}
+                      error={!!customItemErrors.quantity}
+                    />
+                  </FormField>
                 </View>
-              }
-            />
+                <View style={styles.halfField}>
+                  <FormField label="Unit Price" required>
+                    <NumberInput
+                      value={customItem.unit_price}
+                      onChange={(value) => setCustomItem((prev) => ({ ...prev, unit_price: value }))}
+                      placeholder="0.00"
+                      decimals={2}
+                    />
+                  </FormField>
+                </View>
+              </View>
+
+              <FormField label="Tax Rate (%)">
+                <NumberInput
+                  value={customItem.tax_rate}
+                  onChange={(value) => setCustomItem((prev) => ({ ...prev, tax_rate: value }))}
+                  placeholder="0"
+                  decimals={2}
+                />
+              </FormField>
+            </ScrollView>
+
+            <View style={[styles.modalFooter, { borderTopColor: colors.border }]}>
+              <Button title="Cancel" onPress={() => setShowCustomItemModal(false)} variant="outline" style={styles.button} />
+              <Button title="Add Item" onPress={handleAddCustomItem} style={styles.button} />
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Create Client Modal */}
+      <Modal visible={showCreateClientModal} animationType="slide" transparent>
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { backgroundColor: colors.surface }]}>
+            <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
+              <Text style={[styles.modalTitle, { color: colors.text }]}>Create New Client</Text>
+              <TouchableOpacity onPress={() => setShowCreateClientModal(false)}>
+                <Ionicons name="close" size={24} color={colors.text} />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView style={styles.modalBody}>
+              <FormField label="Name" error={clientErrors.name} required>
+                <Input
+                  value={newClient.name}
+                  onChangeText={(value) => setNewClient((prev) => ({ ...prev, name: value }))}
+                  placeholder="Client name"
+                  error={!!clientErrors.name}
+                />
+              </FormField>
+
+              <FormField label="Email" error={clientErrors.email}>
+                <Input
+                  value={newClient.email}
+                  onChangeText={(value) => setNewClient((prev) => ({ ...prev, email: value }))}
+                  placeholder="client@example.com"
+                  keyboardType="email-address"
+                  error={!!clientErrors.email}
+                />
+              </FormField>
+
+              <FormField label="Phone" error={clientErrors.phone}>
+                <Input
+                  value={newClient.phone}
+                  onChangeText={(value) => setNewClient((prev) => ({ ...prev, phone: value }))}
+                  placeholder="+234 XXX XXX XXXX"
+                  keyboardType="phone-pad"
+                  error={!!clientErrors.phone}
+                />
+              </FormField>
+
+              <FormField label="Address">
+                <TextArea
+                  value={newClient.address}
+                  onChangeText={(value) => setNewClient((prev) => ({ ...prev, address: value }))}
+                  placeholder="Client address"
+                  numberOfLines={3}
+                />
+              </FormField>
+            </ScrollView>
+
+            <View style={[styles.modalFooter, { borderTopColor: colors.border }]}>
+              <Button
+                title="Cancel"
+                onPress={() => setShowCreateClientModal(false)}
+                variant="outline"
+                style={styles.button}
+              />
+              <Button
+                title="Create Client"
+                onPress={handleCreateClient}
+                loading={createClient.isPending}
+                style={styles.button}
+              />
+            </View>
           </View>
         </View>
       </Modal>
@@ -549,57 +749,91 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  headerButton: {
-    padding: 8,
-  },
-  stepIndicator: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    padding: 16,
-    borderBottomWidth: 1,
-  },
-  stepItem: {
-    alignItems: 'center',
-  },
-  stepCircle: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 4,
-  },
-  stepNumber: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  stepLabel: {
-    fontSize: 12,
-  },
   content: {
     flex: 1,
+  },
+  contentContainer: {
     padding: 16,
+    paddingBottom: 100,
   },
-  itemsActions: {
-    flexDirection: 'row',
-    gap: 12,
+  section: {
     marginBottom: 16,
   },
-  actionButton: {
-    flex: 1,
-  },
-  lineItemCard: {
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '600',
     marginBottom: 16,
   },
-  lineItemHeader: {
+  clientPreview: {
+    marginTop: 12,
+    padding: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  clientName: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  clientDetail: {
+    fontSize: 14,
+    marginTop: 2,
+  },
+  itemsHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 12,
   },
-  lineItemTitle: {
+  itemCount: {
+    fontSize: 14,
+  },
+  addButtonsRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 16,
+  },
+  addButton: {
+    flex: 1,
+  },
+  emptyItems: {
+    alignItems: 'center',
+    paddingVertical: 40,
+  },
+  emptyText: {
     fontSize: 16,
     fontWeight: '600',
+    marginTop: 12,
+  },
+  emptySubtext: {
+    fontSize: 14,
+    marginTop: 4,
+    textAlign: 'center',
+  },
+  lineItemCard: {
+    marginBottom: 12,
+    padding: 12,
+  },
+  lineItemHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  itemBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  itemType: {
+    fontSize: 12,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+  },
+  itemName: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 12,
   },
   row: {
     flexDirection: 'row',
@@ -616,61 +850,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '600',
     marginTop: 8,
-  },
-  emptyItems: {
-    alignItems: 'center',
-    paddingVertical: 40,
-  },
-  emptyText: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginTop: 12,
-  },
-  emptySubtext: {
-    fontSize: 14,
-    marginTop: 4,
-    textAlign: 'center',
-  },
-  reviewCard: {
-    marginBottom: 16,
-  },
-  reviewTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 12,
-  },
-  reviewRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: 8,
-  },
-  reviewLabel: {
-    fontSize: 14,
-  },
-  reviewValue: {
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  reviewItem: {
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0,0,0,0.05)',
-  },
-  reviewItemName: {
-    fontSize: 14,
-    fontWeight: '500',
-    marginBottom: 2,
-  },
-  reviewItemDetails: {
-    fontSize: 12,
-    marginBottom: 4,
-  },
-  reviewItemAmount: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  totalsCard: {
-    marginBottom: 16,
   },
   totalRow: {
     flexDirection: 'row',
@@ -698,15 +877,16 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   footer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
     flexDirection: 'row',
     padding: 16,
     gap: 12,
     borderTopWidth: 1,
   },
   button: {
-    flex: 1,
-  },
-  fullButton: {
     flex: 1,
   },
   modalOverlay: {
@@ -717,7 +897,7 @@ const styles = StyleSheet.create({
   modalContent: {
     borderTopLeftRadius: 16,
     borderTopRightRadius: 16,
-    maxHeight: '80%',
+    maxHeight: '85%',
   },
   modalHeader: {
     flexDirection: 'row',
@@ -729,6 +909,15 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: 18,
     fontWeight: '600',
+  },
+  modalBody: {
+    padding: 16,
+  },
+  modalFooter: {
+    flexDirection: 'row',
+    padding: 16,
+    gap: 12,
+    borderTopWidth: 1,
   },
   productList: {
     maxHeight: 500,
@@ -750,16 +939,13 @@ const styles = StyleSheet.create({
   },
   productPrice: {
     fontSize: 14,
+    marginBottom: 2,
   },
-  productStock: {
-    fontSize: 14,
-    marginLeft: 12,
+  productSku: {
+    fontSize: 12,
   },
   emptyContainer: {
     padding: 32,
     alignItems: 'center',
-  },
-  emptyText: {
-    fontSize: 16,
   },
 });

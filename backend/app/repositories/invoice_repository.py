@@ -52,8 +52,60 @@ class InvoiceRepository(BaseRepository[InvoiceInDB]):
             )
         """
         from app.repositories.base import _serialize_for_mongo
+        from app.repositories.product_repository import ProductRepository
+        from decimal import Decimal
         
         doc = invoice_data.model_dump()
+        
+        # Process product_items to convert them to invoice items with product details
+        final_items = []
+        
+        # Handle product_items (from catalog)
+        if invoice_data.product_items:
+            product_repo = ProductRepository(self.db)
+            for product_item in invoice_data.product_items:
+                # Fetch product details
+                product = await product_repo.get_by_id_and_user(
+                    product_id=product_item.product_id,
+                    user_id=user_id
+                )
+                if not product:
+                    # Skip product if not found or doesn't belong to user
+                    # Could log warning here
+                    continue
+                    
+                # Create invoice item with product reference
+                quantity = Decimal(str(product_item.quantity))
+                unit_price = Decimal(str(product.unit_price))
+                tax_rate = Decimal(str(product.tax_rate or "0"))
+                amount = quantity * unit_price
+                
+                item = {
+                    "product_id": product_item.product_id,
+                    "description": product.name,
+                    "quantity": quantity,
+                    "unit_price": unit_price,
+                    "tax_rate": tax_rate,
+                    "amount": amount
+                }
+                final_items.append(item)
+        
+        # Handle custom items (manual entries)
+        if invoice_data.items:
+            for custom_item in invoice_data.items:
+                # Convert to dict and ensure amount is calculated
+                item_dict = custom_item.model_dump()
+                if item_dict.get("amount") is None:
+                    quantity = Decimal(str(item_dict.get("quantity", 1)))
+                    unit_price = Decimal(str(item_dict.get("unit_price", 0)))
+                    item_dict["amount"] = quantity * unit_price
+                # No product_id for custom items
+                item_dict["product_id"] = None
+                final_items.append(item_dict)
+        
+        # Replace items in doc and remove product_items (only used for API input)
+        doc["items"] = final_items
+        doc.pop("product_items", None)  # Remove product_items field from storage
         
         # Add system fields
         now = datetime.utcnow()
