@@ -8,6 +8,8 @@ import {
   Modal,
   FlatList,
   Alert,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -370,9 +372,18 @@ export default function CreateInvoiceScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <ScrollView style={styles.content} contentContainerStyle={styles.contentContainer}>
-        {/* Client Selection */}
-        <Card style={styles.section}>
+      <KeyboardAvoidingView
+        style={styles.keyboardView}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={100}
+      >
+        <ScrollView
+          style={styles.content}
+          contentContainerStyle={styles.contentContainer}
+          keyboardShouldPersistTaps="handled"
+        >
+          {/* Client Selection */}
+          <Card style={styles.section}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Client Information</Text>
           
           <FormField label="Client" error={errors.client_id} required>
@@ -581,7 +592,8 @@ export default function CreateInvoiceScreen() {
             </View>
           </Card>
         )}
-      </ScrollView>
+        </ScrollView>
+      </KeyboardAvoidingView>
 
       {/* Footer Buttons */}
       <View style={[styles.footer, { backgroundColor: colors.surface, borderTopColor: colors.border }]}>
@@ -703,7 +715,10 @@ export default function CreateInvoiceScreen() {
 
       {/* Create Client Modal */}
       <Modal visible={showCreateClientModal} animationType="slide" transparent>
-        <View style={styles.modalOverlay}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.modalOverlay}
+        >
           <View style={[styles.modalContent, { backgroundColor: colors.surface }]}>
             <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
               <Text style={[styles.modalTitle, { color: colors.text }]}>Create New Client</Text>
@@ -712,7 +727,7 @@ export default function CreateInvoiceScreen() {
               </TouchableOpacity>
             </View>
 
-            <ScrollView style={styles.modalBody}>
+            <ScrollView style={styles.modalBody} keyboardShouldPersistTaps="handled">
               <FormField label="Name" error={clientErrors.name} required>
                 <Input
                   value={newClient.name}
@@ -767,7 +782,7 @@ export default function CreateInvoiceScreen() {
               />
             </View>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
     </View>
   );
@@ -775,6 +790,9 @@ export default function CreateInvoiceScreen() {
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
+  },
+  keyboardView: {
     flex: 1,
   },
   content: {

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/hooks/useTheme';
@@ -98,8 +98,18 @@ export default function EditClientScreen() {
         }}
       />
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        <FormField label="Name" required error={getFieldError(errors, 'name')}>
+      <KeyboardAvoidingView
+        style={styles.keyboardView}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={100}
+      >
+        <ScrollView
+          style={styles.content}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          <FormField label="Name" required error={getFieldError(errors, 'name')}>
           <Input
             value={formData.name}
             onChangeText={(value) => handleChange('name', value)}
@@ -139,7 +149,8 @@ export default function EditClientScreen() {
             numberOfLines={4}
           />
         </FormField>
-      </ScrollView>
+        </ScrollView>
+      </KeyboardAvoidingView>
 
       <View style={[styles.footer, { borderTopColor: colors.border }]}>
         <Button
@@ -171,9 +182,15 @@ const styles = StyleSheet.create({
   headerButton: {
     padding: 8,
   },
+  keyboardView: {
+    flex: 1,
+  },
   content: {
     flex: 1,
+  },
+  scrollContent: {
     padding: 16,
+    paddingBottom: 100,
   },
   footer: {
     flexDirection: 'row',

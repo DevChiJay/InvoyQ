@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Switch } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Switch, KeyboardAvoidingView, Platform } from 'react-native';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/hooks/useTheme';
@@ -126,8 +126,18 @@ export default function EditProductScreen() {
         }}
       />
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        <FormField label="SKU" required error={getFieldError(errors, 'sku')}>
+      <KeyboardAvoidingView
+        style={styles.keyboardView}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={100}
+      >
+        <ScrollView
+          style={styles.content}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          <FormField label="SKU" required error={getFieldError(errors, 'sku')}>
           <Input
             value={formData.sku}
             onChangeText={(value) => handleChange('sku', value)}
@@ -211,7 +221,8 @@ export default function EditProductScreen() {
             thumbColor="#fff"
           />
         </View>
-      </ScrollView>
+        </ScrollView>
+      </KeyboardAvoidingView>
 
       <View style={[styles.footer, { borderTopColor: colors.border }]}>
         <Button
@@ -243,9 +254,15 @@ const styles = StyleSheet.create({
   headerButton: {
     padding: 8,
   },
+  keyboardView: {
+    flex: 1,
+  },
   content: {
     flex: 1,
+  },
+  scrollContent: {
     padding: 16,
+    paddingBottom: 100,
   },
   infoBox: {
     flexDirection: 'row',

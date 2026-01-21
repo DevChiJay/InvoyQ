@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, KeyboardAvoidingView, Platform } from 'react-native';
 import { Stack, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/hooks/useTheme';
@@ -100,7 +100,17 @@ export default function CreateExpenseScreen() {
         }}
       />
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+      <KeyboardAvoidingView
+        style={styles.keyboardView}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={100}
+      >
+        <ScrollView
+          style={styles.content}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
         <FormField label="Category" required error={getFieldError(errors, 'category')}>
           <Select
             value={formData.category}
@@ -159,7 +169,8 @@ export default function CreateExpenseScreen() {
             error={!!errors.vendor}
           />
         </FormField>
-      </ScrollView>
+        </ScrollView>
+      </KeyboardAvoidingView>
 
       <View style={[styles.footer, { borderTopColor: colors.border }]}>
         <Button
@@ -187,9 +198,15 @@ const styles = StyleSheet.create({
   headerButton: {
     padding: 8,
   },
+  keyboardView: {
+    flex: 1,
+  },
   content: {
     flex: 1,
+  },
+  scrollContent: {
     padding: 16,
+    paddingBottom: 100,
   },
   footer: {
     flexDirection: 'row',
