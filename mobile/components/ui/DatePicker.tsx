@@ -24,9 +24,21 @@ export function DatePicker({
   const [show, setShow] = useState(false);
 
   const handleChange = (event: DateTimePickerEvent, selectedDate?: Date) => {
-    setShow(Platform.OS === 'ios');
-    if (selectedDate) {
+    // On Android, close picker after selection
+    // On iOS with spinner, keep it open until user dismisses
+    if (Platform.OS === 'android') {
+      setShow(false);
+    }
+    
+    if (event.type === 'set' && selectedDate) {
       onChange(selectedDate);
+      // Close picker on iOS after confirmation
+      if (Platform.OS === 'ios') {
+        setShow(false);
+      }
+    } else if (event.type === 'dismissed') {
+      // User cancelled, close picker
+      setShow(false);
     }
   };
 

@@ -49,6 +49,14 @@ const currencyOptions: SelectOption[] = [
   { label: 'GBP - British Pound', value: 'GBP' },
 ];
 
+const statusOptions: SelectOption[] = [
+  { label: 'Draft', value: 'draft' },
+  { label: 'Sent', value: 'sent' },
+  { label: 'Paid', value: 'paid' },
+  { label: 'Overdue', value: 'overdue' },
+  { label: 'Cancelled', value: 'cancelled' },
+];
+
 interface ProductItem {
   id: string;
   product_id: string;
@@ -85,8 +93,9 @@ export default function CreateInvoiceScreen() {
   const [formData, setFormData] = useState({
     client_id: '',
     issued_date: new Date(),
-    due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
+    due_date: new Date(), // Today
     currency: 'NGN',
+    status: 'paid',
     notes: '',
   });
 
@@ -306,21 +315,31 @@ export default function CreateInvoiceScreen() {
 
       const totals = calculateTotals();
 
-      const payload = {
+      const payload: any = {
         client_id: validated.client_id,
         issued_date: validated.issued_date.toISOString().split('T')[0],
         due_date: validated.due_date.toISOString().split('T')[0],
         currency: validated.currency,
-        notes: formData.notes,
         subtotal: totals.subtotal.toString(),
         tax: totals.tax.toString(),
         total: totals.total.toString(),
-        status: 'draft',
-        // Send product_items for catalog products (backend will update quantities)
-        product_items: productItems.length > 0 ? productItems : undefined,
-        // Send items for custom line items
-        items: customItems.length > 0 ? customItems : undefined,
+        status: formData.status,
       };
+
+      // Add optional fields only if they have values
+      if (formData.notes && formData.notes.trim()) {
+        payload.notes = formData.notes;
+      }
+
+      // Send product_items for catalog products (backend will update quantities)
+      if (productItems.length > 0) {
+        payload.product_items = productItems;
+      }
+
+      // Send items for custom line items
+      if (customItems.length > 0) {
+        payload.items = customItems;
+      }
 
       await createInvoice.mutateAsync(payload as any);
 
@@ -411,6 +430,15 @@ export default function CreateInvoiceScreen() {
             />
           </FormField>
 
+          <FormField label="Status" required>
+            <Select
+              value={formData.status}
+              onChange={(value) => handleChange('status', value)}
+              options={statusOptions}
+              placeholder="Select status"
+            />
+          </FormField>
+
           <FormField label="Notes">
             <TextArea
               value={formData.notes}
@@ -484,7 +512,7 @@ export default function CreateInvoiceScreen() {
                       <FormField label="Quantity">
                         <NumberInput
                           value={item.quantity.toString()}
-                          onChange={(value) => updateLineItem(item.id, 'quantity', value)}
+                          onChangeValue={(value) => updateLineItem(item.id, 'quantity', value)}
                           placeholder="0"
                           decimals={2}
                         />
@@ -494,7 +522,7 @@ export default function CreateInvoiceScreen() {
                       <FormField label="Unit Price">
                         <NumberInput
                           value={item.unit_price.toString()}
-                          onChange={(value) => updateLineItem(item.id, 'unit_price', value)}
+                          onChangeValue={(value) => updateLineItem(item.id, 'unit_price', value)}
                           placeholder="0.00"
                           decimals={2}
                         />
@@ -507,7 +535,7 @@ export default function CreateInvoiceScreen() {
                       <FormField label="Tax Rate (%)">
                         <NumberInput
                           value={item.tax_rate.toString()}
-                          onChange={(value) => updateLineItem(item.id, 'tax_rate', value)}
+                          onChangeValue={(value) => updateLineItem(item.id, 'tax_rate', value)}
                           placeholder="0"
                           decimals={2}
                         />
@@ -636,7 +664,7 @@ export default function CreateInvoiceScreen() {
                   <FormField label="Quantity" error={customItemErrors.quantity} required>
                     <NumberInput
                       value={customItem.quantity}
-                      onChange={(value) => setCustomItem((prev) => ({ ...prev, quantity: value }))}
+                      onChangeValue={(value) => setCustomItem((prev) => ({ ...prev, quantity: value }))}
                       placeholder="1"
                       decimals={2}
                       error={!!customItemErrors.quantity}
@@ -647,7 +675,7 @@ export default function CreateInvoiceScreen() {
                   <FormField label="Unit Price" required>
                     <NumberInput
                       value={customItem.unit_price}
-                      onChange={(value) => setCustomItem((prev) => ({ ...prev, unit_price: value }))}
+                      onChangeValue={(value) => setCustomItem((prev) => ({ ...prev, unit_price: value }))}
                       placeholder="0.00"
                       decimals={2}
                     />
@@ -658,7 +686,7 @@ export default function CreateInvoiceScreen() {
               <FormField label="Tax Rate (%)">
                 <NumberInput
                   value={customItem.tax_rate}
-                  onChange={(value) => setCustomItem((prev) => ({ ...prev, tax_rate: value }))}
+                  onChangeValue={(value) => setCustomItem((prev) => ({ ...prev, tax_rate: value }))}
                   placeholder="0"
                   decimals={2}
                 />
