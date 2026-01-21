@@ -74,6 +74,23 @@ export default function TabLayout() {
           ),
         }}
       />
+
+      {/* Hide all detail, create, and edit screens from tab bar */}
+      <Tabs.Screen name="clients/create" options={{ href: null }} />
+      <Tabs.Screen name="clients/edit/[id]" options={{ href: null }} />
+      <Tabs.Screen name="clients/[id]" options={{ href: null }} />
+      
+      <Tabs.Screen name="products/create" options={{ href: null }} />
+      <Tabs.Screen name="products/edit/[id]" options={{ href: null }} />
+      <Tabs.Screen name="products/[id]" options={{ href: null }} />
+      
+      <Tabs.Screen name="invoices/create" options={{ href: null }} />
+      <Tabs.Screen name="invoices/edit/[id]" options={{ href: null }} />
+      <Tabs.Screen name="invoices/[id]" options={{ href: null }} />
+      
+      <Tabs.Screen name="expenses/create" options={{ href: null }} />
+      <Tabs.Screen name="expenses/edit/[id]" options={{ href: null }} />
+      <Tabs.Screen name="expenses/[id]" options={{ href: null }} />
     </Tabs>
   );
 }

@@ -33,8 +33,16 @@ export default function InvoicesScreen() {
   // Restore filter state
   useEffect(() => {
     if (isLoaded) {
-      if (filterState.searchQuery) setSearchQuery(filterState.searchQuery);
-      if (filterState.selectedStatus) setSelectedStatus(filterState.selectedStatus);
+      if (filterState.searchQuery) {
+        setSearchQuery(filterState.searchQuery);
+      }
+      // Only restore status if it's not 'all'
+      if (filterState.selectedStatus && filterState.selectedStatus !== 'all') {
+        setSelectedStatus(filterState.selectedStatus);
+      } else if (filterState.selectedStatus === 'all') {
+        // Clear 'all' from storage since it's the default
+        updateFilter('selectedStatus', undefined);
+      }
     }
   }, [isLoaded]);
 
@@ -46,12 +54,18 @@ export default function InvoicesScreen() {
   }, [debouncedSearch, isLoaded]);
 
   useEffect(() => {
-    if (isLoaded && selectedStatus !== 'all') {
-      updateFilter('selectedStatus', selectedStatus);
+    if (isLoaded) {
+      // Only save status if it's not 'all' (which is the default)
+      if (selectedStatus !== 'all') {
+        updateFilter('selectedStatus', selectedStatus);
+      } else {
+        // Remove from storage when set to 'all'
+        updateFilter('selectedStatus', undefined);
+      }
     }
   }, [selectedStatus, isLoaded]);
 
-  const invoices = data?.items || [];
+  const invoices = data || [];
 
   // Filter invoices
   const filteredInvoices = useMemo(() => {

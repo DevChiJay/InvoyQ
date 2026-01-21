@@ -83,10 +83,12 @@ export function Select({ value, onChange, options, placeholder, error }: SelectP
               </TouchableOpacity>
             </View>
 
-            <ScrollView style={styles.optionsList}>
-              {options.map((option) => (
+            <FlatList
+              data={options}
+              keyExtractor={(item) => item.value}
+              style={styles.optionsList}
+              renderItem={({ item: option }) => (
                 <TouchableOpacity
-                  key={option.value}
                   style={[
                     styles.option,
                     {
@@ -122,8 +124,8 @@ export function Select({ value, onChange, options, placeholder, error }: SelectP
                     <Ionicons name="checkmark" size={20} color={colors.primary} />
                   )}
                 </TouchableOpacity>
-              ))}
-            </ScrollView>
+              )}
+            />
           </View>
         </View>
       </Modal>
@@ -161,6 +163,7 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 16,
     borderTopRightRadius: 16,
     maxHeight: '80%',
+    minHeight: 200,
   },
   modalHeader: {
     flexDirection: 'row',

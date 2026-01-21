@@ -1,10 +1,10 @@
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, RefreshControl } from 'react-native';
+import { View, Text, FlatList, ScrollView, TouchableOpacity, StyleSheet, RefreshControl } from 'react-native';
 import { Stack, router } from 'expo-router';
 import { useProducts } from '@/hooks/useProducts';
 import { useTheme } from '@/hooks/useTheme';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useFilterState } from '@/hooks/useFilterState';
-import { Card, SearchBar, FilterChip, EmptyState, SkeletonList, ErrorState } from '@/components/ui';
+import { Card, Badge, SearchBar, FilterChip, EmptyState, SkeletonList, ErrorState } from '@/components/ui';
 import { Spacing } from '@/constants/colors';
 import { Typography } from '@/constants/typography';
 import { Ionicons } from '@expo/vector-icons';

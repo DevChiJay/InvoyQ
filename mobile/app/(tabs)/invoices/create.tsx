@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, FlatList } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, FlatList, Modal } from 'react-native';
 import { Stack, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/hooks/useTheme';
@@ -53,9 +53,10 @@ export default function CreateInvoiceScreen() {
 
   const [lineItems, setLineItems] = useState<LineItem[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [showProductModal, setShowProductModal] = useState(false);
 
-  const clients = clientsData?.items || [];
-  const products = productsData?.items || [];
+  const clients = clientsData || [];
+  const products = productsData?.pages?.flatMap(page => page.items) || [];
 
   const clientOptions: SelectOption[] = clients.map((client) => ({
     label: client.name,
@@ -171,11 +172,16 @@ export default function CreateInvoiceScreen() {
         tax_rate: item.tax_rate,
       }));
 
+      const { subtotal, tax, total } = calculateTotals();
+
       const apiData = {
         client_id: formData.client_id,
-        issued_date: formData.issued_date.toISOString(),
-        due_date: formData.due_date.toISOString(),
+        issued_date: formData.issued_date.toISOString().split('T')[0],
+        due_date: formData.due_date.toISOString().split('T')[0],
         currency: formData.currency,
+        subtotal: parseFloat(subtotal.toFixed(2)),
+        tax: parseFloat(tax.toFixed(2)),
+        total: parseFloat(total.toFixed(2)),
         notes: formData.notes || undefined,
         items,
       };
@@ -291,8 +297,7 @@ export default function CreateInvoiceScreen() {
                     showError('No products available');
                     return;
                   }
-                  // For simplicity, adding first product. In real app, show product selector modal
-                  if (products[0]) addProductItem(products[0].id);
+                  setShowProductModal(true);
                 }}
                 variant="outline"
                 icon="cube-outline"
@@ -485,6 +490,57 @@ export default function CreateInvoiceScreen() {
           />
         )}
       </View>
+
+      {/* Product Selector Modal */}
+      <Modal
+        visible={showProductModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowProductModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { backgroundColor: colors.surface }]}>
+            <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
+              <Text style={[styles.modalTitle, { color: colors.text }]}>Select Product</Text>
+              <TouchableOpacity onPress={() => setShowProductModal(false)}>
+                <Ionicons name="close" size={24} color={colors.text} />
+              </TouchableOpacity>
+            </View>
+
+            <FlatList
+              data={products}
+              keyExtractor={(item) => item.id}
+              style={styles.productList}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={[styles.productItem, { borderBottomColor: colors.border }]}
+                  onPress={() => {
+                    addProductItem(item.id);
+                    setShowProductModal(false);
+                  }}
+                >
+                  <View style={styles.productInfo}>
+                    <Text style={[styles.productName, { color: colors.text }]}>{item.name}</Text>
+                    <Text style={[styles.productPrice, { color: colors.textSecondary }]}>
+                      {formatCurrency(parseFloat(item.unit_price), formData.currency)}
+                    </Text>
+                  </View>
+                  {item.quantity_in_stock !== undefined && (
+                    <Text style={[styles.productStock, { color: colors.textSecondary }]}>
+                      Stock: {item.quantity_in_stock}
+                    </Text>
+                  )}
+                </TouchableOpacity>
+              )}
+              ListEmptyComponent={
+                <View style={styles.emptyContainer}>
+                  <Text style={[styles.emptyText, { color: colors.textSecondary }]}>No products available</Text>
+                </View>
+              }
+            />
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -652,5 +708,58 @@ const styles = StyleSheet.create({
   },
   fullButton: {
     flex: 1,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    maxHeight: '80%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
+    borderBottomWidth: 1,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  productList: {
+    maxHeight: 500,
+  },
+  productItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
+    borderBottomWidth: 1,
+  },
+  productInfo: {
+    flex: 1,
+  },
+  productName: {
+    fontSize: 16,
+    fontWeight: '500',
+    marginBottom: 4,
+  },
+  productPrice: {
+    fontSize: 14,
+  },
+  productStock: {
+    fontSize: 14,
+    marginLeft: 12,
+  },
+  emptyContainer: {
+    padding: 32,
+    alignItems: 'center',
+  },
+  emptyText: {
+    fontSize: 16,
   },
 });

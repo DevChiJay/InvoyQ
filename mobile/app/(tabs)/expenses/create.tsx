@@ -74,7 +74,7 @@ export default function CreateExpenseScreen() {
         description: formData.description,
         amount: parseFloat(formData.amount || '0'),
         currency: formData.currency,
-        expense_date: formData.expense_date.toISOString(),
+        expense_date: formData.expense_date.toISOString().split('T')[0],
         vendor: formData.vendor || undefined,
       };
 
