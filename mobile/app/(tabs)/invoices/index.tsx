@@ -1,34 +1,73 @@
-import { View, Text, FlatList, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, FlatList, StyleSheet, ActivityIndicator, TouchableOpacity, RefreshControl } from 'react-native';
+import { Stack, router } from 'expo-router';
 import { useInvoices } from '@/hooks/useInvoices';
 import { useTheme } from '@/hooks/useTheme';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
+import { SearchBar, FilterChip, EmptyState } from '@/components/ui';
+import { useDebounce } from '@/hooks/useDebounce';
 import { Spacing } from '@/constants/colors';
 import { Typography } from '@/constants/typography';
 import { Ionicons } from '@expo/vector-icons';
-import { format } from 'date-fns';
+import { formatCurrency, formatDate } from '@/utils/formatters';
+import { useState, useMemo } from 'react';
+
+const statusFilters = [
+  { label: 'All', value: 'all' },
+  { label: 'Draft', value: 'draft' },
+  { label: 'Sent', value: 'sent' },
+  { label: 'Paid', value: 'paid' },
+  { label: 'Overdue', value: 'overdue' },
+];
 
 export default function InvoicesScreen() {
-  const { data: invoices, isLoading, error } = useInvoices();
+  const { data, isLoading, error, refetch } = useInvoices();
   const { colors } = useTheme();
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedStatus, setSelectedStatus] = useState('all');
+  const [refreshing, setRefreshing] = useState(false);
+  const debouncedSearch = useDebounce(searchQuery, 300);
 
-  if (isLoading) {
-    return (
-      <View style={[styles.centered, { backgroundColor: colors.background }]}>
-        <ActivityIndicator size="large" color={colors.primary} />
-      </View>
-    );
-  }
+  const invoices = data?.items || [];
 
-  if (error) {
-    return (
-      <View style={[styles.centered, { backgroundColor: colors.background }]}>
-        <Text style={[styles.errorText, { color: colors.error }]}>
-          Failed to load invoices
-        </Text>
-      </View>
-    );
-  }
+  // Filter invoices
+  const filteredInvoices = useMemo(() => {
+    return invoices.filter((invoice) => {
+      const matchesSearch =
+        !debouncedSearch ||
+        invoice.number?.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+        invoice.client?.name?.toLowerCase().includes(debouncedSearch.toLowerCase());
+
+      const matchesStatus = selectedStatus === 'all' || invoice.status === selectedStatus;
+
+      return matchesSearch && matchesStatus;
+    });
+  }, [invoices, debouncedSearch, selectedStatus]);
+
+  // Calculate filter counts
+  const filterCounts = useMemo(() => {
+    const counts: Record<string, number> = { all: invoices.length };
+    statusFilters.forEach((filter) => {
+      if (filter.value !== 'all') {
+        counts[filter.value] = invoices.filter((i) => i.status === filter.value).length;
+      }
+    });
+    return counts;
+  }, [invoices]);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await refetch();
+    setRefreshing(false);
+  };
+
+  const handleInvoicePress = (id: string) => {
+    router.push(`/invoices/${id}`);
+  };
+
+  const handleInvoicePress = (id: string) => {
+    router.push(`/invoices/${id}`);
+  };
 
   const getStatusVariant = (status: string) => {
     switch (status) {
@@ -45,69 +84,131 @@ export default function InvoicesScreen() {
     }
   };
 
+  if (isLoading) {
+    return (
+      <View style={[styles.centered, { backgroundColor: colors.background }]}>
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={[styles.centered, { backgroundColor: colors.background }]}>
+        <Text style={[styles.errorText, { color: colors.error }]}>Failed to load invoices</Text>
+      </View>
+    );
+  }
+
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <Stack.Screen
+        options={{
+          title: 'Invoices',
+          headerStyle: { backgroundColor: colors.surface },
+          headerTintColor: colors.text,
+          headerRight: () => (
+            <TouchableOpacity onPress={() => router.push('/invoices/create')} style={styles.headerButton}>
+              <Ionicons name="add" size={28} color={colors.primary} />
+            </TouchableOpacity>
+          ),
+        }}
+      />
+
+      {/* Search Bar */}
+      <View style={styles.searchContainer}>
+        <SearchBar
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          placeholder="Search invoices..."
+        />
+      </View>
+
+      {/* Status Filters */}
+      <View style={styles.filtersContainer}>
+        <FlatList
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          data={statusFilters}
+          keyExtractor={(item) => item.value}
+          renderItem={({ item }) => (
+            <FilterChip
+              label={item.label}
+              count={filterCounts[item.value] || 0}
+              selected={selectedStatus === item.value}
+              onPress={() => setSelectedStatus(item.value)}
+            />
+          )}
+          contentContainerStyle={styles.filtersList}
+        />
+      </View>
+
+      {/* Invoice List */}
       <FlatList
-        data={invoices}
+        data={filteredInvoices}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContent}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} colors={[colors.primary]} />
+        }
         ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Ionicons name="document-text-outline" size={64} color={colors.textSecondary} />
-            <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
-              No invoices yet
-            </Text>
-            <Text style={[styles.emptySubtext, { color: colors.textTertiary }]}>
-              Create your first invoice
-            </Text>
-          </View>
+          <EmptyState
+            icon="document-text-outline"
+            title={searchQuery || selectedStatus !== 'all' ? 'No invoices found' : 'No invoices yet'}
+            description={
+              searchQuery || selectedStatus !== 'all'
+                ? 'Try adjusting your filters'
+                : 'Create your first invoice'
+            }
+            actionLabel={!searchQuery && selectedStatus === 'all' ? 'Create Invoice' : undefined}
+            onActionPress={!searchQuery && selectedStatus === 'all' ? () => router.push('/invoices/create') : undefined}
+          />
         }
         renderItem={({ item }) => (
-          <Card variant="elevated" style={styles.invoiceCard}>
-            <View style={styles.invoiceHeader}>
-              <View style={styles.invoiceInfo}>
-                <Text style={[styles.invoiceNumber, { color: colors.text }]}>
-                  {item.number || `INV-${item.id.slice(-6)}`}
-                </Text>
-                {item.client && (
-                  <Text style={[styles.clientName, { color: colors.textSecondary }]}>
-                    {item.client.name}
+          <TouchableOpacity onPress={() => handleInvoicePress(item.id)}>
+            <Card variant="elevated" style={styles.invoiceCard}>
+              <View style={styles.invoiceHeader}>
+                <View style={styles.invoiceInfo}>
+                  <Text style={[styles.invoiceNumber, { color: colors.text }]}>
+                    {item.number || `INV-${item.id.slice(-6)}`}
                   </Text>
+                  {item.client && (
+                    <Text style={[styles.clientName, { color: colors.textSecondary }]}>{item.client.name}</Text>
+                  )}
+                </View>
+                <Badge label={item.status.toUpperCase()} variant={getStatusVariant(item.status)} size="sm" />
+              </View>
+
+              <View style={styles.invoiceDetails}>
+                {item.issued_date && (
+                  <View style={styles.detailRow}>
+                    <Ionicons name="calendar-outline" size={16} color={colors.textSecondary} />
+                    <Text style={[styles.detailText, { color: colors.textSecondary }]}>
+                      Issued: {formatDate(item.issued_date)}
+                    </Text>
+                  </View>
+                )}
+                {item.due_date && (
+                  <View style={styles.detailRow}>
+                    <Ionicons name="time-outline" size={16} color={colors.textSecondary} />
+                    <Text style={[styles.detailText, { color: colors.textSecondary }]}>
+                      Due: {formatDate(item.due_date)}
+                    </Text>
+                  </View>
                 )}
               </View>
-              <Badge
-                label={item.status.toUpperCase()}
-                variant={getStatusVariant(item.status)}
-                size="sm"
-              />
-            </View>
 
-            <View style={styles.invoiceDetails}>
-              {item.issued_date && (
-                <View style={styles.detailRow}>
-                  <Ionicons name="calendar-outline" size={16} color={colors.textSecondary} />
-                  <Text style={[styles.detailText, { color: colors.textSecondary }]}>
-                    Issued: {format(new Date(item.issued_date), 'MMM dd, yyyy')}
+              <View style={styles.totalContainer}>
+                <Text style={[styles.totalLabel, { color: colors.textSecondary }]}>Total</Text>
+                <View style={styles.totalRow}>
+                  <Text style={[styles.totalAmount, { color: colors.primary }]}>
+                    {formatCurrency(parseFloat(item.total || '0'), item.currency)}
                   </Text>
+                  <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
                 </View>
-              )}
-              {item.due_date && (
-                <View style={styles.detailRow}>
-                  <Ionicons name="time-outline" size={16} color={colors.textSecondary} />
-                  <Text style={[styles.detailText, { color: colors.textSecondary }]}>
-                    Due: {format(new Date(item.due_date), 'MMM dd, yyyy')}
-                  </Text>
-                </View>
-              )}
-            </View>
-
-            <View style={styles.totalContainer}>
-              <Text style={[styles.totalLabel, { color: colors.textSecondary }]}>Total</Text>
-              <Text style={[styles.totalAmount, { color: colors.primary }]}>
-                {item.currency} {item.total ? parseFloat(item.total).toFixed(2) : '0.00'}
-              </Text>
-            </View>
-          </Card>
+              </View>
+            </Card>
+          </TouchableOpacity>
         )}
       />
     </View>
@@ -122,6 +223,21 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  headerButton: {
+    padding: 8,
+  },
+  searchContainer: {
+    paddingHorizontal: Spacing.md,
+    paddingTop: Spacing.sm,
+    paddingBottom: Spacing.xs,
+  },
+  filtersContainer: {
+    paddingBottom: Spacing.sm,
+  },
+  filtersList: {
+    paddingHorizontal: Spacing.md,
+    gap: Spacing.xs,
   },
   listContent: {
     padding: Spacing.md,
@@ -171,22 +287,14 @@ const styles = StyleSheet.create({
     fontSize: Typography.sizes.md,
     fontWeight: Typography.weights.medium,
   },
+  totalRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
   totalAmount: {
     fontSize: Typography.sizes.xl,
     fontWeight: Typography.weights.bold,
-  },
-  emptyContainer: {
-    alignItems: 'center',
-    paddingTop: 80,
-  },
-  emptyText: {
-    fontSize: Typography.sizes.lg,
-    fontWeight: Typography.weights.semibold,
-    marginTop: Spacing.md,
-  },
-  emptySubtext: {
-    fontSize: Typography.sizes.sm,
-    marginTop: Spacing.xs,
   },
   errorText: {
     fontSize: Typography.sizes.md,

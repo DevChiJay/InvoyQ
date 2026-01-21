@@ -1,16 +1,85 @@
-import { View, Text, FlatList, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, FlatList, StyleSheet, ActivityIndicator, TouchableOpacity, RefreshControl } from 'react-native';
+import { Stack, router } from 'expo-router';
 import { useExpenses } from '@/hooks/useExpenses';
 import { useTheme } from '@/hooks/useTheme';
 import { Card } from '@/components/ui/Card';
 import { IconBadge } from '@/components/ui/IconBadge';
+import { SearchBar, FilterChip, EmptyState } from '@/components/ui';
+import { useDebounce } from '@/hooks/useDebounce';
 import { Spacing } from '@/constants/colors';
 import { Typography } from '@/constants/typography';
 import { Ionicons } from '@expo/vector-icons';
-import { format } from 'date-fns';
+import { formatCurrency, formatDate } from '@/utils/formatters';
+import { useState, useMemo } from 'react';
+
+const categoryFilters = [
+  { label: 'All', value: 'all', icon: 'apps' as keyof typeof Ionicons.glyphMap },
+  { label: 'Food & Dining', value: 'food-dining', icon: 'restaurant' as keyof typeof Ionicons.glyphMap },
+  { label: 'Transportation', value: 'transportation', icon: 'car' as keyof typeof Ionicons.glyphMap },
+  { label: 'Office', value: 'office-supplies', icon: 'briefcase' as keyof typeof Ionicons.glyphMap },
+  { label: 'Utilities', value: 'utilities', icon: 'flash' as keyof typeof Ionicons.glyphMap },
+  { label: 'Other', value: 'other', icon: 'ellipsis-horizontal' as keyof typeof Ionicons.glyphMap },
+];
 
 export default function ExpensesScreen() {
-  const { data, isLoading, error } = useExpenses();
+  const { data, isLoading, error, refetch } = useExpenses();
   const { colors } = useTheme();
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [refreshing, setRefreshing] = useState(false);
+  const debouncedSearch = useDebounce(searchQuery, 300);
+
+  const expenses = data?.items ?? [];
+
+  // Filter expenses
+  const filteredExpenses = useMemo(() => {
+    return expenses.filter((expense) => {
+      const matchesSearch =
+        !debouncedSearch ||
+        expense.description.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+        expense.category.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+        expense.vendor?.toLowerCase().includes(debouncedSearch.toLowerCase());
+
+      const matchesCategory = selectedCategory === 'all' || expense.category === selectedCategory;
+
+      return matchesSearch && matchesCategory;
+    });
+  }, [expenses, debouncedSearch, selectedCategory]);
+
+  // Calculate filter counts
+  const filterCounts = useMemo(() => {
+    const counts: Record<string, number> = { all: expenses.length };
+    categoryFilters.forEach((filter) => {
+      if (filter.value !== 'all') {
+        counts[filter.value] = expenses.filter((e) => e.category === filter.value).length;
+      }
+    });
+    return counts;
+  }, [expenses]);
+
+  const getCategoryIcon = (category: string): keyof typeof Ionicons.glyphMap => {
+    const categoryMap: Record<string, keyof typeof Ionicons.glyphMap> = {
+      'food-dining': 'restaurant',
+      'transportation': 'car',
+      'office-supplies': 'briefcase',
+      'utilities': 'flash',
+      'rent': 'home',
+      'salaries': 'people',
+      'marketing': 'megaphone',
+      'other': 'ellipsis-horizontal',
+    };
+    return categoryMap[category] || 'pricetag';
+  };
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await refetch();
+    setRefreshing(false);
+  };
+
+  const handleExpensePress = (id: string) => {
+    router.push(`/expenses/${id}`);
+  };
 
   if (isLoading) {
     return (
@@ -23,97 +92,125 @@ export default function ExpensesScreen() {
   if (error) {
     return (
       <View style={[styles.centered, { backgroundColor: colors.background }]}>
-        <Text style={[styles.errorText, { color: colors.error }]}>
-          Failed to load expenses
-        </Text>
+        <Text style={[styles.errorText, { color: colors.error }]}>Failed to load expenses</Text>
       </View>
     );
   }
 
-  const expenses = data?.items ?? [];
-
-  const getCategoryIcon = (category: string): keyof typeof Ionicons.glyphMap => {
-    const categoryLower = category.toLowerCase();
-    if (categoryLower.includes('travel')) return 'airplane-outline';
-    if (categoryLower.includes('food') || categoryLower.includes('meal')) return 'restaurant-outline';
-    if (categoryLower.includes('office')) return 'briefcase-outline';
-    if (categoryLower.includes('utilities')) return 'flash-outline';
-    if (categoryLower.includes('software')) return 'laptop-outline';
-    return 'receipt-outline';
-  };
-
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <Stack.Screen
+        options={{
+          title: 'Expenses',
+          headerStyle: { backgroundColor: colors.surface },
+          headerTintColor: colors.text,
+          headerRight: () => (
+            <TouchableOpacity onPress={() => router.push('/expenses/create')} style={styles.headerButton}>
+              <Ionicons name="add" size={28} color={colors.primary} />
+            </TouchableOpacity>
+          ),
+        }}
+      />
+
+      {/* Search Bar */}
+      <View style={styles.searchContainer}>
+        <SearchBar
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          placeholder="Search expenses..."
+        />
+      </View>
+
+      {/* Category Filters */}
+      <View style={styles.filtersContainer}>
+        <FlatList
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          data={categoryFilters}
+          keyExtractor={(item) => item.value}
+          renderItem={({ item }) => (
+            <FilterChip
+              label={item.label}
+              count={filterCounts[item.value] || 0}
+              selected={selectedCategory === item.value}
+              onPress={() => setSelectedCategory(item.value)}
+              icon={item.icon}
+            />
+          )}
+          contentContainerStyle={styles.filtersList}
+        />
+      </View>
+
+      {/* Expense List */}
       <FlatList
-        data={expenses}
+        data={filteredExpenses}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContent}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} colors={[colors.primary]} />
+        }
         ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Ionicons name="receipt-outline" size={64} color={colors.textSecondary} />
-            <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
-              No expenses yet
-            </Text>
-            <Text style={[styles.emptySubtext, { color: colors.textTertiary }]}>
-              Track your business expenses
-            </Text>
-          </View>
+          <EmptyState
+            icon="receipt-outline"
+            title={searchQuery || selectedCategory !== 'all' ? 'No expenses found' : 'No expenses yet'}
+            description={
+              searchQuery || selectedCategory !== 'all'
+                ? 'Try adjusting your filters'
+                : 'Track your business expenses'
+            }
+            actionLabel={!searchQuery && selectedCategory === 'all' ? 'Add Expense' : undefined}
+            onActionPress={!searchQuery && selectedCategory === 'all' ? () => router.push('/expenses/create') : undefined}
+          />
         }
         renderItem={({ item }) => (
-          <Card variant="elevated" style={styles.expenseCard}>
-            <View style={styles.expenseHeader}>
-              <IconBadge
-                icon={getCategoryIcon(item.category)}
-                size={40}
-                backgroundColor={colors.accentLight + '20'}
-                iconColor={colors.accent}
-              />
-              <View style={styles.expenseInfo}>
-                <Text style={[styles.description, { color: colors.text }]}>
-                  {item.description}
-                </Text>
-                <View style={styles.metaRow}>
-                  <Text style={[styles.category, { color: colors.textSecondary }]}>
-                    {item.category}
+          <TouchableOpacity onPress={() => handleExpensePress(item.id)}>
+            <Card variant="elevated" style={styles.expenseCard}>
+              <View style={styles.expenseHeader}>
+                <IconBadge
+                  icon={getCategoryIcon(item.category)}
+                  size={40}
+                  backgroundColor={colors.accentLight + '20'}
+                  iconColor={colors.accent}
+                />
+                <View style={styles.expenseInfo}>
+                  <Text style={[styles.description, { color: colors.text }]}>{item.description}</Text>
+                  <View style={styles.metaRow}>
+                    <Text style={[styles.category, { color: colors.textSecondary }]}>{item.category}</Text>
+                    {item.vendor && (
+                      <>
+                        <Text style={[styles.separator, { color: colors.textTertiary }]}>•</Text>
+                        <Text style={[styles.vendor, { color: colors.textSecondary }]}>{item.vendor}</Text>
+                      </>
+                    )}
+                  </View>
+                  <Text style={[styles.date, { color: colors.textTertiary }]}>
+                    {formatDate(item.expense_date)}
                   </Text>
-                  {item.vendor && (
-                    <>
-                      <Text style={[styles.separator, { color: colors.textTertiary }]}>•</Text>
-                      <Text style={[styles.vendor, { color: colors.textSecondary }]}>
-                        {item.vendor}
-                      </Text>
-                    </>
+                </View>
+                <View style={styles.amountContainer}>
+                  <Text style={[styles.amount, { color: colors.error }]}>
+                    {formatCurrency(parseFloat(item.amount), item.currency)}
+                  </Text>
+                  <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
+                </View>
+              </View>
+
+              {item.tags && item.tags.length > 0 && (
+                <View style={styles.tagsContainer}>
+                  {item.tags.slice(0, 3).map((tag, index) => (
+                    <View key={index} style={[styles.tag, { backgroundColor: colors.primaryLight + '20' }]}>
+                      <Text style={[styles.tagText, { color: colors.primary }]}>{tag}</Text>
+                    </View>
+                  ))}
+                  {item.tags.length > 3 && (
+                    <Text style={[styles.moreTag, { color: colors.textSecondary }]}>
+                      +{item.tags.length - 3} more
+                    </Text>
                   )}
                 </View>
-                <Text style={[styles.date, { color: colors.textTertiary }]}>
-                  {format(new Date(item.expense_date), 'MMM dd, yyyy')}
-                </Text>
-              </View>
-              <Text style={[styles.amount, { color: colors.error }]}>
-                -{item.currency} {parseFloat(item.amount).toFixed(2)}
-              </Text>
-            </View>
-
-            {item.tags && item.tags.length > 0 && (
-              <View style={styles.tagsContainer}>
-                {item.tags.slice(0, 3).map((tag, index) => (
-                  <View
-                    key={index}
-                    style={[styles.tag, { backgroundColor: colors.primaryLight + '20' }]}
-                  >
-                    <Text style={[styles.tagText, { color: colors.primary }]}>
-                      {tag}
-                    </Text>
-                  </View>
-                ))}
-                {item.tags.length > 3 && (
-                  <Text style={[styles.moreTag, { color: colors.textSecondary }]}>
-                    +{item.tags.length - 3} more
-                  </Text>
-                )}
-              </View>
-            )}
-          </Card>
+              )}
+            </Card>
+          </TouchableOpacity>
         )}
       />
     </View>
@@ -128,6 +225,21 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  headerButton: {
+    padding: 8,
+  },
+  searchContainer: {
+    paddingHorizontal: Spacing.md,
+    paddingTop: Spacing.sm,
+    paddingBottom: Spacing.xs,
+  },
+  filtersContainer: {
+    paddingBottom: Spacing.sm,
+  },
+  filtersList: {
+    paddingHorizontal: Spacing.md,
+    gap: Spacing.xs,
   },
   listContent: {
     padding: Spacing.md,
@@ -166,6 +278,11 @@ const styles = StyleSheet.create({
   date: {
     fontSize: Typography.sizes.xs,
   },
+  amountContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
   amount: {
     fontSize: Typography.sizes.lg,
     fontWeight: Typography.weights.bold,
@@ -188,19 +305,6 @@ const styles = StyleSheet.create({
   moreTag: {
     fontSize: Typography.sizes.xs,
     alignSelf: 'center',
-  },
-  emptyContainer: {
-    alignItems: 'center',
-    paddingTop: 80,
-  },
-  emptyText: {
-    fontSize: Typography.sizes.lg,
-    fontWeight: Typography.weights.semibold,
-    marginTop: Spacing.md,
-  },
-  emptySubtext: {
-    fontSize: Typography.sizes.sm,
-    marginTop: Spacing.xs,
   },
   errorText: {
     fontSize: Typography.sizes.md,
