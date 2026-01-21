@@ -1,20 +1,36 @@
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator, RefreshControl } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, RefreshControl } from 'react-native';
 import { Stack, router } from 'expo-router';
 import { useClients } from '@/hooks/useClients';
 import { useTheme } from '@/hooks/useTheme';
 import { useDebounce } from '@/hooks/useDebounce';
-import { Card, SearchBar, EmptyState } from '@/components/ui';
+import { useFilterState } from '@/hooks/useFilterState';
+import { Card, SearchBar, EmptyState, SkeletonList, ErrorState } from '@/components/ui';
 import { Spacing, BorderRadius } from '@/constants/colors';
 import { Typography } from '@/constants/typography';
 import { Ionicons } from '@expo/vector-icons';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 
 export default function ClientsScreen() {
   const { colors } = useTheme();
+  const { filterState, isLoaded, updateFilter } = useFilterState('clients');
   const [searchQuery, setSearchQuery] = useState('');
   const debouncedSearch = useDebounce(searchQuery, 300);
   const { data: clients, isLoading, error, refetch } = useClients();
   const [refreshing, setRefreshing] = useState(false);
+
+  // Restore search query from filter state
+  useEffect(() => {
+    if (isLoaded && filterState.searchQuery) {
+      setSearchQuery(filterState.searchQuery);
+    }
+  }, [isLoaded]);
+
+  // Save search query to filter state
+  useEffect(() => {
+    if (isLoaded && debouncedSearch) {
+      updateFilter('searchQuery', debouncedSearch);
+    }
+  }, [debouncedSearch, isLoaded]);
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -38,18 +54,34 @@ export default function ClientsScreen() {
 
   if (isLoading) {
     return (
-      <View style={[styles.centered, { backgroundColor: colors.background }]}>
-        <ActivityIndicator size="large" color={colors.primary} />
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <Stack.Screen
+          options={{
+            title: 'Clients',
+            headerStyle: { backgroundColor: colors.surface },
+            headerTintColor: colors.text,
+          }}
+        />
+        <SkeletonList count={6} />
       </View>
     );
   }
 
   if (error) {
     return (
-      <View style={[styles.centered, { backgroundColor: colors.background }]}>
-        <Text style={[styles.errorText, { color: colors.error }]}>
-          Failed to load clients
-        </Text>
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <Stack.Screen
+          options={{
+            title: 'Clients',
+            headerStyle: { backgroundColor: colors.surface },
+            headerTintColor: colors.text,
+          }}
+        />
+        <ErrorState
+          title="Failed to load clients"
+          message="We couldn't fetch your clients. Please check your connection and try again."
+          onRetry={refetch}
+        />
       </View>
     );
   }

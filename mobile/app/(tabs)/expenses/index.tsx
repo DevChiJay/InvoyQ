@@ -1,16 +1,17 @@
-import { View, Text, FlatList, StyleSheet, ActivityIndicator, TouchableOpacity, RefreshControl } from 'react-native';
+import { View, Text, FlatList, StyleSheet, TouchableOpacity, RefreshControl } from 'react-native';
 import { Stack, router } from 'expo-router';
 import { useExpenses } from '@/hooks/useExpenses';
 import { useTheme } from '@/hooks/useTheme';
 import { Card } from '@/components/ui/Card';
 import { IconBadge } from '@/components/ui/IconBadge';
-import { SearchBar, FilterChip, EmptyState } from '@/components/ui';
+import { SearchBar, FilterChip, EmptyState, SkeletonList, ErrorState } from '@/components/ui';
 import { useDebounce } from '@/hooks/useDebounce';
+import { useFilterState } from '@/hooks/useFilterState';
 import { Spacing } from '@/constants/colors';
 import { Typography } from '@/constants/typography';
 import { Ionicons } from '@expo/vector-icons';
 import { formatCurrency, formatDate } from '@/utils/formatters';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 
 const categoryFilters = [
   { label: 'All', value: 'all', icon: 'apps' as keyof typeof Ionicons.glyphMap },
@@ -24,10 +25,32 @@ const categoryFilters = [
 export default function ExpensesScreen() {
   const { data, isLoading, error, refetch } = useExpenses();
   const { colors } = useTheme();
+  const { filterState, isLoaded, updateFilter } = useFilterState('expenses');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [refreshing, setRefreshing] = useState(false);
   const debouncedSearch = useDebounce(searchQuery, 300);
+
+  // Restore filter state
+  useEffect(() => {
+    if (isLoaded) {
+      if (filterState.searchQuery) setSearchQuery(filterState.searchQuery);
+      if (filterState.selectedFilter) setSelectedCategory(filterState.selectedFilter);
+    }
+  }, [isLoaded]);
+
+  // Save filter state
+  useEffect(() => {
+    if (isLoaded && debouncedSearch) {
+      updateFilter('searchQuery', debouncedSearch);
+    }
+  }, [debouncedSearch, isLoaded]);
+
+  useEffect(() => {
+    if (isLoaded && selectedCategory !== 'all') {
+      updateFilter('selectedFilter', selectedCategory);
+    }
+  }, [selectedCategory, isLoaded]);
 
   const expenses = data?.items ?? [];
 
@@ -83,16 +106,34 @@ export default function ExpensesScreen() {
 
   if (isLoading) {
     return (
-      <View style={[styles.centered, { backgroundColor: colors.background }]}>
-        <ActivityIndicator size="large" color={colors.primary} />
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <Stack.Screen
+          options={{
+            title: 'Expenses',
+            headerStyle: { backgroundColor: colors.surface },
+            headerTintColor: colors.text,
+          }}
+        />
+        <SkeletonList count={6} />
       </View>
     );
   }
 
   if (error) {
     return (
-      <View style={[styles.centered, { backgroundColor: colors.background }]}>
-        <Text style={[styles.errorText, { color: colors.error }]}>Failed to load expenses</Text>
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <Stack.Screen
+          options={{
+            title: 'Expenses',
+            headerStyle: { backgroundColor: colors.surface },
+            headerTintColor: colors.text,
+          }}
+        />
+        <ErrorState
+          title="Failed to load expenses"
+          message="We couldn't fetch your expenses. Please check your connection and try again."
+          onRetry={refetch}
+        />
       </View>
     );
   }

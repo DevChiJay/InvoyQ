@@ -1,23 +1,46 @@
-import { View, Text, FlatList, StyleSheet, ActivityIndicator, RefreshControl, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, RefreshControl } from 'react-native';
 import { Stack, router } from 'expo-router';
 import { useProducts } from '@/hooks/useProducts';
 import { useTheme } from '@/hooks/useTheme';
 import { useDebounce } from '@/hooks/useDebounce';
-import { Card, Badge, SearchBar, FilterChip, EmptyState } from '@/components/ui';
+import { useFilterState } from '@/hooks/useFilterState';
+import { Card, SearchBar, FilterChip, EmptyState, SkeletonList, ErrorState } from '@/components/ui';
 import { Spacing } from '@/constants/colors';
 import { Typography } from '@/constants/typography';
 import { Ionicons } from '@expo/vector-icons';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 
 type FilterType = 'all' | 'in-stock' | 'low-stock' | 'out-of-stock' | 'active' | 'inactive';
 
 export default function ProductsScreen() {
   const { colors } = useTheme();
+  const { filterState, isLoaded, updateFilter } = useFilterState('products');
   const [searchQuery, setSearchQuery] = useState('');
   const [filter, setFilter] = useState<FilterType>('all');
   const debouncedSearch = useDebounce(searchQuery, 300);
   const { data, isLoading, error, fetchNextPage, hasNextPage, isFetchingNextPage, refetch } = useProducts();
   const [refreshing, setRefreshing] = useState(false);
+
+  // Restore filter state
+  useEffect(() => {
+    if (isLoaded) {
+      if (filterState.searchQuery) setSearchQuery(filterState.searchQuery);
+      if (filterState.selectedFilter) setFilter(filterState.selectedFilter as FilterType);
+    }
+  }, [isLoaded]);
+
+  // Save filter state
+  useEffect(() => {
+    if (isLoaded && debouncedSearch) {
+      updateFilter('searchQuery', debouncedSearch);
+    }
+  }, [debouncedSearch, isLoaded]);
+
+  useEffect(() => {
+    if (isLoaded && filter !== 'all') {
+      updateFilter('selectedFilter', filter);
+    }
+  }, [filter, isLoaded]);
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -81,18 +104,34 @@ export default function ProductsScreen() {
 
   if (isLoading) {
     return (
-      <View style={[styles.centered, { backgroundColor: colors.background }]}>
-        <ActivityIndicator size="large" color={colors.primary} />
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <Stack.Screen
+          options={{
+            title: 'Products',
+            headerStyle: { backgroundColor: colors.surface },
+            headerTintColor: colors.text,
+          }}
+        />
+        <SkeletonList count={6} />
       </View>
     );
   }
 
   if (error) {
     return (
-      <View style={[styles.centered, { backgroundColor: colors.background }]}>
-        <Text style={[styles.errorText, { color: colors.error }]}>
-          Failed to load products
-        </Text>
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <Stack.Screen
+          options={{
+            title: 'Products',
+            headerStyle: { backgroundColor: colors.surface },
+            headerTintColor: colors.text,
+          }}
+        />
+        <ErrorState
+          title="Failed to load products"
+          message="We couldn't fetch your products. Please check your connection and try again."
+          onRetry={refetch}
+        />
       </View>
     );
   }
