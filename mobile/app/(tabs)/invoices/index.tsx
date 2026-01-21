@@ -88,10 +88,6 @@ export default function InvoicesScreen() {
     router.push(`/invoices/${id}`);
   };
 
-  const handleInvoicePress = (id: string) => {
-    router.push(`/invoices/${id}`);
-  };
-
   const getStatusVariant = (status: string) => {
     switch (status) {
       case 'paid':

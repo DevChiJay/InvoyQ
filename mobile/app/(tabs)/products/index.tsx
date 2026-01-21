@@ -136,8 +136,6 @@ export default function ProductsScreen() {
     );
   }
 
-  const products = data?.pages.flatMap((page) => page.items) ?? [];
-
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <Stack.Screen
@@ -386,38 +384,5 @@ const styles = StyleSheet.create({
   },
   errorText: {
     fontSize: Typography.sizes.md,
-  },
-});
-  detailRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  label: {
-    fontSize: Typography.sizes.sm,
-  },
-  value: {
-    fontSize: Typography.sizes.sm,
-    fontWeight: Typography.weights.medium,
-  },
-  emptyContainer: {
-    alignItems: 'center',
-    paddingTop: 80,
-  },
-  emptyText: {
-    fontSize: Typography.sizes.lg,
-    fontWeight: Typography.weights.semibold,
-    marginTop: Spacing.md,
-  },
-  emptySubtext: {
-    fontSize: Typography.sizes.sm,
-    marginTop: Spacing.xs,
-  },
-  errorText: {
-    fontSize: Typography.sizes.md,
-  },
-  footer: {
-    paddingVertical: Spacing.md,
-    alignItems: 'center',
   },
 });
