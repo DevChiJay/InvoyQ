@@ -38,6 +38,12 @@ export default function DashboardScreen() {
   const paidInvoices = invoices?.filter(inv => inv.status === 'paid').length || 0;
   const totalInvoices = invoices?.length || 0;
   const collectionRate = totalInvoices > 0 ? (paidInvoices / totalInvoices) * 100 : 0;
+  
+  // Calculate actual collected and pending amounts
+  const collectedAmount = invoices?.filter(inv => inv.status === 'paid')
+    .reduce((sum, inv) => sum + parseFloat(inv.total || '0'), 0) || 0;
+  const pendingAmount = invoices?.filter(inv => inv.status !== 'paid')
+    .reduce((sum, inv) => sum + parseFloat(inv.total || '0'), 0) || 0;
 
   const lowStockProducts = products?.filter(p => p.quantity_available < 10).length || 0;
 
@@ -169,7 +175,7 @@ export default function DashboardScreen() {
           <View style={styles.collectionStats}>
             <View style={styles.collectionStat}>
               <Text style={[styles.collectionStatValue, { color: colors.success }]}>
-                {formatCurrency(totalRevenue * (collectionRate / 100))}
+                {formatCurrency(collectedAmount)}
               </Text>
               <Text style={[styles.collectionStatLabel, { color: colors.textSecondary }]}>
                 Collected
@@ -177,7 +183,7 @@ export default function DashboardScreen() {
             </View>
             <View style={styles.collectionStat}>
               <Text style={[styles.collectionStatValue, { color: colors.error }]}>
-                {formatCurrency(totalRevenue * ((100 - collectionRate) / 100))}
+                {formatCurrency(pendingAmount)}
               </Text>
               <Text style={[styles.collectionStatLabel, { color: colors.textSecondary }]}>
                 Pending
@@ -222,32 +228,44 @@ export default function DashboardScreen() {
 
         {invoices && invoices.length > 0 ? (
           invoices.slice(0, 3).map((invoice) => (
-            <Card key={invoice.id} variant="elevated" style={styles.listItem}>
-              <View style={styles.listItemHeader}>
-                <View>
-                  <Text style={[styles.listItemTitle, { color: colors.text }]}>
-                    {invoice.number || `INV-${invoice.id.slice(-6)}`}
-                  </Text>
-                  <Text style={[styles.listItemSubtitle, { color: colors.textSecondary }]}>
-                    {invoice.client?.name || 'Unknown Client'}
-                  </Text>
+            <TouchableOpacity 
+              key={invoice.id}
+              onPress={() => {
+                // Navigate to invoices tab first, then to the detail screen
+                router.push({
+                  pathname: '/(tabs)/invoices/[id]',
+                  params: { id: invoice.id }
+                });
+              }}
+              activeOpacity={0.7}
+            >
+              <Card variant="elevated" style={styles.listItem}>
+                <View style={styles.listItemHeader}>
+                  <View>
+                    <Text style={[styles.listItemTitle, { color: colors.text }]}>
+                      {invoice.number || `INV-${invoice.id.slice(-6)}`}
+                    </Text>
+                    <Text style={[styles.listItemSubtitle, { color: colors.textSecondary }]}>
+                      {invoice.client?.name || 'Unknown Client'}
+                    </Text>
+                  </View>
+                  <View style={styles.listItemRight}>
+                    <Text style={[styles.listItemAmount, { color: colors.primary }]}>
+                      {formatCurrency(invoice.total || '0', invoice.currency)}
+                    </Text>
+                    <Badge
+                      label={invoice.status.toUpperCase()}
+                      variant={
+                        invoice.status === 'paid' ? 'success' :
+                        invoice.status === 'sent' ? 'info' :
+                        invoice.status === 'overdue' ? 'error' : 'warning'
+                      }
+                      size="sm"
+                    />
+                  </View>
                 </View>
-                <View style={styles.listItemRight}>
-                  <Text style={[styles.listItemAmount, { color: colors.primary }]}>
-                    {formatCurrency(invoice.total || '0', invoice.currency)}
-                  </Text>
-                  <Badge
-                    label={invoice.status.toUpperCase()}
-                    variant={
-                      invoice.status === 'paid' ? 'success' :
-                      invoice.status === 'sent' ? 'info' :
-                      invoice.status === 'overdue' ? 'error' : 'warning'
-                    }
-                    size="sm"
-                  />
-                </View>
-              </View>
-            </Card>
+              </Card>
+            </TouchableOpacity>
           ))
         ) : (
           <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
@@ -271,29 +289,41 @@ export default function DashboardScreen() {
 
         {expenses && expenses.length > 0 ? (
           expenses.slice(0, 3).map((expense) => (
-            <Card key={expense.id} variant="elevated" style={styles.listItem}>
-              <View style={styles.listItemHeader}>
-                <View style={styles.expenseInfo}>
-                  <IconBadge
-                    icon="receipt-outline"
-                    backgroundColor={colors.accentLight + '20'}
-                    iconColor={colors.accent}
-                    size={32}
-                  />
-                  <View>
-                    <Text style={[styles.listItemTitle, { color: colors.text }]}>
-                      {expense.description}
-                    </Text>
-                    <Text style={[styles.listItemSubtitle, { color: colors.textSecondary }]}>
-                      {expense.category} • {formatDate(expense.expense_date)}
-                    </Text>
+            <TouchableOpacity 
+              key={expense.id}
+              onPress={() => {
+                // Navigate to expenses tab first, then to the detail screen
+                router.push({
+                  pathname: '/(tabs)/expenses/[id]',
+                  params: { id: expense.id }
+                });
+              }}
+              activeOpacity={0.7}
+            >
+              <Card variant="elevated" style={styles.listItem}>
+                <View style={styles.listItemHeader}>
+                  <View style={styles.expenseInfo}>
+                    <IconBadge
+                      icon="receipt-outline"
+                      backgroundColor={colors.accentLight + '20'}
+                      iconColor={colors.accent}
+                      size={32}
+                    />
+                    <View>
+                      <Text style={[styles.listItemTitle, { color: colors.text }]}>
+                        {expense.description}
+                      </Text>
+                      <Text style={[styles.listItemSubtitle, { color: colors.textSecondary }]}>
+                        {expense.category} • {formatDate(expense.expense_date)}
+                      </Text>
+                    </View>
                   </View>
+                  <Text style={[styles.expenseAmount, { color: colors.error }]}>
+                    -{formatCurrency(expense.amount, expense.currency)}
+                  </Text>
                 </View>
-                <Text style={[styles.expenseAmount, { color: colors.error }]}>
-                  -{formatCurrency(expense.amount, expense.currency)}
-                </Text>
-              </View>
-            </Card>
+              </Card>
+            </TouchableOpacity>
           ))
         ) : (
           <Text style={[styles.emptyText, { color: colors.textSecondary }]}>

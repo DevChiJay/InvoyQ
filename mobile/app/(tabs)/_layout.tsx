@@ -14,10 +14,7 @@ export default function TabLayout() {
           backgroundColor: colors.surface,
           borderTopColor: colors.border,
         },
-        headerStyle: {
-          backgroundColor: colors.surface,
-        },
-        headerTintColor: colors.text,
+        headerShown: false, // Hide tab headers, let Stack handle them
       }}
     >
       <Tabs.Screen
@@ -27,10 +24,15 @@ export default function TabLayout() {
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="home-outline" size={size} color={color} />
           ),
+          headerShown: true,
+          headerStyle: {
+            backgroundColor: colors.surface,
+          },
+          headerTintColor: colors.text,
         }}
       />
       <Tabs.Screen
-        name="clients/index"
+        name="clients"
         options={{
           title: 'Clients',
           tabBarIcon: ({ color, size }) => (
@@ -39,7 +41,7 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="products/index"
+        name="products"
         options={{
           title: 'Products',
           tabBarIcon: ({ color, size }) => (
@@ -48,7 +50,7 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="invoices/index"
+        name="invoices"
         options={{
           title: 'Invoices',
           tabBarIcon: ({ color, size }) => (
@@ -57,7 +59,7 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="expenses/index"
+        name="expenses"
         options={{
           title: 'Expenses',
           tabBarIcon: ({ color, size }) => (
@@ -66,7 +68,7 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="settings/index"
+        name="settings"
         options={{
           title: 'Settings',
           tabBarIcon: ({ color, size }) => (
@@ -74,23 +76,6 @@ export default function TabLayout() {
           ),
         }}
       />
-
-      {/* Hide all detail, create, and edit screens from tab bar */}
-      <Tabs.Screen name="clients/create" options={{ href: null }} />
-      <Tabs.Screen name="clients/edit/[id]" options={{ href: null }} />
-      <Tabs.Screen name="clients/[id]" options={{ href: null }} />
-      
-      <Tabs.Screen name="products/create" options={{ href: null }} />
-      <Tabs.Screen name="products/edit/[id]" options={{ href: null }} />
-      <Tabs.Screen name="products/[id]" options={{ href: null }} />
-      
-      <Tabs.Screen name="invoices/create" options={{ href: null }} />
-      <Tabs.Screen name="invoices/edit/[id]" options={{ href: null }} />
-      <Tabs.Screen name="invoices/[id]" options={{ href: null }} />
-      
-      <Tabs.Screen name="expenses/create" options={{ href: null }} />
-      <Tabs.Screen name="expenses/edit/[id]" options={{ href: null }} />
-      <Tabs.Screen name="expenses/[id]" options={{ href: null }} />
     </Tabs>
   );
 }
