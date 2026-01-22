@@ -44,17 +44,25 @@ const getStatusBgColor = (status: string, colors: any) => {
 
 export default function InvoiceDetailScreen() {
   const { colors } = useTheme();
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, from } = useLocalSearchParams<{ id: string; from?: string }>();
   const { data: invoice, isLoading } = useInvoice(id);
   const deleteInvoice = useDeleteInvoice();
   const updateInvoice = useUpdateInvoice();
+
+  const handleBack = () => {
+    if (from === 'dashboard') {
+      router.push('/(tabs)');
+    } else {
+      router.back();
+    }
+  };
 
   const handleDelete = () => {
     if (!invoice) return;
     confirmDelete(`Invoice ${invoice.number || 'draft'}`, async () => {
       try {
         await deleteInvoice.mutateAsync(id);
-        router.back();
+        handleBack();
       } catch (error: any) {
         showError(error.response?.data?.detail || 'Failed to delete invoice');
       }
@@ -120,6 +128,12 @@ export default function InvoiceDetailScreen() {
           title: invoice.number || 'Draft Invoice',
           headerStyle: { backgroundColor: colors.surface },
           headerTintColor: colors.text,
+          gestureEnabled: from !== 'dashboard',
+          headerLeft: () => (
+            <TouchableOpacity onPress={handleBack} style={styles.headerButton}>
+              <Ionicons name="arrow-back" size={24} color={colors.text} />
+            </TouchableOpacity>
+          ),
           headerRight: () => (
             <View style={styles.headerActions}>
               <TouchableOpacity onPress={handleEdit} style={styles.headerButton}>

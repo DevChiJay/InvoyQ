@@ -32,16 +32,24 @@ const categoryLabels: Record<string, string> = {
 
 export default function ExpenseDetailScreen() {
   const { colors } = useTheme();
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, from } = useLocalSearchParams<{ id: string; from?: string }>();
   const { data: expense, isLoading } = useExpense(id);
   const deleteExpense = useDeleteExpense();
+
+  const handleBack = () => {
+    if (from === 'dashboard') {
+      router.push('/(tabs)');
+    } else {
+      router.back();
+    }
+  };
 
   const handleDelete = () => {
     if (!expense) return;
     confirmDelete('this expense', async () => {
       try {
         await deleteExpense.mutateAsync(id);
-        router.back();
+        handleBack();
       } catch (error: any) {
         showError(error.response?.data?.detail || 'Failed to delete expense');
       }
@@ -78,6 +86,12 @@ export default function ExpenseDetailScreen() {
           title: 'Expense Details',
           headerStyle: { backgroundColor: colors.surface },
           headerTintColor: colors.text,
+          gestureEnabled: from !== 'dashboard',
+          headerLeft: () => (
+            <TouchableOpacity onPress={handleBack} style={styles.headerButton}>
+              <Ionicons name="arrow-back" size={24} color={colors.text} />
+            </TouchableOpacity>
+          ),
           headerRight: () => (
             <View style={styles.headerActions}>
               <TouchableOpacity onPress={handleEdit} style={styles.headerButton}>

@@ -17,7 +17,7 @@ import { z } from 'zod';
 
 import { useTheme } from '@/hooks/useTheme';
 import { useClients, useCreateClient } from '@/hooks/useClients';
-import { useProducts } from '@/hooks/useProducts';
+import { useProducts, useCreateProduct } from '@/hooks/useProducts';
 import { useCreateInvoice } from '@/hooks/useInvoices';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -42,6 +42,16 @@ const clientSchema = z.object({
   email: z.string().email('Invalid email').optional().or(z.literal('')),
   phone: z.string().optional(),
   address: z.string().optional(),
+});
+
+const productSchema = z.object({
+  sku: z.string().min(1, 'SKU is required'),
+  name: z.string().min(1, 'Name is required'),
+  description: z.string().optional(),
+  unit_price: z.number().min(0, 'Unit price must be positive'),
+  tax_rate: z.number().min(0).max(100).optional(),
+  currency: z.string().optional(),
+  quantity_available: z.number().min(0).optional(),
 });
 
 const currencyOptions: SelectOption[] = [
@@ -88,6 +98,7 @@ export default function CreateInvoiceScreen() {
   const { colors } = useTheme();
   const createInvoice = useCreateInvoice();
   const createClient = useCreateClient();
+  const createProduct = useCreateProduct();
   const { data: clientsData } = useClients();
   const { data: productsData } = useProducts();
 
@@ -109,6 +120,7 @@ export default function CreateInvoiceScreen() {
   const [showProductModal, setShowProductModal] = useState(false);
   const [showCustomItemModal, setShowCustomItemModal] = useState(false);
   const [showCreateClientModal, setShowCreateClientModal] = useState(false);
+  const [showCreateProductModal, setShowCreateProductModal] = useState(false);
 
   // New client form
   const [newClient, setNewClient] = useState({
@@ -118,6 +130,17 @@ export default function CreateInvoiceScreen() {
     address: '',
   });
   const [clientErrors, setClientErrors] = useState<Record<string, string>>({});
+
+  // New product form
+  const [newProduct, setNewProduct] = useState({
+    sku: '',
+    name: '',
+    description: '',
+    unit_price: '',
+    tax_rate: '0',
+    quantity_available: '0',
+  });
+  const [productErrors, setProductErrors] = useState<Record<string, string>>({});
 
   // Custom item form
   const [customItem, setCustomItem] = useState({
@@ -188,7 +211,61 @@ export default function CreateInvoiceScreen() {
     }
   };
 
+  const handleCreateProduct = async () => {
+    try {
+      const validated = productSchema.parse({
+        sku: newProduct.sku,
+        name: newProduct.name,
+        description: newProduct.description || undefined,
+        unit_price: parseFloat(newProduct.unit_price) || 0,
+        tax_rate: parseFloat(newProduct.tax_rate) || 0,
+        currency: formData.currency,
+        quantity_available: parseFloat(newProduct.quantity_available) || 0,
+      });
+      
+      const result = await createProduct.mutateAsync(validated as any);
+      
+      // Add the newly created product to line items
+      const newItem: ProductItem = {
+        id: Date.now().toString(),
+        product_id: result.id,
+        name: result.name,
+        quantity: 1,
+        unit_price: parseFloat(result.unit_price),
+        tax_rate: parseFloat(result.tax_rate || '0'),
+        amount: parseFloat(result.unit_price),
+      };
+      setLineItems((prev) => [...prev, newItem]);
+      
+      // Reset and close modal
+      setNewProduct({ sku: '', name: '', description: '', unit_price: '', tax_rate: '0', quantity_available: '0' });
+      setProductErrors({});
+      setShowCreateProductModal(false);
+      setShowProductModal(false);
+      
+      Alert.alert('Success', 'Product created and added successfully!');
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        const fieldErrors: Record<string, string> = {};
+        error.errors.forEach((err) => {
+          if (err.path[0]) {
+            fieldErrors[err.path[0].toString()] = err.message;
+          }
+        });
+        setProductErrors(fieldErrors);
+      } else {
+        Alert.alert('Error', error.message || 'Failed to create product');
+      }
+    }
+  };
+
   const addProductItem = (productId: string) => {
+    if (productId === '__create_new__') {
+      setShowProductModal(false);
+      setShowCreateProductModal(true);
+      return;
+    }
+    
     const product = products.find((p) => p.id === productId);
     if (!product) return;
 
@@ -617,24 +694,36 @@ export default function CreateInvoiceScreen() {
               </TouchableOpacity>
             </View>
 
-            {products.length === 0 ? (
-              <View style={styles.emptyContainer}>
-                <Ionicons name="cube-outline" size={48} color={colors.textSecondary} />
-                <Text style={[styles.emptyText, { color: colors.textSecondary }]}>No products available</Text>
-              </View>
-            ) : (
-              <FlatList
-                data={products}
-                keyExtractor={(item) => item.id}
-                style={styles.productList}
-                renderItem={({ item }) => (
-                  <TouchableOpacity
-                    style={[styles.productItem, { borderBottomColor: colors.border }]}
-                    onPress={() => addProductItem(item.id)}
-                  >
+            <FlatList
+              data={[
+                { id: '__create_new__', name: '+ Create New Product', sku: '', unit_price: '0', tax_rate: '0', quantity_available: 0, is_active: true, description: null, user_id: '', currency: '', created_at: '', updated_at: '' },
+                ...products,
+              ]}
+              keyExtractor={(item) => item.id}
+              style={styles.productList}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={[
+                    styles.productItem,
+                    { borderBottomColor: colors.border },
+                    item.id === '__create_new__' && { backgroundColor: colors.primaryLight + '15' },
+                  ]}
+                  onPress={() => addProductItem(item.id)}
+                >
+                  {item.id === '__create_new__' ? (
                     <View style={styles.productInfo}>
-                      <Text style={[styles.productName, { color: colors.text }]}>{item.name}</Text>
-                      <Text style={[styles.productPrice, { color: colors.textSecondary }]}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                        <Ionicons name="add-circle" size={20} color={colors.primary} />
+                        <Text style={[styles.productName, { color: colors.primary, fontWeight: '600' }]}>
+                          {item.name}
+                        </Text>
+                      </View>
+                    </View>
+                  ) : (
+                    <>
+                      <View style={styles.productInfo}>
+                        <Text style={[styles.productName, { color: colors.text }]}>{item.name}</Text>
+                        <Text style={[styles.productPrice, { color: colors.textSecondary }]}>
                         {formatCurrency(parseFloat(item.unit_price), formData.currency)} • Tax: {item.tax_rate}%
                       </Text>
                       {item.sku && (
@@ -642,12 +731,111 @@ export default function CreateInvoiceScreen() {
                       )}
                     </View>
                     <Ionicons name="add-circle-outline" size={24} color={colors.primary} />
-                  </TouchableOpacity>
-                )}
-              />
-            )}
+                  </>
+                  )}
+                </TouchableOpacity>
+              )}
+            />
           </View>
         </View>
+      </Modal>
+
+      {/* Create Product Modal */}
+      <Modal visible={showCreateProductModal} animationType="slide" transparent>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.modalOverlay}
+        >
+          <View style={[styles.modalContent, { backgroundColor: colors.surface }]}>
+            <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
+              <Text style={[styles.modalTitle, { color: colors.text }]}>Create New Product</Text>
+              <TouchableOpacity onPress={() => setShowCreateProductModal(false)}>
+                <Ionicons name="close" size={24} color={colors.text} />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView style={styles.modalBody} keyboardShouldPersistTaps="handled">
+              <FormField label="SKU" error={productErrors.sku} required>
+                <Input
+                  value={newProduct.sku}
+                  onChangeText={(value) => setNewProduct((prev) => ({ ...prev, sku: value }))}
+                  placeholder="PROD-01234"
+                  error={!!productErrors.sku}
+                />
+              </FormField>
+
+              <FormField label="Name" error={productErrors.name} required>
+                <Input
+                  value={newProduct.name}
+                  onChangeText={(value) => setNewProduct((prev) => ({ ...prev, name: value }))}
+                  placeholder="Product name"
+                  error={!!productErrors.name}
+                />
+              </FormField>
+
+              <FormField label="Description">
+                <TextArea
+                  value={newProduct.description}
+                  onChangeText={(value) => setNewProduct((prev) => ({ ...prev, description: value }))}
+                  placeholder="Product description"
+                  numberOfLines={3}
+                />
+              </FormField>
+
+              <View style={styles.row}>
+                <View style={styles.halfField}>
+                  <FormField label="Unit Price" error={productErrors.unit_price} required>
+                    <NumberInput
+                      value={newProduct.unit_price}
+                      onChangeValue={(value) => setNewProduct((prev) => ({ ...prev, unit_price: value }))}
+                      placeholder="0.00"
+                      decimals={2}
+                      error={!!productErrors.unit_price}
+                    />
+                  </FormField>
+                </View>
+                <View style={styles.halfField}>
+                  <FormField label="Tax Rate (%)" error={productErrors.tax_rate}>
+                    <NumberInput
+                      value={newProduct.tax_rate}
+                      onChangeValue={(value) => setNewProduct((prev) => ({ ...prev, tax_rate: value }))}
+                      placeholder="0"
+                      decimals={2}
+                      error={!!productErrors.tax_rate}
+                    />
+                  </FormField>
+                </View>
+              </View>
+
+              <FormField label="Quantity Available">
+                <NumberInput
+                  value={newProduct.quantity_available}
+                  onChangeValue={(value) => setNewProduct((prev) => ({ ...prev, quantity_available: value }))}
+                  placeholder="0"
+                  decimals={0}
+                />
+              </FormField>
+            </ScrollView>
+
+            <View style={[styles.modalFooter, { borderTopColor: colors.border }]}>
+              <Button
+                title="Cancel"
+                onPress={() => {
+                  setShowCreateProductModal(false);
+                  setShowProductModal(true);
+                }}
+                variant="outline"
+                style={styles.button}
+              />
+              <Button
+                title="Create Product"
+                onPress={handleCreateProduct}
+                loading={createProduct.isPending}
+                style={styles.button}
+              />
+            </View>
+          </View>
+        </KeyboardAvoidingView>
       </Modal>
 
       {/* Custom Item Modal */}

@@ -235,7 +235,7 @@ export default function DashboardScreen() {
                 // Navigate to invoices tab first, then to the detail screen
                 router.push({
                   pathname: '/(tabs)/invoices/[id]',
-                  params: { id: invoice.id }
+                  params: { id: invoice.id, from: 'dashboard' }
                 });
               }}
               activeOpacity={0.7}
@@ -296,7 +296,7 @@ export default function DashboardScreen() {
                 // Navigate to expenses tab first, then to the detail screen
                 router.push({
                   pathname: '/(tabs)/expenses/[id]',
-                  params: { id: expense.id }
+                  params: { id: expense.id, from: 'dashboard' }
                 });
               }}
               activeOpacity={0.7}
