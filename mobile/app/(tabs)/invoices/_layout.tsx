@@ -37,7 +37,7 @@ export default function InvoicesLayout() {
       />
       <Stack.Screen 
         name="create" 
-        options={{ headerShown: true }}
+        options={{ title: "New Invoice", headerShown: true }}
       />
       <Stack.Screen 
         name="[id]" 
