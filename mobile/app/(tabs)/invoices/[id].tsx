@@ -1,12 +1,15 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, FlatList } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, FlatList, Platform, Alert } from 'react-native';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import * as Print from 'expo-print';
+import * as Sharing from 'expo-sharing';
 import { useTheme } from '@/hooks/useTheme';
 import { useInvoice, useDeleteInvoice, useUpdateInvoice } from '@/hooks/useInvoices';
 import { Card } from '@/components/ui';
 import { confirmDelete, showError, confirmAction } from '@/utils/alerts';
 import { formatCurrency, formatDate } from '@/utils/formatters';
+import { generateInvoiceHTML } from '@/utils/invoicePrint';
 
 const getStatusColor = (status: string, colors: any) => {
   switch (status) {
@@ -48,6 +51,7 @@ export default function InvoiceDetailScreen() {
   const { data: invoice, isLoading } = useInvoice(id);
   const deleteInvoice = useDeleteInvoice();
   const updateInvoice = useUpdateInvoice();
+  const [isPrinting, setIsPrinting] = useState(false);
 
   const handleBack = () => {
     if (from === 'dashboard') {
@@ -102,6 +106,49 @@ export default function InvoiceDetailScreen() {
     });
   };
 
+  const handlePrint = async () => {
+    if (!invoice) return;
+    
+    setIsPrinting(true);
+    try {
+      // Generate HTML for the invoice
+      const html = generateInvoiceHTML(invoice);
+      
+      // Create PDF
+      const { uri } = await Print.printToFileAsync({ 
+        html,
+        base64: false 
+      });
+      
+      // Check if sharing is available
+      const isAvailable = await Sharing.isAvailableAsync();
+      
+      if (isAvailable) {
+        // Share the PDF
+        await Sharing.shareAsync(uri, {
+          mimeType: 'application/pdf',
+          dialogTitle: `Invoice ${invoice.number || 'Draft'}`,
+          UTI: 'com.adobe.pdf',
+        });
+      } else {
+        // Fallback to print dialog on platforms that don't support sharing
+        await Print.printAsync({ 
+          html 
+        });
+      }
+    } catch (error: any) {
+      console.error('Print error:', error);
+      Alert.alert(
+        'Print Error',
+        'Failed to generate or print invoice. Please try again.',
+        [{ text: 'OK' }]
+      );
+    } finally {
+      setIsPrinting(false);
+    }
+  };
+
+
   if (isLoading) {
     return (
       <View style={[styles.container, styles.centered, { backgroundColor: colors.background }]}>
@@ -136,6 +183,17 @@ export default function InvoiceDetailScreen() {
           ),
           headerRight: () => (
             <View style={styles.headerActions}>
+              <TouchableOpacity 
+                onPress={handlePrint} 
+                style={styles.headerButton}
+                disabled={isPrinting}
+              >
+                <Ionicons 
+                  name={isPrinting ? "hourglass-outline" : "print-outline"} 
+                  size={22} 
+                  color={isPrinting ? colors.textSecondary : colors.primary} 
+                />
+              </TouchableOpacity>
               <TouchableOpacity onPress={handleEdit} style={styles.headerButton}>
                 <Ionicons name="pencil" size={22} color={colors.primary} />
               </TouchableOpacity>
