@@ -40,6 +40,9 @@ class Settings(BaseModel):
     # Frontend URL for email verification links
     FRONTEND_URL: str = os.getenv("FRONTEND_URL", "http://localhost:3000")
     
+    # Mobile app scheme for deep linking
+    MOBILE_APP_SCHEME: str = os.getenv("MOBILE_APP_SCHEME", "invoyq")
+    
     # Google OAuth settings
     GOOGLE_CLIENT_ID: str | None = os.getenv("GOOGLE_CLIENT_ID")
     GOOGLE_CLIENT_SECRET: str | None = os.getenv("GOOGLE_CLIENT_SECRET")

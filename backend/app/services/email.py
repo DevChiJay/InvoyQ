@@ -131,6 +131,73 @@ class EmailService:
         """
         
         return self._send_email(to_email, subject, html_content, text_content)
+    
+    def send_password_reset_email(self, to_email: str, user_name: str, reset_url: str) -> bool:
+        """Send password reset link to user"""
+        subject = "Reset your InvoYQ password"
+        
+        html_content = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <style>
+                body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
+                .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+                .header {{ background-color: #4F46E5; color: white; padding: 20px; text-align: center; }}
+                .content {{ background-color: #f9fafb; padding: 30px; }}
+                .button {{ 
+                    display: inline-block; 
+                    padding: 12px 30px; 
+                    background-color: #4F46E5; 
+                    color: white; 
+                    text-decoration: none; 
+                    border-radius: 5px; 
+                    margin: 20px 0;
+                }}
+                .footer {{ text-align: center; padding: 20px; color: #666; font-size: 12px; }}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <h1>Password Reset Request</h1>
+                </div>
+                <div class="content">
+                    <h2>Hi {user_name},</h2>
+                    <p>We received a request to reset your password for your InvoYQ account. Click the button below to create a new password:</p>
+                    <p style="text-align: center;">
+                        <a href="{reset_url}" class="button" style="color: white;">Reset Password</a>
+                    </p>
+                    <p>Or copy and paste this link into your browser:</p>
+                    <p style="word-break: break-all; color: #4F46E5;">{reset_url}</p>
+                    <p>This link will expire in 1 hour.</p>
+                    <p>If you didn't request a password reset, you can safely ignore this email. Your password will remain unchanged.</p>
+                </div>
+                <div class="footer">
+                    <p>&copy; 2025 InvoYQ. All rights reserved.</p>
+                </div>
+            </div>
+        </body>
+        </html>
+        """
+        
+        text_content = f"""
+        Password Reset Request
+        
+        Hi {user_name},
+        
+        We received a request to reset your password for your InvoYQ account. Visit this link to create a new password:
+        
+        {reset_url}
+        
+        This link will expire in 1 hour.
+        
+        If you didn't request a password reset, you can safely ignore this email. Your password will remain unchanged.
+        
+        © 2025 InvoYQ. All rights reserved.
+        """
+        
+        return self._send_email(to_email, subject, html_content, text_content)
 
 
 # Create singleton instance

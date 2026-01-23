@@ -46,6 +46,10 @@ class UserInDB(UserOut):
     verification_token: Optional[str] = None
     verification_token_expires: Optional[datetime] = None
     
+    # Password reset
+    password_reset_token: Optional[str] = None
+    password_reset_token_expires: Optional[datetime] = None
+    
     class Config:
         populate_by_name = True
 
@@ -108,6 +112,21 @@ class UserRepository(BaseRepository[UserInDB]):
             user = await user_repo.get_by_verification_token("abc123...")
         """
         return await self.get_one({"verification_token": token})
+    
+    async def get_by_password_reset_token(self, token: str) -> Optional[UserInDB]:
+        """
+        Find user by password reset token.
+        
+        Args:
+            token: Password reset token
+            
+        Returns:
+            User document or None if not found
+            
+        Example:
+            user = await user_repo.get_by_password_reset_token("xyz789...")
+        """
+        return await self.get_one({"password_reset_token": token})
     
     async def create_user(
         self,

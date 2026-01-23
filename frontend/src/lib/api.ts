@@ -165,6 +165,13 @@ export const authAPI = {
   resendVerification: (email: string) =>
     api.post<{ message: string }>('/v1/auth/resend-verification', { email }),
   
+  // Password reset
+  requestPasswordReset: (email: string) =>
+    api.post<{ message: string }>('/v1/auth/request-password-reset', { email }),
+  
+  resetPassword: (token: string, new_password: string) =>
+    api.post<{ message: string }>('/v1/auth/reset-password', { token, new_password }),
+  
   // Google OAuth (NEW)
   googleAuth: (token: string) =>
     api.post<AuthResponse>('/v1/auth/google', { token }),

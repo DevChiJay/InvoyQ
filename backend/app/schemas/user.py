@@ -71,3 +71,18 @@ class ResendVerificationRequest(BaseModel):
     """Request to resend verification email"""
     email: EmailStr
 
+
+class PasswordResetRequest(BaseModel):
+    """Request to reset password with token"""
+    token: str
+    new_password: str
+    
+    @field_validator('new_password')
+    @classmethod
+    def validate_password(cls, v: str) -> str:
+        if len(v) < 6:
+            raise ValueError('Password must be at least 6 characters long')
+        if not re.search(r'\d', v):
+            raise ValueError('Password must contain at least 1 number')
+        return v
+

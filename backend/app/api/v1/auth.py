@@ -12,7 +12,7 @@ from app.db.mongo import get_database
 from app.repositories.user_repository import UserRepository
 from app.repositories.refresh_token_repository import RefreshTokenRepository
 from app.schemas.auth import Token, TokenRefresh, AccessToken
-from app.schemas.user import UserCreate, UserOut, EmailVerificationResponse, ResendVerificationRequest
+from app.schemas.user import UserCreate, UserOut, EmailVerificationResponse, ResendVerificationRequest, PasswordResetRequest
 from app.core.security import verify_password, get_password_hash
 from app.services.email import email_service
 
@@ -368,3 +368,81 @@ async def logout(
     await refresh_token_repo.revoke_token(token_data.refresh_token)
     
     return {"message": "Logged out successfully"}
+
+
+# ==================== Password Reset ====================
+
+@router.post("/request-password-reset")
+async def request_password_reset(
+    request: ResendVerificationRequest,
+    db: AsyncIOMotorDatabase = Depends(get_database)
+):
+    """Request a password reset email"""
+    user_repo = UserRepository(db)
+    
+    user = await user_repo.get_by_email(request.email)
+    
+    # Don't reveal if email exists or not for security
+    if not user:
+        return {"message": "If the email exists, a password reset link has been sent."}
+    
+    # Generate reset token and expiry (1 hour)
+    reset_token = generate_verification_token()
+    reset_token_expires = datetime.utcnow() + timedelta(hours=1)
+    
+    await user_repo.update(
+        user.id,
+        {
+            "password_reset_token": reset_token,
+            "password_reset_token_expires": reset_token_expires
+        }
+    )
+    
+    # Send password reset email
+    try:
+        # Use mobile app deep link for password reset
+        reset_url = f"{settings.MOBILE_APP_SCHEME}://(auth)/reset-password?token={reset_token}"
+        await email_service.send_password_reset_email(
+            to_email=user.email,
+            user_name=user.full_name,
+            reset_url=reset_url
+        )
+    except Exception as e:
+        print(f"Failed to send password reset email: {e}")
+        # Don't fail the request even if email fails
+    
+    return {"message": "If the email exists, a password reset link has been sent."}
+
+
+@router.post("/reset-password")
+async def reset_password(
+    request: PasswordResetRequest,
+    db: AsyncIOMotorDatabase = Depends(get_database)
+):
+    """Reset password using reset token"""
+    user_repo = UserRepository(db)
+    
+    # Find user by reset token
+    user = await user_repo.get_by_password_reset_token(request.token)
+    
+    if not user:
+        raise HTTPException(status_code=400, detail="Invalid or expired reset token")
+    
+    # Check if token has expired
+    if user.password_reset_token_expires and user.password_reset_token_expires < datetime.utcnow():
+        raise HTTPException(status_code=400, detail="Reset token has expired. Please request a new one.")
+    
+    # Hash new password
+    hashed_password = get_password_hash(request.new_password)
+    
+    # Update password and clear reset token
+    await user_repo.update(
+        user.id,
+        {
+            "hashed_password": hashed_password,
+            "password_reset_token": None,
+            "password_reset_token_expires": None
+        }
+    )
+    
+    return {"message": "Password reset successfully"}
