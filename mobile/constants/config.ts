@@ -43,6 +43,7 @@ export const PAGINATION = {
 
 export const STORAGE_KEYS = {
   AUTH_TOKEN: 'invoyq_auth_token',
+  REFRESH_TOKEN: 'invoyq_refresh_token',
   USER_PREFERENCES: 'invoyq_preferences',
   OFFLINE_QUEUE: 'invoyq_offline_queue',
 };

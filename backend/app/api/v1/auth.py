@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 from typing import Optional
 import secrets
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Header
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import JWTError, jwt
 from motor.motor_asyncio import AsyncIOMotorDatabase
@@ -10,7 +10,8 @@ from motor.motor_asyncio import AsyncIOMotorDatabase
 from app.core.config import settings
 from app.db.mongo import get_database
 from app.repositories.user_repository import UserRepository
-from app.schemas.auth import Token
+from app.repositories.refresh_token_repository import RefreshTokenRepository
+from app.schemas.auth import Token, TokenRefresh, AccessToken
 from app.schemas.user import UserCreate, UserOut, EmailVerificationResponse, ResendVerificationRequest
 from app.core.security import verify_password, get_password_hash
 from app.services.email import email_service
@@ -86,8 +87,13 @@ async def register(user_in: UserCreate, db: AsyncIOMotorDatabase = Depends(get_d
 
 
 @router.post("/login", response_model=Token)
-async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: AsyncIOMotorDatabase = Depends(get_database)):
+async def login(
+    form_data: OAuth2PasswordRequestForm = Depends(),
+    db: AsyncIOMotorDatabase = Depends(get_database),
+    x_device_id: Optional[str] = Header(None)
+):
     user_repo = UserRepository(db)
+    refresh_token_repo = RefreshTokenRepository(db)
     
     user = await user_repo.get_by_email(form_data.username)
     if not user or not user.hashed_password or not verify_password(form_data.password, user.hashed_password):
@@ -100,8 +106,21 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: AsyncIOMot
             detail="Email not verified. Please check your email for verification link."
         )
     
+    # Create access token
     access_token = create_access_token({"sub": user.id})
-    return {"access_token": access_token, "token_type": "bearer"}
+    
+    # Create refresh token
+    refresh_token_doc = await refresh_token_repo.create_refresh_token(
+        user_id=user.id,
+        expires_delta=timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS),
+        device_id=x_device_id
+    )
+    
+    return {
+        "access_token": access_token,
+        "refresh_token": refresh_token_doc.token,
+        "token_type": "bearer"
+    }
 
 
 @router.get("/verify-email", response_model=EmailVerificationResponse)
@@ -269,3 +288,83 @@ async def google_callback(code: str, db: AsyncIOMotorDatabase = Depends(get_data
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"OAuth error: {str(e)}")
 
+
+@router.post("/refresh", response_model=Token)
+async def refresh_token(
+    token_data: TokenRefresh,
+    db: AsyncIOMotorDatabase = Depends(get_database),
+    x_device_id: Optional[str] = Header(None)
+):
+    """
+    Refresh access token using refresh token.
+    
+    Implements token rotation: Each refresh invalidates the old refresh token
+    and issues a new one. If a revoked token is reused, all user sessions are revoked
+    to prevent token theft.
+    """
+    refresh_token_repo = RefreshTokenRepository(db)
+    
+    # Check if token was already used (reuse detection)
+    if await refresh_token_repo.detect_token_reuse(token_data.refresh_token):
+        # Security breach detected - revoke all user tokens
+        token_doc = await refresh_token_repo.get_by_token(token_data.refresh_token)
+        if token_doc:
+            await refresh_token_repo.revoke_all_user_tokens(token_doc.user_id)
+        
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token reuse detected. All sessions have been revoked for security."
+        )
+    
+    # Validate refresh token
+    if not await refresh_token_repo.is_valid(token_data.refresh_token):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired refresh token"
+        )
+    
+    # Get token document
+    token_doc = await refresh_token_repo.get_by_token(token_data.refresh_token)
+    if not token_doc:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid refresh token"
+        )
+    
+    # Create new access token
+    access_token = create_access_token({"sub": token_doc.user_id})
+    
+    # Create new refresh token (rotation)
+    new_refresh_token_doc = await refresh_token_repo.create_refresh_token(
+        user_id=token_doc.user_id,
+        expires_delta=timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS),
+        device_id=x_device_id or token_doc.device_id
+    )
+    
+    # Revoke old refresh token
+    await refresh_token_repo.revoke_token(
+        token_data.refresh_token,
+        replaced_by_token=new_refresh_token_doc.token
+    )
+    
+    return {
+        "access_token": access_token,
+        "refresh_token": new_refresh_token_doc.token,
+        "token_type": "bearer"
+    }
+
+
+@router.post("/logout")
+async def logout(
+    token_data: TokenRefresh,
+    db: AsyncIOMotorDatabase = Depends(get_database)
+):
+    """
+    Logout user by revoking their refresh token.
+    """
+    refresh_token_repo = RefreshTokenRepository(db)
+    
+    # Revoke the refresh token
+    await refresh_token_repo.revoke_token(token_data.refresh_token)
+    
+    return {"message": "Logged out successfully"}

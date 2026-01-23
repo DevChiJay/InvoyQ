@@ -14,7 +14,7 @@ interface AuthState {
   // Actions
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string, full_name: string) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
   fetchUser: () => Promise<void>;
   clearError: () => void;
   setHasHydrated: (hasHydrated: boolean) => void;
@@ -22,7 +22,7 @@ interface AuthState {
   
   // OAuth helpers
   setUser: (user: User) => void;
-  setToken: (token: string) => void;
+  setToken: (token: string, refreshToken?: string) => void;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -65,9 +65,9 @@ export const useAuthStore = create<AuthState>()(
         try {
           // Step 1: Login and get token
           const loginResponse = await authAPI.login(email, password);
-          const { access_token } = loginResponse.data;
+          const { access_token, refresh_token } = loginResponse.data;
           
-          setTokens(access_token);
+          setTokens(access_token, refresh_token);
           
           // Step 2: Fetch user details with the token
           const userResponse = await authAPI.getCurrentUser();
@@ -124,7 +124,15 @@ export const useAuthStore = create<AuthState>()(
         }
       },
 
-      logout: () => {
+      logout: async () => {
+        try {
+          // Call logout API to invalidate refresh token
+          await authAPI.logout();
+        } catch (error) {
+          // Continue with local logout even if API call fails
+          console.error('Logout API call failed:', error);
+        }
+        
         clearTokens();
         clearUser();
         set({
@@ -177,8 +185,8 @@ export const useAuthStore = create<AuthState>()(
         });
       },
       
-      setToken: (token: string) => {
-        setTokens(token);
+      setToken: (token: string, refreshToken?: string) => {
+        setTokens(token, refreshToken);
       },
     }),
     {

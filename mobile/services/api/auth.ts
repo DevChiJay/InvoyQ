@@ -1,5 +1,6 @@
 import { apiClient } from './client';
 import { Token, UserRead, LoginRequest, RegisterRequest } from '@/types/auth';
+import { tokenStorage } from '@/services/storage/tokenStorage';
 
 export const authApi = {
   register: async (data: RegisterRequest): Promise<UserRead> => {
@@ -15,7 +16,25 @@ export const authApi = {
     const response = await apiClient.post('/auth/login', formData, {
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     });
-    return response.data;
+    
+    // Store both access and refresh tokens
+    const tokenData: Token = response.data;
+    await tokenStorage.setTokens(tokenData.access_token, tokenData.refresh_token);
+    
+    return tokenData;
+  },
+
+  logout: async (): Promise<void> => {
+    const refreshToken = await tokenStorage.getRefreshToken();
+    if (refreshToken) {
+      try {
+        await apiClient.post('/auth/logout', { refresh_token: refreshToken });
+      } catch (error) {
+        console.error('Logout API error:', error);
+        // Continue with local logout even if API call fails
+      }
+    }
+    await tokenStorage.removeAllTokens();
   },
 
   verifyEmail: async (token: string): Promise<{ message: string; email: string }> => {

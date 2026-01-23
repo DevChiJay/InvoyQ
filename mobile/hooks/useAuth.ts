@@ -33,7 +33,7 @@ export function useAuth() {
   const loginMutation = useMutation({
     mutationFn: authApi.login,
     onSuccess: async (data) => {
-      await tokenStorage.setToken(data.access_token);
+      // Tokens are already stored in authApi.login
       queryClient.invalidateQueries({ queryKey: AUTH_KEYS.currentUser });
       router.replace('/(tabs)');
     },
@@ -42,7 +42,7 @@ export function useAuth() {
   // Logout mutation
   const logoutMutation = useMutation({
     mutationFn: async () => {
-      await tokenStorage.removeToken();
+      await authApi.logout(); // This will call the API and remove tokens
       queryClient.clear(); // Clear all cached data
     },
     onSuccess: () => {
