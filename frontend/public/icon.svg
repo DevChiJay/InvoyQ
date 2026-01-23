@@ -1,10 +1,22 @@
-<!-- filepath: d:\Work\InvoYQ\public\icons\favicon-v3.svg -->
-<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect width="32" height="32" rx="6" fill="#1E293B"/>
-  <path d="M9 6C9 5.44772 9.44772 5 10 5H18L23 10V26C23 26.5523 22.5523 27 22 27H10C9.44772 27 9 26.5523 9 26V6Z" fill="white"/>
-  <path d="M18 5V9C18 9.55228 18.4477 10 19 10H23L18 5Z" fill="#CBD5E1"/>
-  <rect x="12" y="14" width="8" height="1.2" rx="0.6" fill="#2563EB"/>
-  <rect x="12" y="17" width="6" height="1.2" rx="0.6" fill="#2563EB"/>
-  <rect x="12" y="20" width="7" height="1.2" rx="0.6" fill="#2563EB"/>
-  <path d="M25 22L24 19L23 22M27 20L26 23L25 20M27 24L24 22L27 20" stroke="#F59E0B" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+<svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Favicon - Simple version for small sizes -->
+  
+  <!-- Background -->
+  <rect width="48" height="48" rx="8" fill="#6366F1"/>
+  
+  <!-- Document shape -->
+  <rect x="10" y="8" width="28" height="32" rx="3" fill="white" opacity="0.95"/>
+  
+  <!-- Document lines -->
+  <line x1="14" y1="14" x2="34" y2="14" stroke="#6366F1" stroke-width="1.5" stroke-linecap="round" opacity="0.4"/>
+  <line x1="14" y1="18" x2="30" y2="18" stroke="#6366F1" stroke-width="1.5" stroke-linecap="round" opacity="0.3"/>
+  <line x1="14" y1="22" x2="32" y2="22" stroke="#E5E7EB" stroke-width="1.5" stroke-linecap="round"/>
+  <line x1="14" y1="26" x2="28" y2="26" stroke="#E5E7EB" stroke-width="1.5" stroke-linecap="round"/>
+  
+  <!-- Q letter -->
+  <circle cx="24" cy="32" r="6" fill="#6366F1"/>
+  <circle cx="24" cy="32" r="4" fill="white"/>
+  <text x="24" y="35.5" font-family="Arial, sans-serif" font-size="7" font-weight="700" fill="#6366F1" text-anchor="middle">
+    Q
+  </text>
 </svg>
