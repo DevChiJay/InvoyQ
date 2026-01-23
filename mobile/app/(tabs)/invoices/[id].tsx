@@ -5,7 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
 import { useTheme } from '@/hooks/useTheme';
-import { useInvoice, useDeleteInvoice, useUpdateInvoice } from '@/hooks/useInvoices';
+import { useInvoice, useDeleteInvoice, useUpdateInvoice, useSendInvoiceEmail } from '@/hooks/useInvoices';
 import { Card } from '@/components/ui';
 import { confirmDelete, showError, confirmAction } from '@/utils/alerts';
 import { formatCurrency, formatDate } from '@/utils/formatters';
@@ -51,6 +51,7 @@ export default function InvoiceDetailScreen() {
   const { data: invoice, isLoading } = useInvoice(id);
   const deleteInvoice = useDeleteInvoice();
   const updateInvoice = useUpdateInvoice();
+  const sendInvoiceEmail = useSendInvoiceEmail();
   const [isPrinting, setIsPrinting] = useState(false);
 
   const handleBack = () => {
@@ -97,14 +98,34 @@ export default function InvoiceDetailScreen() {
   };
 
   const handleSend = () => {
-    confirmAction('Send Invoice', 'Send this invoice to the client?', 'Send', async () => {
-      try {
-        await updateInvoice.mutateAsync({ id, data: { status: 'sent' } });
-      } catch (error: any) {
-        showError(error.response?.data?.detail || 'Failed to send invoice');
+    if (!invoice?.client?.email) {
+      Alert.alert(
+        'No Email Address',
+        'This client does not have an email address. Please add one before sending.',
+        [{ text: 'OK' }]
+      );
+      return;
+    }
+
+    confirmAction(
+      'Send Invoice',
+      `Send this invoice to ${invoice.client.email}?`,
+      'Send',
+      async () => {
+        try {
+          await sendInvoiceEmail.mutateAsync({ id });
+          Alert.alert(
+            'Success',
+            `Invoice sent successfully to ${invoice.client.email}`,
+            [{ text: 'OK' }]
+          );
+        } catch (error: any) {
+          showError(error.response?.data?.detail || 'Failed to send invoice');
+        }
       }
-    });
+    );
   };
+
 
   const handlePrint = async () => {
     if (!invoice) return;

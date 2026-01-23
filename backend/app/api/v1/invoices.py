@@ -14,6 +14,8 @@ from app.repositories.product_repository import ProductRepository
 from app.schemas.invoice_mongo import (
     InvoiceCreate, InvoiceOut, InvoiceUpdate, UserBusinessInfo
 )
+from app.services.email import email_service
+from pydantic import BaseModel
 
 
 router = APIRouter()
@@ -283,3 +285,80 @@ async def delete_invoice(
         raise HTTPException(status_code=404, detail="Invoice not found")
     
     return None
+
+
+class SendInvoiceRequest(BaseModel):
+    """Request body for sending invoice via email"""
+    email: Optional[str] = None
+
+
+@router.post("/invoices/{invoice_id}/send")
+async def send_invoice_email(
+    invoice_id: str,
+    request: SendInvoiceRequest,
+    db: AsyncIOMotorDatabase = Depends(get_database),
+    current_user: UserInDB = Depends(get_current_user)
+):
+    """
+    Send invoice via email to client.
+    
+    If email is not provided, uses the client's email from the invoice.
+    Updates invoice status to 'sent' if currently 'draft'.
+    """
+    repo = InvoiceRepository(db)
+    client_repo = ClientRepository(db)
+    
+    # Get invoice
+    invoice = await repo.get_by_id_and_user(
+        invoice_id=invoice_id,
+        user_id=str(current_user.id)
+    )
+    
+    if not invoice:
+        raise HTTPException(status_code=404, detail="Invoice not found")
+    
+    # Get client to get email
+    client = await client_repo.get_by_id_and_user(
+        client_id=invoice.client_id,
+        user_id=str(current_user.id)
+    )
+    
+    if not client:
+        raise HTTPException(status_code=404, detail="Client not found")
+    
+    # Determine recipient email
+    recipient_email = request.email or client.email
+    
+    if not recipient_email:
+        raise HTTPException(
+            status_code=400,
+            detail="Client email not found. Please provide an email address."
+        )
+    
+    # Update status to sent if it's draft
+    if invoice.status == "draft":
+        await repo.update_invoice(
+            invoice_id=invoice_id,
+            user_id=str(current_user.id),
+            invoice_data=InvoiceUpdate(status="sent")
+        )
+    
+    # Send email
+    try:
+        await email_service.send_invoice_email(
+            to_email=recipient_email,
+            client_name=client.name,
+            invoice_number=invoice.number or "Draft",
+            invoice_total=str(invoice.total),
+            currency=invoice.currency,
+            due_date=invoice.due_date.strftime("%B %d, %Y") if invoice.due_date else "Not specified",
+            user_name=current_user.full_name or "InvoYQ User",
+            company_name=getattr(current_user, 'company_name', None)
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to send email: {str(e)}"
+        )
+    
+    return {"message": f"Invoice sent successfully to {recipient_email}"}

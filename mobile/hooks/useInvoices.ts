@@ -58,3 +58,15 @@ export function useDeleteInvoice() {
     },
   });
 }
+
+export function useSendInvoiceEmail() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, email }: { id: string; email?: string }) =>
+      invoicesApi.sendEmail(id, email || ''),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: INVOICE_KEYS.all });
+      queryClient.invalidateQueries({ queryKey: INVOICE_KEYS.detail(variables.id) });
+    },
+  });
+}

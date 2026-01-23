@@ -198,6 +198,116 @@ class EmailService:
         """
         
         return self._send_email(to_email, subject, html_content, text_content)
+    
+    def send_invoice_email(
+        self,
+        to_email: str,
+        client_name: str,
+        invoice_number: str,
+        invoice_total: str,
+        currency: str,
+        due_date: str,
+        user_name: str,
+        company_name: Optional[str] = None
+    ) -> bool:
+        """Send invoice to client via email"""
+        sender = company_name or user_name
+        subject = f"Invoice {invoice_number} from {sender}"
+        
+        html_content = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <style>
+                body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
+                .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+                .header {{ background-color: #4F46E5; color: white; padding: 20px; text-align: center; }}
+                .content {{ background-color: #f9fafb; padding: 30px; }}
+                .invoice-details {{ 
+                    background-color: white; 
+                    border: 1px solid #e5e7eb; 
+                    border-radius: 8px; 
+                    padding: 20px; 
+                    margin: 20px 0;
+                }}
+                .detail-row {{ 
+                    display: flex; 
+                    justify-content: space-between; 
+                    padding: 10px 0; 
+                    border-bottom: 1px solid #f3f4f6;
+                }}
+                .detail-row:last-child {{ border-bottom: none; }}
+                .detail-label {{ color: #6b7280; font-weight: 500; }}
+                .detail-value {{ font-weight: 600; }}
+                .total-row {{ 
+                    background-color: #f9fafb; 
+                    padding: 15px; 
+                    margin-top: 10px; 
+                    border-radius: 5px;
+                    font-size: 18px;
+                }}
+                .footer {{ text-align: center; padding: 20px; color: #666; font-size: 12px; }}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <h1>New Invoice</h1>
+                </div>
+                <div class="content">
+                    <h2>Hi {client_name},</h2>
+                    <p>{sender} has sent you an invoice for your review and payment.</p>
+                    
+                    <div class="invoice-details">
+                        <div class="detail-row">
+                            <span class="detail-label">Invoice Number</span>
+                            <span class="detail-value">{invoice_number}</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Due Date</span>
+                            <span class="detail-value">{due_date}</span>
+                        </div>
+                        <div class="total-row">
+                            <div style="display: flex; justify-content: space-between;">
+                                <span class="detail-label">Total Amount</span>
+                                <span class="detail-value" style="color: #4F46E5; font-size: 20px;">{currency} {invoice_total}</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <p>Please review the invoice details and arrange payment by the due date.</p>
+                    <p>If you have any questions about this invoice, please contact {user_name}.</p>
+                </div>
+                <div class="footer">
+                    <p>This invoice was sent via InvoYQ</p>
+                    <p>&copy; 2025 InvoYQ. All rights reserved.</p>
+                </div>
+            </div>
+        </body>
+        </html>
+        """
+        
+        text_content = f"""
+        New Invoice from {sender}
+        
+        Hi {client_name},
+        
+        {sender} has sent you an invoice for your review and payment.
+        
+        Invoice Details:
+        - Invoice Number: {invoice_number}
+        - Due Date: {due_date}
+        - Total Amount: {currency} {invoice_total}
+        
+        Please review the invoice details and arrange payment by the due date.
+        
+        If you have any questions about this invoice, please contact {user_name}.
+        
+        This invoice was sent via InvoYQ
+        © 2025 InvoYQ. All rights reserved.
+        """
+        
+        return self._send_email(to_email, subject, html_content, text_content)
 
 
 # Create singleton instance

@@ -246,6 +246,9 @@ export const invoicesAPI = {
   
   delete: (id: string) =>
     api.delete(`/v1/invoices/${id}`),
+  
+  sendEmail: (id: string, email?: string) =>
+    api.post<{ message: string }>(`/v1/invoices/${id}/send`, { email }),
 };
 
 export const generateAPI = {

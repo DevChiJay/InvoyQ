@@ -2,7 +2,7 @@
 
 import { useState, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { useInvoice, useDeleteInvoice } from '@/lib/hooks/use-invoices';
+import { useInvoice, useDeleteInvoice, useSendInvoiceEmail } from '@/lib/hooks/use-invoices';
 import { useClient } from '@/lib/hooks/use-clients';
 import { useSendReminder } from '@/lib/hooks/use-payments';
 import { Card, CardContent } from '@/components/ui/card';
@@ -25,6 +25,7 @@ export default function InvoiceDetailPage() {
   const { data: client } = useClient(invoice?.client_id || '');
   const deleteInvoice = useDeleteInvoice();
   const sendReminder = useSendReminder();
+  const sendInvoiceEmail = useSendInvoiceEmail();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const previewRef = useRef<HTMLDivElement>(null);
 
@@ -54,6 +55,22 @@ export default function InvoiceDetailPage() {
         loading: 'Sending reminder email...',
         success: 'Reminder sent to client successfully',
         error: 'Failed to send reminder. Please try again.',
+      }
+    );
+  };
+
+  const handleSendInvoice = () => {
+    if (!client?.email) {
+      toast.error('Client does not have an email address');
+      return;
+    }
+    
+    toast.promise(
+      sendInvoiceEmail.mutateAsync({ id: invoiceId }),
+      {
+        loading: 'Sending invoice email...',
+        success: `Invoice sent to ${client.email}`,
+        error: 'Failed to send invoice. Please try again.',
       }
     );
   };
@@ -148,6 +165,15 @@ export default function InvoiceDetailPage() {
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
+          <Button
+            variant="default"
+            size="sm"
+            onClick={handleSendInvoice}
+            disabled={sendInvoiceEmail.isPending || invoice.status === 'paid' || !client?.email}
+          >
+            <Bell className="mr-2 h-4 w-4" />
+            {sendInvoiceEmail.isPending ? 'Sending...' : 'Send Invoice'}
+          </Button>
           <ProFeatureGate feature="Email reminders">
             <Button
               variant="outline"

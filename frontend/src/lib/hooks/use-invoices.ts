@@ -82,3 +82,20 @@ export const useDeleteInvoice = () => {
     },
   });
 };
+
+export const useSendInvoiceEmail = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, email }: { id: string; email?: string }) => invoicesAPI.sendEmail(id, email),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['invoices'] });
+      toast.success('Invoice sent successfully');
+    },
+    onError: (error: unknown) => {
+      const err = error as { response?: { data?: { detail?: unknown } } };
+      const message = formatErrorMessage(err.response?.data?.detail, 'Failed to send invoice');
+      toast.error(message);
+    },
+  });
+};
