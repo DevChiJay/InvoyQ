@@ -8,10 +8,12 @@ import { ActivityIndicator, View } from 'react-native';
 import { OfflineBanner } from '@/components/ui/OfflineBanner';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { analytics } from '@/utils/analytics';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function RootLayout() {
   const [isReady, setIsReady] = useState(false);
   const [hasToken, setHasToken] = useState(false);
+  const [hasSeenOnboarding, setHasSeenOnboarding] = useState(false);
   const segments = useSegments();
   const router = useRouter();
 
@@ -31,6 +33,8 @@ export default function RootLayout() {
 
     const initAuth = async () => {
       await checkAuth();
+      const onboardingSeen = await AsyncStorage.getItem('hasSeenOnboarding');
+      setHasSeenOnboarding(!!onboardingSeen);
       setIsReady(true);
     };
 
@@ -44,19 +48,6 @@ export default function RootLayout() {
     }
   }, [segments, isReady]);
 
-  useEffect(() => {
-    if (!isReady) return;
-
-    const inAuthGroup = segments[0] === '(auth)';
-
-    if (!hasToken && !inAuthGroup) {
-      // Redirect to login if no token and not in auth screens
-      router.replace('/(auth)/login');
-    } else if (hasToken && inAuthGroup) {
-      // Redirect to tabs if has token but still in auth screens
-      router.replace('/(tabs)');
-    }
-  }, [isReady, hasToken, segments]);
 
   if (!isReady) {
     return (

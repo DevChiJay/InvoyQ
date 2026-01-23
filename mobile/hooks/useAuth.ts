@@ -12,10 +12,16 @@ export const AUTH_KEYS = {
 export function useAuth() {
   const queryClient = useQueryClient();
 
-  // Get current user
+  // Get current user - only fetch if we have a token
   const { data: user, isLoading, error, refetch } = useQuery({
     queryKey: AUTH_KEYS.currentUser,
-    queryFn: userApi.getMe,
+    queryFn: async () => {
+      const hasToken = await tokenStorage.hasToken();
+      if (!hasToken) {
+        return null;
+      }
+      return userApi.getMe();
+    },
     retry: false,
     staleTime: 5 * 60 * 1000,
   });
