@@ -83,74 +83,98 @@ export default function DashboardScreen() {
           <Text style={styles.statLabel}>Total Revenue</Text>
         </GradientCard>
 
-        <GradientCard
-          colors={[colors.error, '#DC2626']}
-          style={styles.statCard}
+        <TouchableOpacity
+          onPress={() => router.push('/(tabs)/expenses')}
+          activeOpacity={0.8}
+          style={{ flex: 1 }}
         >
-          <Ionicons name="trending-down" size={24} color="#FFFFFF" />
-          <Text style={styles.statValue}>{formatCurrency(totalExpenses)}</Text>
-          <Text style={styles.statLabel}>Total Expenses</Text>
-        </GradientCard>
+          <GradientCard
+            colors={[colors.error, '#DC2626']}
+            style={styles.statCard}
+          >
+            <Ionicons name="trending-down" size={24} color="#FFFFFF" />
+            <Text style={styles.statValue}>{formatCurrency(totalExpenses)}</Text>
+            <Text style={styles.statLabel}>Total Expenses</Text>
+          </GradientCard>
+        </TouchableOpacity>
       </View>
 
       {/* Quick Stats */}
       <View style={styles.quickStats}>
-        <Card variant="elevated" style={styles.quickStatCard}>
-          <View style={styles.quickStatContent}>
-            <IconBadge
-              icon="document-text-outline"
-              backgroundColor={colors.accentLight + '20'}
-              iconColor={colors.accent}
-              size={40}
-            />
-            <View style={styles.quickStatInfo}>
-              <Text style={[styles.quickStatValue, { color: colors.text }]}>
-                {totalInvoices}
-              </Text>
-              <Text style={[styles.quickStatLabel, { color: colors.textSecondary }]}>
-                Invoices
-              </Text>
+        <TouchableOpacity
+          onPress={() => router.push('/(tabs)/invoices')}
+          activeOpacity={0.7}
+          style={{ flex: 1 }}
+        >
+          <Card variant="elevated" style={styles.quickStatCard}>
+            <View style={styles.quickStatContent}>
+              <IconBadge
+                icon="document-text-outline"
+                backgroundColor={colors.accentLight + '20'}
+                iconColor={colors.accent}
+                size={40}
+              />
+              <View style={styles.quickStatInfo}>
+                <Text style={[styles.quickStatValue, { color: colors.text }]}>
+                  {totalInvoices}
+                </Text>
+                <Text style={[styles.quickStatLabel, { color: colors.textSecondary }]}>
+                  Invoices
+                </Text>
+              </View>
             </View>
-          </View>
-        </Card>
+          </Card>
+        </TouchableOpacity>
 
-        <Card variant="elevated" style={styles.quickStatCard}>
-          <View style={styles.quickStatContent}>
-            <IconBadge
-              icon="people-outline"
-              backgroundColor={colors.primaryLight + '20'}
-              iconColor={colors.primary}
-              size={40}
-            />
-            <View style={styles.quickStatInfo}>
-              <Text style={[styles.quickStatValue, { color: colors.text }]}>
-                {clients?.length || 0}
-              </Text>
-              <Text style={[styles.quickStatLabel, { color: colors.textSecondary }]}>
-                Clients
-              </Text>
+        <TouchableOpacity
+          onPress={() => router.push('/(tabs)/clients')}
+          activeOpacity={0.7}
+          style={{ flex: 1 }}
+        >
+          <Card variant="elevated" style={styles.quickStatCard}>
+            <View style={styles.quickStatContent}>
+              <IconBadge
+                icon="people-outline"
+                backgroundColor={colors.primaryLight + '20'}
+                iconColor={colors.primary}
+                size={40}
+              />
+              <View style={styles.quickStatInfo}>
+                <Text style={[styles.quickStatValue, { color: colors.text }]}>
+                  {clients?.length || 0}
+                </Text>
+                <Text style={[styles.quickStatLabel, { color: colors.textSecondary }]}>
+                  Clients
+                </Text>
+              </View>
             </View>
-          </View>
-        </Card>
+          </Card>
+        </TouchableOpacity>
 
-        <Card variant="elevated" style={styles.quickStatCard}>
-          <View style={styles.quickStatContent}>
-            <IconBadge
-              icon="pricetag-outline"
-              backgroundColor={colors.gold + '20'}
-              iconColor={colors.gold}
-              size={40}
-            />
-            <View style={styles.quickStatInfo}>
-              <Text style={[styles.quickStatValue, { color: colors.text }]}>
-                {products?.length || 0}
-              </Text>
-              <Text style={[styles.quickStatLabel, { color: colors.textSecondary }]}>
-                Products
-              </Text>
+        <TouchableOpacity
+          onPress={() => router.push('/(tabs)/products')}
+          activeOpacity={0.7}
+          style={{ flex: 1 }}
+        >
+          <Card variant="elevated" style={styles.quickStatCard}>
+            <View style={styles.quickStatContent}>
+              <IconBadge
+                icon="pricetag-outline"
+                backgroundColor={colors.gold + '20'}
+                iconColor={colors.gold}
+                size={40}
+              />
+              <View style={styles.quickStatInfo}>
+                <Text style={[styles.quickStatValue, { color: colors.text }]}>
+                  {products?.length || 0}
+                </Text>
+                <Text style={[styles.quickStatLabel, { color: colors.textSecondary }]}>
+                  Products
+                </Text>
+              </View>
             </View>
-          </View>
-        </Card>
+          </Card>
+        </TouchableOpacity>
       </View>
 
       {/* Collection Rate */}

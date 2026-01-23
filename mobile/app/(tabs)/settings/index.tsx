@@ -89,13 +89,6 @@ export default function SettingsScreen() {
       </Text>
 
       <Card variant="elevated" style={styles.section}>
-        <SettingItem
-          icon="notifications-outline"
-          title="Notifications"
-          subtitle="Manage your notifications"
-          onPress={() => {}}
-          colors={colors}
-        />
         <View style={[styles.divider, { backgroundColor: colors.border }]} />
         <SettingItem
           icon="moon-outline"

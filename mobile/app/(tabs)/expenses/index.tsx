@@ -47,8 +47,12 @@ export default function ExpensesScreen() {
   }, [debouncedSearch, isLoaded]);
 
   useEffect(() => {
-    if (isLoaded && selectedCategory !== 'all') {
-      updateFilter('selectedFilter', selectedCategory);
+    if (isLoaded) {
+      if (selectedCategory !== 'all') {
+        updateFilter('selectedFilter', selectedCategory);
+      } else {
+        updateFilter('selectedFilter', '');
+      }
     }
   }, [selectedCategory, isLoaded]);
 
