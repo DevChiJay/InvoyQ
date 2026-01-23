@@ -1,11 +1,12 @@
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator, Animated, Platform, StatusBar } from 'react-native';
+import { useState, useRef } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useInvoices } from '@/hooks/useInvoices';
 import { useExpenses } from '@/hooks/useExpenses';
 import { useProducts } from '@/hooks/useProducts';
 import { useClients } from '@/hooks/useClients';
 import { formatCurrency, formatDate } from '@/utils/formatters';
-import { router } from 'expo-router';
+import { router, useNavigation } from 'expo-router';
 import { useTheme } from '@/hooks/useTheme';
 import { GradientCard } from '@/components/ui/GradientCard';
 import { Card } from '@/components/ui/Card';
@@ -15,10 +16,13 @@ import { Badge } from '@/components/ui/Badge';
 import { Spacing } from '@/constants/colors';
 import { Typography } from '@/constants/typography';
 import { Ionicons } from '@expo/vector-icons';
+import { useEffect } from 'react';
 
 export default function DashboardScreen() {
   const { user } = useAuth();
   const { colors } = useTheme();
+  const navigation = useNavigation();
+  const scrollY = useRef(new Animated.Value(0)).current;
   
   const { data: invoices, isLoading: invoicesLoading } = useInvoices({ limit: 5 });
   const { data: expensesData, isLoading: expensesLoading } = useExpenses({ limit: 5 });
@@ -49,6 +53,20 @@ export default function DashboardScreen() {
 
   const isLoading = invoicesLoading || expensesLoading || productsLoading || clientsLoading;
 
+  // Hide/show header title on scroll
+  useEffect(() => {
+    const listener = scrollY.addListener(({ value }) => {
+      navigation.setOptions({
+        headerTitle: value > 50 ? 'Dashboard' : '',
+        headerStyle: {
+          backgroundColor: value > 50 ? colors.surface : 'transparent',
+        },
+      });
+    });
+
+    return () => scrollY.removeListener(listener);
+  }, [scrollY, navigation, colors]);
+
   if (isLoading) {
     return (
       <View style={[styles.centered, { backgroundColor: colors.background }]}>
@@ -59,7 +77,15 @@ export default function DashboardScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <ScrollView style={styles.scrollContent}>
+      <Animated.ScrollView 
+        style={styles.scrollContent}
+        contentContainerStyle={styles.scrollContentContainer}
+        onScroll={Animated.event(
+          [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+          { useNativeDriver: false }
+        )}
+        scrollEventThrottle={16}
+      >
         {/* Header */}
       <View style={styles.header}>
         <View>
@@ -356,7 +382,7 @@ export default function DashboardScreen() {
           </Text>
         )}
       </View>
-      </ScrollView>
+      </Animated.ScrollView>
       
       {/* Floating Action Button */}
       <TouchableOpacity
@@ -376,6 +402,10 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flex: 1,
+  },
+  scrollContentContainer: {
+    paddingTop: Platform.OS === 'ios' ? 100 : 80, // Account for header space
+    paddingBottom: 110, // Extra padding for floating tab bar
   },
   centered: {
     flex: 1,
@@ -553,7 +583,7 @@ const styles = StyleSheet.create({
   fab: {
     position: 'absolute',
     right: 20,
-    bottom: 20,
+    bottom: 110, // Above floating tab bar
     width: 56,
     height: 56,
     borderRadius: 28,
