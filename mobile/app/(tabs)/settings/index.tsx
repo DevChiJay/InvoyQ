@@ -1,4 +1,5 @@
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Image } from 'react-native';
+import { router } from 'expo-router';
 import { useAuth } from '@/hooks/useAuth';
 import { useTheme } from '@/hooks/useTheme';
 import { Card } from '@/components/ui/Card';
@@ -11,7 +12,7 @@ export default function SettingsScreen() {
   const { user, logout } = useAuth();
   const { colors } = useTheme();
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     Alert.alert(
       'Logout',
       'Are you sure you want to logout?',
@@ -22,29 +23,43 @@ export default function SettingsScreen() {
     );
   };
 
+  const handleProfilePress = () => {
+    router.push('/settings/profile');
+  };
+
   return (
     <ScrollView
       style={[styles.container, { backgroundColor: colors.background }]}
       contentContainerStyle={styles.content}
     >
       {/* User Profile Card */}
-      <Card variant="elevated" style={styles.profileCard}>
-        <View style={styles.profileHeader}>
-          <View style={[styles.avatar, { backgroundColor: colors.primary }]}>
-            <Text style={styles.avatarText}>
-              {user?.full_name?.charAt(0).toUpperCase() || user?.email.charAt(0).toUpperCase()}
-            </Text>
+      <TouchableOpacity onPress={handleProfilePress}>
+        <Card variant="elevated" style={styles.profileCard}>
+          <View style={styles.profileHeader}>
+            {user?.avatar_url ? (
+              <Image
+                source={{ uri: user.avatar_url }}
+                style={styles.avatarImage}
+              />
+            ) : (
+              <View style={[styles.avatar, { backgroundColor: colors.primary }]}>
+                <Text style={styles.avatarText}>
+                  {user?.full_name?.charAt(0).toUpperCase() || user?.email.charAt(0).toUpperCase()}
+                </Text>
+              </View>
+            )}
+            <View style={styles.profileInfo}>
+              <Text style={[styles.userName, { color: colors.text }]}>
+                {user?.full_name || 'User'}
+              </Text>
+              <Text style={[styles.userEmail, { color: colors.textSecondary }]}>
+                {user?.email}
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color={colors.textTertiary} />
           </View>
-          <View style={styles.profileInfo}>
-            <Text style={[styles.userName, { color: colors.text }]}>
-              {user?.full_name || 'User'}
-            </Text>
-            <Text style={[styles.userEmail, { color: colors.textSecondary }]}>
-              {user?.email}
-            </Text>
-          </View>
-        </View>
-      </Card>
+        </Card>
+      </TouchableOpacity>
 
       {/* Settings Sections */}
       <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
@@ -56,7 +71,7 @@ export default function SettingsScreen() {
           icon="person-outline"
           title="Profile"
           subtitle="Update your personal information"
-          onPress={() => {}}
+          onPress={() => router.push('/settings/profile')}
           colors={colors}
         />
         <View style={[styles.divider, { backgroundColor: colors.border }]} />
@@ -64,7 +79,7 @@ export default function SettingsScreen() {
           icon="business-outline"
           title="Business Info"
           subtitle="Company details and branding"
-          onPress={() => {}}
+          onPress={() => router.push('/settings/business')}
           colors={colors}
         />
       </Card>
@@ -168,6 +183,12 @@ const styles = StyleSheet.create({
   profileHeader: {
     flexDirection: 'row',
     alignItems: 'center',
+  },
+  avatarImage: {
+    width: 64,
+    height: 64,
+    borderRadius: BorderRadius.full,
+    marginRight: Spacing.md,
   },
   avatar: {
     width: 64,

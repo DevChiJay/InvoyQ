@@ -13,12 +13,17 @@ export function useAuth() {
   const queryClient = useQueryClient();
 
   // Get current user
-  const { data: user, isLoading, error } = useQuery({
+  const { data: user, isLoading, error, refetch } = useQuery({
     queryKey: AUTH_KEYS.currentUser,
     queryFn: userApi.getMe,
-    enabled: false, // Manually fetch on app start
+    retry: false,
     staleTime: 5 * 60 * 1000,
   });
+
+  // Fetch user function for manual refresh
+  const fetchUser = async () => {
+    await refetch();
+  };
 
   // Register mutation
   const registerMutation = useMutation({
@@ -78,6 +83,7 @@ export function useAuth() {
     user,
     isLoading,
     error,
+    fetchUser,
     register: registerMutation.mutate,
     login: loginMutation.mutate,
     logout: logoutMutation.mutate,
