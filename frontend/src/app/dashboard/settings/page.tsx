@@ -5,7 +5,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ProfileSettingsForm } from "@/components/settings/profile-settings-form";
 import { BusinessSettingsForm } from "@/components/settings/business-settings-form";
-import { User, Building2 } from "lucide-react";
+import { SecuritySettingsForm } from "@/components/settings/security-settings-form";
+import { User, Building2, Shield } from "lucide-react";
 
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState("profile");
@@ -20,7 +21,7 @@ export default function SettingsPage() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="profile" className="flex items-center gap-2">
             <User className="h-4 w-4" />
             Profile
@@ -28,6 +29,10 @@ export default function SettingsPage() {
           <TabsTrigger value="business" className="flex items-center gap-2">
             <Building2 className="h-4 w-4" />
             Business Details
+          </TabsTrigger>
+          <TabsTrigger value="security" className="flex items-center gap-2">
+            <Shield className="h-4 w-4" />
+            Security
           </TabsTrigger>
         </TabsList>
 
@@ -55,6 +60,20 @@ export default function SettingsPage() {
             </CardHeader>
             <CardContent>
               <BusinessSettingsForm />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="security" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Password & Security</CardTitle>
+              <CardDescription>
+                Update your password and security settings
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <SecuritySettingsForm />
             </CardContent>
           </Card>
         </TabsContent>

@@ -199,6 +199,12 @@ export const usersAPI = {
       },
     });
   },
+  
+  changePassword: (current_password: string, new_password: string) =>
+    api.post<{ message: string }>('/v1/change-password', {
+      current_password,
+      new_password,
+    }),
 };
 
 export const clientsAPI = {
