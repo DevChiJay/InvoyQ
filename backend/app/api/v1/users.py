@@ -2,9 +2,11 @@ from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from app.dependencies.auth import get_current_user
 from app.schemas.user import UserOut, UserRead, UserUpdate
+from app.schemas.auth import ChangePassword
 from app.repositories.user_repository import UserRepository, UserInDB
 from app.db.mongo import get_database
 from app.services.storage import save_bytes
+from app.core.security import verify_password, get_password_hash
 import uuid
 from pathlib import Path
 
@@ -100,3 +102,33 @@ async def upload_company_logo(
     await user_repo.update(current_user.id, {"company_logo_url": public_url})
     
     return {"url": public_url, "message": "Company logo uploaded successfully"}
+
+@router.post("/change-password", response_model=dict)
+async def change_password(
+    password_data: ChangePassword,
+    current_user: UserInDB = Depends(get_current_user),
+    db: AsyncIOMotorDatabase = Depends(get_database)
+):
+    """Change user password"""
+    user_repo = UserRepository(db)
+    
+    # Verify current password
+    if not current_user.hashed_password:
+        raise HTTPException(
+            status_code=400,
+            detail="Password change not available for OAuth users"
+        )
+    
+    if not verify_password(password_data.current_password, current_user.hashed_password):
+        raise HTTPException(status_code=400, detail="Incorrect current password")
+    
+    # Hash new password
+    new_hashed_password = get_password_hash(password_data.new_password)
+    
+    # Update password
+    await user_repo.collection.update_one(
+        {"_id": user_repo._to_object_id(current_user.id)},
+        {"$set": {"hashed_password": new_hashed_password}}
+    )
+    
+    return {"message": "Password changed successfully"}
