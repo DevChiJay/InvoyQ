@@ -199,7 +199,7 @@ class EmailService:
         
         return self._send_email(to_email, subject, html_content, text_content)
     
-    def send_invoice_email(
+    async def send_invoice_email(
         self,
         to_email: str,
         client_name: str,

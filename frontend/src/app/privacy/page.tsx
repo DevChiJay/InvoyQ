@@ -21,7 +21,7 @@ export default function PrivacyPolicyPage() {
             <section>
               <h2 className="text-2xl font-semibold mt-8 mb-4">1. Introduction</h2>
               <p className="text-muted-foreground leading-relaxed">
-                Welcome to InvoyQ ("we," "our," or "us"), a digital invoicing platform built and owned by <strong>Devchi Digital Ltd</strong>. We are committed to protecting your privacy and ensuring the security of your personal information. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our website (invoyq.com), mobile application (InvoyQ for iOS and Android), and related services (collectively, the "Service").
+                Welcome to InvoyQ ("we," "our," or "us"), a digital invoicing platform built and owned by <strong>Devchi Digital</strong>. We are committed to protecting your privacy and ensuring the security of your personal information. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our website (invoyq.com), mobile application (InvoyQ for iOS and Android), and related services (collectively, the "Service").
               </p>
               <p className="text-muted-foreground leading-relaxed mt-4">
                 By accessing or using our Service, you agree to the collection and use of information in accordance with this Privacy Policy. If you do not agree with our policies and practices, please do not use our Service.
@@ -171,7 +171,7 @@ export default function PrivacyPolicyPage() {
                 If you have questions or concerns about this Privacy Policy, please contact:
               </p>
               <div className="mt-4 space-y-2 text-muted-foreground">
-                <p><strong>Devchi Digital Ltd</strong></p>
+                <p><strong>Devchi Digital</strong></p>
                 <p><strong>Email:</strong> support@devchi.me</p>
                 <p><strong>Website:</strong> https://invoyq.com/privacy</p>
               </div>

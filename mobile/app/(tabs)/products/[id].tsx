@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Modal } from 'react-native';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/hooks/useTheme';
 import { useProduct, useDeleteProduct, useAdjustProductQuantity } from '@/hooks/useProducts';
 import { Card, Button, Badge, NumberInput, FormField } from '@/components/ui';
@@ -10,6 +11,7 @@ import { formatCurrency } from '@/utils/formatters';
 
 export default function ProductDetailScreen() {
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { data: product, isLoading } = useProduct(id);
   const deleteProduct = useDeleteProduct();
@@ -93,7 +95,7 @@ export default function ProductDetailScreen() {
         }}
       />
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView style={styles.content} contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, 16) }} showsVerticalScrollIndicator={false}>
         {/* Product Info Card */}
         <Card style={styles.card}>
           <View style={styles.row}>

@@ -25,6 +25,7 @@ class UserBusinessInfo(BaseModel):
 
 class InvoiceItemBase(BaseModel):
     """Base invoice item schema"""
+    product_id: Optional[str] = Field(None, description="Reference to product._id if item from product catalog")
     description: str = Field(..., min_length=1, max_length=500)
     quantity: Decimal = Field(default=Decimal("1.00"), gt=0)
     unit_price: Decimal = Field(default=Decimal("0.00"), ge=0)

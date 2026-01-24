@@ -4,15 +4,17 @@ import { useTheme } from '@/hooks/useTheme';
 import { HamburgerMenu } from '@/components/ui/HamburgerMenu';
 import { Platform, StyleSheet, Animated } from 'react-native';
 import { useState, useRef } from 'react';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function TabLayout() {
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
   const scrollY = useRef(new Animated.Value(0)).current;
   const segments = useSegments();
 
-  // Check if we're on a create or edit page
-  const shouldHideTabBar = segments.length >= 3 && 
-    (segments[2] === 'create' || segments[2] === 'edit');
+  // Check if we're on a create, edit, detail, or settings page
+  const shouldHideTabBar = 
+    (segments.length >= 3 && (segments[2] === 'create' || segments[2] === 'edit' || segments[2] === '[id]'));
 
   // Animated header background
   const headerBackgroundColor = scrollY.interpolate({
@@ -28,7 +30,7 @@ export default function TabLayout() {
         tabBarInactiveTintColor: colors.textSecondary,
         tabBarStyle: shouldHideTabBar ? { display: 'none' } : {
           position: 'absolute',
-          bottom: 20,
+          bottom: Math.max(insets.bottom, 20),
           marginHorizontal: 20,
           backgroundColor: colors.surface,
           borderRadius: 16,

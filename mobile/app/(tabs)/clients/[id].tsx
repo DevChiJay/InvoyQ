@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/hooks/useTheme';
 import { useClient, useDeleteClient } from '@/hooks/useClients';
 import { Card, Button } from '@/components/ui';
@@ -9,6 +10,7 @@ import { confirmDelete, showError } from '@/utils/alerts';
 
 export default function ClientDetailScreen() {
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { data: client, isLoading } = useClient(id);
   const deleteClient = useDeleteClient();
@@ -73,7 +75,7 @@ export default function ClientDetailScreen() {
         }}
       />
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView style={styles.content} contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, 16) }} showsVerticalScrollIndicator={false}>
         {/* Avatar/Initials Card */}
         <Card style={styles.avatarCard}>
           <View style={[styles.avatar, { backgroundColor: colors.primary }]}>

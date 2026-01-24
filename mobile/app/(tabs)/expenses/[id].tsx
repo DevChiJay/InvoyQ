@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/hooks/useTheme';
 import { useExpense, useDeleteExpense } from '@/hooks/useExpenses';
 import { Card } from '@/components/ui';
@@ -32,6 +33,7 @@ const categoryLabels: Record<string, string> = {
 
 export default function ExpenseDetailScreen() {
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
   const { id, from } = useLocalSearchParams<{ id: string; from?: string }>();
   const { data: expense, isLoading } = useExpense(id);
   const deleteExpense = useDeleteExpense();
@@ -105,7 +107,7 @@ export default function ExpenseDetailScreen() {
         }}
       />
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView style={styles.content} contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, 16) }} showsVerticalScrollIndicator={false}>
         {/* Amount Card */}
         <Card style={styles.amountCard}>
           <Text style={[styles.amountLabel, { color: colors.textSecondary }]}>Amount</Text>

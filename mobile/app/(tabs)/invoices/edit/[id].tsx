@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, FlatList } from 'react-native';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/hooks/useTheme';
 import { useInvoice, useUpdateInvoice } from '@/hooks/useInvoices';
 import { useClients } from '@/hooks/useClients';
@@ -37,6 +38,7 @@ interface LineItem {
 
 export default function EditInvoiceScreen() {
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { data: invoice, isLoading: invoiceLoading } = useInvoice(id);
   const updateInvoice = useUpdateInvoice();
@@ -53,7 +55,7 @@ export default function EditInvoiceScreen() {
   const [lineItems, setLineItems] = useState<LineItem[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const clients = clientsData?.items || [];
+  const clients = clientsData || [];
 
   const clientOptions: SelectOption[] = clients.map((client) => ({
     label: client.name,
@@ -164,6 +166,7 @@ export default function EditInvoiceScreen() {
         quantity: item.quantity,
         unit_price: item.unit_price,
         tax_rate: item.tax_rate,
+        amount: item.amount,
       }));
 
       const apiData = {
@@ -366,7 +369,7 @@ export default function EditInvoiceScreen() {
         </Card>
       </ScrollView>
 
-      <View style={[styles.footer, { borderTopColor: colors.border }]}>
+      <View style={[styles.footer, { borderTopColor: colors.border, paddingBottom: Math.max(insets.bottom, 16) }]}>
         <Button
           title="Cancel"
           onPress={() => router.back()}
@@ -484,7 +487,8 @@ const styles = StyleSheet.create({
   },
   footer: {
     flexDirection: 'row',
-    padding: 16,
+    paddingHorizontal: 16,
+    paddingTop: 16,
     gap: 12,
     borderTopWidth: 1,
   },

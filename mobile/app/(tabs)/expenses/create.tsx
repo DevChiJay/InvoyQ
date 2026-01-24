@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, KeyboardAvoidingView, Platform } from 'react-native';
 import { Stack, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/hooks/useTheme';
 import { useCreateExpense } from '@/hooks/useExpenses';
 import { FormField, Input, TextArea, NumberInput, Select, DatePicker, Button, SelectOption } from '@/components/ui';
@@ -37,6 +38,7 @@ const currencyOptions: SelectOption[] = [
 
 export default function CreateExpenseScreen() {
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
   const createExpense = useCreateExpense();
 
   const [formData, setFormData] = useState({
@@ -172,7 +174,7 @@ export default function CreateExpenseScreen() {
         </ScrollView>
       </KeyboardAvoidingView>
 
-      <View style={[styles.footer, { borderTopColor: colors.border }]}>
+      <View style={[styles.footer, { borderTopColor: colors.border, paddingBottom: Math.max(insets.bottom, 16) }]}>
         <Button
           title="Cancel"
           onPress={() => router.back()}
@@ -210,7 +212,8 @@ const styles = StyleSheet.create({
   },
   footer: {
     flexDirection: 'row',
-    padding: 16,
+    paddingHorizontal: 16,
+    paddingTop: 16,
     gap: 12,
     borderTopWidth: 1,
   },

@@ -4,6 +4,7 @@ import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/hooks/useTheme';
 import { useInvoice, useDeleteInvoice, useUpdateInvoice, useSendInvoiceEmail } from '@/hooks/useInvoices';
 import { Card } from '@/components/ui';
@@ -47,6 +48,7 @@ const getStatusBgColor = (status: string, colors: any) => {
 
 export default function InvoiceDetailScreen() {
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
   const { id, from } = useLocalSearchParams<{ id: string; from?: string }>();
   const { data: invoice, isLoading } = useInvoice(id);
   const deleteInvoice = useDeleteInvoice();
@@ -226,7 +228,7 @@ export default function InvoiceDetailScreen() {
         }}
       />
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView style={styles.content} contentContainerStyle={{ paddingBottom: Math.max(insets.bottom + 80, 96) }} showsVerticalScrollIndicator={false}>
         {/* Status Badge */}
         <View style={[styles.statusBadge, { backgroundColor: statusBgColor }]}>
           <Text style={[styles.statusText, { color: statusColor }]}>{invoice.status.toUpperCase()}</Text>
@@ -355,7 +357,7 @@ export default function InvoiceDetailScreen() {
 
       {/* Action Buttons */}
       {invoice.status !== 'paid' && invoice.status !== 'cancelled' && (
-        <View style={[styles.footer, { borderTopColor: colors.border }]}>
+        <View style={[styles.footer, { borderTopColor: colors.border, paddingBottom: Math.max(insets.bottom, 16) }]}>
           {invoice.status === 'draft' && (
             <TouchableOpacity
               style={[styles.actionButton, { backgroundColor: colors.primary }]}
@@ -506,7 +508,8 @@ const styles = StyleSheet.create({
     lineHeight: 24,
   },
   footer: {
-    padding: 16,
+    paddingHorizontal: 16,
+    paddingTop: 16,
     borderTopWidth: 1,
   },
   actionButton: {

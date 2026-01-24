@@ -14,6 +14,7 @@ import {
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { z } from 'zod';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useTheme } from '@/hooks/useTheme';
 import { useClients, useCreateClient } from '@/hooks/useClients';
@@ -96,6 +97,7 @@ function isProductItem(item: LineItem): item is ProductItem {
 
 export default function CreateInvoiceScreen() {
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
   const createInvoice = useCreateInvoice();
   const createClient = useCreateClient();
   const createProduct = useCreateProduct();
@@ -673,7 +675,7 @@ export default function CreateInvoiceScreen() {
       </KeyboardAvoidingView>
 
       {/* Footer Buttons */}
-      <View style={[styles.footer, { backgroundColor: colors.surface, borderTopColor: colors.border }]}>
+      <View style={[styles.footer, { backgroundColor: colors.surface, borderTopColor: colors.border, paddingBottom: Math.max(insets.bottom, 16) }]}>
         <Button title="Cancel" onPress={() => router.back()} variant="outline" style={styles.button} />
         <Button
           title="Create Invoice"
@@ -1116,7 +1118,8 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     flexDirection: 'row',
-    padding: 16,
+    paddingHorizontal: 16,
+    paddingTop: 16,
     gap: 12,
     borderTopWidth: 1,
   },

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
 import { Stack, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/hooks/useTheme';
 import { useCreateClient } from '@/hooks/useClients';
 import { FormField, Input, TextArea, Button } from '@/components/ui';
@@ -11,6 +12,7 @@ import { showError } from '@/utils/alerts';
 
 export default function CreateClientScreen() {
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
   const createClient = useCreateClient();
 
   const [formData, setFormData] = useState({
@@ -122,7 +124,7 @@ export default function CreateClientScreen() {
         </ScrollView>
       </KeyboardAvoidingView>
 
-      <View style={[styles.footer, { borderTopColor: colors.border }]}>
+      <View style={[styles.footer, { borderTopColor: colors.border, paddingBottom: Math.max(insets.bottom, 16) }]}>
         <Button
           title="Cancel"
           onPress={() => router.back()}
@@ -160,7 +162,8 @@ const styles = StyleSheet.create({
   },
   footer: {
     flexDirection: 'row',
-    padding: 16,
+    paddingHorizontal: 16,
+    paddingTop: 16,
     gap: 12,
     borderTopWidth: 1,
   },

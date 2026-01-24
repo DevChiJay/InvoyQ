@@ -609,7 +609,7 @@ const styles = StyleSheet.create({
   fab: {
     position: 'absolute',
     right: 20,
-    bottom: 110, // Above floating tab bar
+    bottom: 120, // Above floating tab bar
     width: 56,
     height: 56,
     borderRadius: 28,
