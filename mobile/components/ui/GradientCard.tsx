@@ -10,7 +10,7 @@ interface GradientCardProps {
 
 export function GradientCard({ children, colors, style }: GradientCardProps) {
   return (
-    <View style={[styles.container, Shadows.lg, style]}>
+    <View style={[styles.container, style]}>
       <LinearGradient
         colors={colors}
         start={{ x: 0, y: 0 }}

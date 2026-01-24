@@ -1,5 +1,6 @@
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator, Animated, Platform, StatusBar } from 'react-native';
 import { useState, useRef } from 'react';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '@/hooks/useAuth';
 import { useInvoices } from '@/hooks/useInvoices';
 import { useExpenses } from '@/hooks/useExpenses';
@@ -99,34 +100,47 @@ export default function DashboardScreen() {
       </View>
 
       {/* Stats Cards */}
-      <View style={styles.statsGrid}>
-        <GradientCard
-          colors={[colors.primary, colors.primaryDark]}
-          style={styles.statCard}
+      <View style={styles.statsSection}>
+        <LinearGradient
+          colors={['rgba(99, 102, 241, 0.05)', 'rgba(99, 102, 241, 0.02)', 'transparent']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 0, y: 1 }}
+          style={styles.statsBackground}
         >
-          <Ionicons name="trending-up" size={24} color="#FFFFFF" />
-          <Text style={styles.statValue}>{formatCurrency(totalRevenue)}</Text>
-          <Text style={styles.statLabel}>Total Revenue</Text>
-        </GradientCard>
+          <View style={styles.statsGrid}>
+            <TouchableOpacity
+              onPress={() => router.push('/(tabs)/invoices')}
+              activeOpacity={0.8}
+              style={styles.statCardWrapper}
+            >
+              <GradientCard
+                colors={[colors.primary, colors.primaryDark]}
+                style={styles.statCard}
+              >
+                <Ionicons name="trending-up" size={24} color="#FFFFFF" />
+                <Text style={styles.statValue}>{formatCurrency(totalRevenue)}</Text>
+                <Text style={styles.statLabel}>Total Revenue</Text>
+              </GradientCard>
+            </TouchableOpacity>
 
-        <TouchableOpacity
-          onPress={() => router.push('/(tabs)/expenses')}
-          activeOpacity={0.8}
-          style={{ flex: 1 }}
-        >
-          <GradientCard
-            colors={[colors.error, '#DC2626']}
-            style={styles.statCard}
-          >
-            <Ionicons name="trending-down" size={24} color="#FFFFFF" />
-            <Text style={styles.statValue}>{formatCurrency(totalExpenses)}</Text>
-            <Text style={styles.statLabel}>Total Expenses</Text>
-          </GradientCard>
-        </TouchableOpacity>
-      </View>
+            <TouchableOpacity
+              onPress={() => router.push('/(tabs)/expenses')}
+              activeOpacity={0.8}
+              style={styles.statCardWrapper}
+            >
+              <GradientCard
+                colors={[colors.error, '#DC2626']}
+                style={styles.statCard}
+              >
+                <Ionicons name="trending-down" size={24} color="#FFFFFF" />
+                <Text style={styles.statValue}>{formatCurrency(totalExpenses)}</Text>
+                <Text style={styles.statLabel}>Total Expenses</Text>
+              </GradientCard>
+            </TouchableOpacity>
+          </View>
 
-      {/* Quick Stats */}
-      <View style={styles.quickStats}>
+          {/* Quick Stats */}
+          <View style={styles.quickStats}>
         <TouchableOpacity
           onPress={() => router.push('/(tabs)/invoices')}
           activeOpacity={0.7}
@@ -201,6 +215,8 @@ export default function DashboardScreen() {
             </View>
           </Card>
         </TouchableOpacity>
+      </View>
+        </LinearGradient>
       </View>
 
       {/* Collection Rate */}
@@ -416,6 +432,15 @@ const styles = StyleSheet.create({
     padding: Spacing.lg,
     paddingBottom: Spacing.md,
   },
+  statsSection: {
+    overflow: 'hidden',
+  },
+  statsBackground: {
+    paddingBottom: Spacing.xl,
+  },
+  statCardWrapper: {
+    flex: 1,
+  },
   greeting: {
     fontSize: Typography.sizes.md,
   },
@@ -427,6 +452,7 @@ const styles = StyleSheet.create({
   statsGrid: {
     flexDirection: 'row',
     paddingHorizontal: Spacing.lg,
+    paddingTop: Spacing.md,
     gap: Spacing.md,
   },
   statCard: {
@@ -448,7 +474,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     paddingHorizontal: Spacing.lg,
     gap: Spacing.sm,
-    marginTop: Spacing.lg,
+    marginTop: Spacing.md,
   },
   quickStatCard: {
     flex: 1,
