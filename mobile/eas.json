@@ -1,53 +1,34 @@
 {
   "cli": {
-    "version": ">= 12.2.1"
+    "version": ">= 16.6.2",
+    "appVersionSource": "remote"
   },
   "build": {
     "development": {
       "developmentClient": true,
-      "distribution": "internal",
-      "ios": {
-        "simulator": true
-      },
-      "android": {
-        "buildType": "apk"
-      },
-      "env": {
-        "EXPO_PUBLIC_API_BASE_URL": "http://localhost:8000"
-      }
+      "distribution": "internal"
     },
     "preview": {
       "distribution": "internal",
-      "ios": {
-        "simulator": false
-      },
       "android": {
         "buildType": "apk"
       },
       "env": {
-        "EXPO_PUBLIC_API_BASE_URL": "https://api.invoyq.com"
+        "EXPO_PUBLIC_API_BASE_URL": "https://preview.liveurl.com"
       }
     },
     "production": {
       "distribution": "store",
-      "ios": {
-        "simulator": false
-      },
       "android": {
         "buildType": "app-bundle"
       },
       "env": {
-        "EXPO_PUBLIC_API_BASE_URL": "https://api.invoyq.com"
+        "EXPO_PUBLIC_API_BASE_URL": "https://production.liveUrl.com"
       }
     }
   },
   "submit": {
     "production": {
-      "ios": {
-        "appleId": "your-apple-id@example.com",
-        "ascAppId": "your-app-store-connect-id",
-        "appleTeamId": "your-team-id"
-      },
       "android": {
         "serviceAccountKeyPath": "./service-account-key.json",
         "track": "production"
