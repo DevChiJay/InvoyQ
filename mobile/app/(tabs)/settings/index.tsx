@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Image } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Image, Linking } from 'react-native';
 import { Stack, router } from 'expo-router';
 import { useAuth } from '@/hooks/useAuth';
 import { useTheme } from '@/hooks/useTheme';
@@ -121,9 +121,9 @@ export default function SettingsScreen() {
         <View style={[styles.divider, { backgroundColor: colors.border }]} />
         <SettingItem
           icon="document-text-outline"
-          title="Terms & Privacy"
-          subtitle="Read our policies"
-          onPress={() => {}}
+          title="Privacy Policy"
+          subtitle="Read our privacy policy"
+          onPress={() => Linking.openURL(`${process.env.EXPO_PUBLIC_FRONTEND_URL}/privacy`)}
           colors={colors}
         />
       </Card>

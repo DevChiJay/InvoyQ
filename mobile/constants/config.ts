@@ -1,9 +1,7 @@
 import Constants from 'expo-constants';
 
 const ENV = Constants.expoConfig?.extra?.eas?.environment || 'development';
-const BASE_URL = ENV === 'production' 
-  ? process.env.EXPO_PUBLIC_API_BASE_URL_PROD 
-  : process.env.EXPO_PUBLIC_API_BASE_URL_DEV;
+const BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
 
 /**
  * Validate API URL for security

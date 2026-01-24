@@ -34,10 +34,6 @@ export function useAuth() {
   // Register mutation
   const registerMutation = useMutation({
     mutationFn: authApi.register,
-    onSuccess: () => {
-      // Don't auto-login, user needs to verify email
-      router.replace('/(auth)/login');
-    },
   });
 
   // Login mutation

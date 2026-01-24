@@ -10,6 +10,7 @@ import {
   ScrollView,
   Alert,
   Image,
+  Linking,
 } from 'react-native';
 import { useAuth } from '@/hooks/useAuth';
 import { router } from 'expo-router';
@@ -43,7 +44,11 @@ export default function RegisterScreen() {
       return;
     }
 
-    register({ email, full_name: fullName, password });
+    register({ email, full_name: fullName, password }, {
+      onSuccess: () => {
+        router.replace(`/(auth)/email-sent?email=${encodeURIComponent(email)}`);
+      },
+    });
   };
 
   return (
@@ -169,6 +174,19 @@ export default function RegisterScreen() {
             style={styles.registerButton}
           />
 
+          <View style={styles.privacyContainer}>
+            <Text style={[styles.privacyText, { color: colors.textSecondary }]}>
+              By continuing, you agree to our{' '}
+              <Text 
+                style={[styles.privacyLink, { color: colors.primary }]}
+                onPress={() => Linking.openURL(`${process.env.EXPO_PUBLIC_FRONTEND_URL}/privacy`)}
+              >
+                Privacy Policy
+              </Text>
+              .
+            </Text>
+          </View>
+
           <TouchableOpacity
             onPress={() => router.back()}
             style={styles.linkContainer}
@@ -241,6 +259,18 @@ const styles = StyleSheet.create({
   },
   registerButton: {
     marginTop: Spacing.md,
+  },
+  privacyContainer: {
+    marginTop: Spacing.md,
+    alignItems: 'center',
+  },
+  privacyText: {
+    fontSize: Typography.sizes.xs,
+    textAlign: 'center',
+  },
+  privacyLink: {
+    fontWeight: Typography.weights.semibold,
+    textDecorationLine: 'underline',
   },
   linkContainer: {
     marginTop: Spacing.lg,
