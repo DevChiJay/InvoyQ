@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/hooks/useTheme';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export interface SelectOption {
   label: string;
@@ -27,6 +28,7 @@ interface SelectProps {
 
 export function Select({ value, onChange, options, placeholder, error }: SelectProps) {
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
   const [modalVisible, setModalVisible] = useState(false);
 
   const selectedOption = options.find((opt) => opt.value === value);
@@ -73,7 +75,7 @@ export function Select({ value, onChange, options, placeholder, error }: SelectP
         onRequestClose={() => setModalVisible(false)}
       >
         <View style={styles.modalOverlay}>
-          <View style={[styles.modalContent, { backgroundColor: colors.surface }]}>
+        <View style={[styles.modalContent, { backgroundColor: colors.surface, paddingBottom: insets.bottom }]}>
             <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
               <Text style={[styles.modalTitle, { color: colors.text }]}>
                 {placeholder || 'Select an option'}

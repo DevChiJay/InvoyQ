@@ -6,7 +6,8 @@
   "build": {
     "development": {
       "developmentClient": true,
-      "distribution": "internal"
+      "distribution": "internal",
+      "channel": "development"
     },
     "preview": {
       "distribution": "internal",
@@ -14,8 +15,10 @@
         "buildType": "apk"
       },
       "env": {
-        "EXPO_PUBLIC_API_BASE_URL": "https://preview.liveurl.com"
-      }
+        "EXPO_PUBLIC_API_BASE_URL": "https://api.invoyq.com",
+        "EXPO_PUBLIC_FRONTEND_URL": "https://invoyq.com"
+      },
+      "channel": "preview"
     },
     "production": {
       "distribution": "store",
@@ -23,8 +26,10 @@
         "buildType": "app-bundle"
       },
       "env": {
-        "EXPO_PUBLIC_API_BASE_URL": "https://production.liveUrl.com"
-      }
+        "EXPO_PUBLIC_API_BASE_URL": "https://api.invoyq.com",
+        "EXPO_PUBLIC_FRONTEND_URL": "https://invoyq.com"
+      },
+      "channel": "production"
     }
   },
   "submit": {

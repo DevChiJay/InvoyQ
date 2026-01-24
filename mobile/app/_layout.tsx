@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Slot, useRouter, useSegments } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from '@/utils/queryClient';
 import { setupNetworkManager } from '@/utils/offline';
@@ -14,6 +15,7 @@ export default function RootLayout() {
   const [isReady, setIsReady] = useState(false);
   const [hasToken, setHasToken] = useState(false);
   const [hasSeenOnboarding, setHasSeenOnboarding] = useState(false);
+  const hasNavigated = useRef(false);
   const segments = useSegments();
   const router = useRouter();
 
@@ -41,55 +43,51 @@ export default function RootLayout() {
     initAuth();
   }, []);
 
-  // Re-check auth when segments change (after navigation)
-  useEffect(() => {
-    if (isReady) {
-      checkAuth();
-    }
-  }, [segments, isReady]);
 
   // Handle navigation based on auth and onboarding state
   useEffect(() => {
-    if (!isReady) return;
+     if (!isReady || hasNavigated.current) return;
 
     const inAuthGroup = segments[0] === '(auth)';
     const inTabsGroup = segments[0] === '(tabs)';
 
     // First time user - show onboarding
-    if (!hasSeenOnboarding && !inAuthGroup) {
-      router.replace('/(auth)/onboarding');
-    }
-    // User has seen onboarding but not logged in
-    else if (hasSeenOnboarding && !hasToken && !inAuthGroup) {
-      router.replace('/(auth)/login');
-    }
-    // User is logged in but not in tabs
-    else if (hasToken && !inTabsGroup) {
-      router.replace('/(tabs)');
-    }
-  }, [isReady, hasSeenOnboarding, hasToken, segments]);
-
-  if (!isReady) {
-    return (
-      <View
-        style={{
-          flex: 1,
-          justifyContent: 'center',
-          alignItems: 'center',
-          backgroundColor: '#F8FAFC',
-        }}
-      >
-        <ActivityIndicator size="large" color="#6366F1" />
-      </View>
-    );
+  if (!hasSeenOnboarding) {
+    hasNavigated.current = true;
+    router.replace('/(auth)/onboarding');
+  } else if (!hasToken) {
+    hasNavigated.current = true;
+    router.replace('/(auth)/login');
+  } else if (!inTabsGroup) {
+    hasNavigated.current = true;
+    router.replace('/(tabs)');
   }
+}, [isReady, hasSeenOnboarding, hasToken]);
+
 
   return (
-    <ErrorBoundary>
-      <QueryClientProvider client={queryClient}>
-        <OfflineBanner />
-        <Slot />
-      </QueryClientProvider>
-    </ErrorBoundary>
+    <>
+      <StatusBar style="auto" />
+
+      {!isReady ? (
+        <View
+          style={{
+            flex: 1,
+            justifyContent: 'center',
+            alignItems: 'center',
+            backgroundColor: '#F8FAFC',
+          }}
+        >
+          <ActivityIndicator size="large" color="#6366F1" />
+        </View>
+      ) : (
+        <ErrorBoundary>
+          <QueryClientProvider client={queryClient}>
+            <OfflineBanner />
+            <Slot />
+          </QueryClientProvider>
+        </ErrorBoundary>
+      )}
+    </>
   );
 }

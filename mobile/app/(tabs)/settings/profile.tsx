@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Stack, router } from 'expo-router';
 import { useTheme } from '@/hooks/useTheme';
 import { useAuth } from '@/hooks/useAuth';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Card } from '@/components/ui/Card';
 import { FormField } from '@/components/ui/FormField';
 import { Input } from '@/components/ui/Input';
@@ -18,6 +19,7 @@ export default function ProfileEditScreen() {
   const { user, fetchUser } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const insets = useSafeAreaInsets();
   
   const [formData, setFormData] = useState({
     full_name: user?.full_name || '',
@@ -92,7 +94,7 @@ export default function ProfileEditScreen() {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <View style={[styles.container, { backgroundColor: colors.background, paddingBottom: Math.max(insets.bottom + 80, 100) }]}>
       <Stack.Screen
         options={{
           title: 'Edit Profile',

@@ -685,10 +685,9 @@ export default function CreateInvoiceScreen() {
         />
       </View>
 
-      {/* Product Selection Modal */}
       <Modal visible={showProductModal} animationType="slide" transparent>
         <View style={styles.modalOverlay}>
-          <View style={[styles.modalContent, { backgroundColor: colors.surface }]}>
+          <View style={[styles.modalContent, { backgroundColor: colors.surface, paddingBottom: insets.bottom }]}>
             <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
               <Text style={[styles.modalTitle, { color: colors.text }]}>Select Product</Text>
               <TouchableOpacity onPress={() => setShowProductModal(false)}>
@@ -748,7 +747,7 @@ export default function CreateInvoiceScreen() {
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={styles.modalOverlay}
         >
-          <View style={[styles.modalContent, { backgroundColor: colors.surface }]}>
+          <View style={[styles.modalContent, { backgroundColor: colors.surface, paddingBottom: insets.bottom }]}>
             <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
               <Text style={[styles.modalTitle, { color: colors.text }]}>Create New Product</Text>
               <TouchableOpacity onPress={() => setShowCreateProductModal(false)}>
@@ -843,7 +842,8 @@ export default function CreateInvoiceScreen() {
       {/* Custom Item Modal */}
       <Modal visible={showCustomItemModal} animationType="slide" transparent>
         <View style={styles.modalOverlay}>
-          <View style={[styles.modalContent, { backgroundColor: colors.surface }]}>
+          <View style={[styles.modalContent, { backgroundColor: colors.surface, paddingBottom: insets.bottom }]}>
+            <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
             <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
               <Text style={[styles.modalTitle, { color: colors.text }]}>Add Custom Item</Text>
               <TouchableOpacity onPress={() => setShowCustomItemModal(false)}>
@@ -901,6 +901,7 @@ export default function CreateInvoiceScreen() {
             </View>
           </View>
         </View>
+        </View>
       </Modal>
 
       {/* Create Client Modal */}
@@ -909,7 +910,8 @@ export default function CreateInvoiceScreen() {
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={styles.modalOverlay}
         >
-          <View style={[styles.modalContent, { backgroundColor: colors.surface }]}>
+          <View style={[styles.modalContent, { backgroundColor: colors.surface, paddingBottom: insets.bottom }]}>
+            <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
             <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
               <Text style={[styles.modalTitle, { color: colors.text }]}>Create New Client</Text>
               <TouchableOpacity onPress={() => setShowCreateClientModal(false)}>
@@ -971,6 +973,7 @@ export default function CreateInvoiceScreen() {
                 style={styles.button}
               />
             </View>
+          </View>
           </View>
         </KeyboardAvoidingView>
       </Modal>
@@ -1149,6 +1152,7 @@ const styles = StyleSheet.create({
   },
   modalBody: {
     padding: 16,
+    flex: 1,
   },
   modalFooter: {
     flexDirection: 'row',
