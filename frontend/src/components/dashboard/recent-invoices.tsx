@@ -105,12 +105,12 @@ export function RecentInvoices({ invoices, isLoading }: RecentInvoicesProps) {
                   </Badge>
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  {invoice.client?.name || `Client #${invoice.client_id}`} •{' '}
+                  {`Client #${invoice.client_id}`} •{' '}
                   {formatRelativeDate(invoice.created_at)}
                 </p>
               </div>
               <div className="text-right">
-                <p className="font-semibold">{formatCurrency(invoice.total, invoice.currency)}</p>
+                <p className="font-semibold">{formatCurrency(invoice.total ?? 0, invoice.currency ?? 'NGN')}</p>
                 <p className="text-xs text-muted-foreground">
                   Due: {formatSimpleDate(invoice.due_date)}
                 </p>

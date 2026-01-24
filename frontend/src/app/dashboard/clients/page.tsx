@@ -14,9 +14,9 @@ export default function ClientsPage() {
   const deleteClient = useDeleteClient();
   const [isClientModalOpen, setIsClientModalOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [clientToDelete, setClientToDelete] = useState<{ id: number; name: string } | null>(null);
+  const [clientToDelete, setClientToDelete] = useState<{ id: string; name: string } | null>(null);
 
-  const handleDeleteClick = (id: number, name: string) => {
+  const handleDeleteClick = (id: string, name: string) => {
     setClientToDelete({ id, name });
     setDeleteDialogOpen(true);
   };

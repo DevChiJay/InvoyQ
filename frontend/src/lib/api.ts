@@ -142,6 +142,12 @@ api.interceptors.response.use(
 
 // API endpoints
 export const authAPI = {
+    logout: () => {
+      const refreshToken = localStorage.getItem('refresh_token');
+      // If no refresh token, just resolve
+      if (!refreshToken) return Promise.resolve({ data: { message: 'No refresh token' } });
+      return api.post<{ message: string }>('/v1/auth/logout', { refresh_token: refreshToken });
+    },
   login: (email: string, password: string) => {
     // Backend uses OAuth2PasswordRequestForm which expects form data with 'username' and 'password'
     const formData = new URLSearchParams();

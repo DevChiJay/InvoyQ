@@ -111,7 +111,7 @@ export function ProductForm({ product, onSubmit, isSubmitting }: ProductFormProp
                   placeholder="Detailed product description..."
                   rows={3}
                   {...field}
-                  value={field.value || ''}
+                  value={field.value !== undefined && field.value !== null ? String(field.value) : ''}
                 />
               </FormControl>
               <FormDescription>Max 1000 characters</FormDescription>
@@ -154,7 +154,7 @@ export function ProductForm({ product, onSubmit, isSubmitting }: ProductFormProp
                     type="text"
                     placeholder="7.50"
                     {...field}
-                    value={field.value || ''}
+                    value={field.value !== undefined && field.value !== null ? String(field.value) : ''}
                     className="font-mono"
                   />
                 </FormControl>
@@ -204,7 +204,7 @@ export function ProductForm({ product, onSubmit, isSubmitting }: ProductFormProp
                     min="0"
                     placeholder="0"
                     {...field}
-                    value={field.value || ''}
+                    value={field.value !== undefined && field.value !== null ? String(field.value) : ''}
                   />
                 </FormControl>
                 <FormDescription>Initial stock quantity</FormDescription>

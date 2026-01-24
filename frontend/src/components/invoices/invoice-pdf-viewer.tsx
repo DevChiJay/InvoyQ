@@ -43,7 +43,8 @@ export function InvoicePDFViewer({ invoice, previewRef }: InvoicePDFViewerProps)
       });
 
       const link = document.createElement("a");
-      const filename = `invoice-${invoice.number.replace(/[^a-zA-Z0-9-]/g, "_")}.png`;
+      const safeNumber = invoice.number ?? 'unknown';
+      const filename = `invoice-${safeNumber.replace(/[^a-zA-Z0-9-]/g, "_")}.png`;
       link.href = dataUrl;
       link.download = filename;
       document.body.appendChild(link);
@@ -113,7 +114,8 @@ export function InvoicePDFViewer({ invoice, previewRef }: InvoicePDFViewerProps)
         position -= pdfHeight;
       }
 
-      const filename = `invoice-${invoice.number.replace(/[^a-zA-Z0-9-]/g, "_")}.pdf`;
+      const safeNumber = invoice.number ?? 'unknown';
+      const filename = `invoice-${safeNumber.replace(/[^a-zA-Z0-9-]/g, "_")}.pdf`;
       pdf.save(filename);
 
       const now = new Date().toLocaleTimeString();

@@ -208,7 +208,7 @@ export function InvoiceList({ invoices, isLoading, onDelete, filters, onFilterCh
                 </TableCell>
                 <TableCell>
                   <Link href={`/dashboard/invoices/${invoice.id}`} className="block">
-                    {invoice.client?.name || `Client #${invoice.client_id}`}
+                    {`Client #${invoice.client_id}`}
                   </Link>
                 </TableCell>
                 <TableCell>
@@ -230,7 +230,7 @@ export function InvoiceList({ invoices, isLoading, onDelete, filters, onFilterCh
                 </TableCell>
                 <TableCell className="text-right font-semibold">
                   <Link href={`/dashboard/invoices/${invoice.id}`} className="block">
-                    {formatCurrency(invoice.total, invoice.currency)}
+                    {formatCurrency(invoice.total ?? 0, invoice.currency ?? 'NGN')}
                   </Link>
                 </TableCell>
                 <TableCell className="text-right">
@@ -248,7 +248,7 @@ export function InvoiceList({ invoices, isLoading, onDelete, filters, onFilterCh
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => onDelete?.(invoice.id, invoice.number)}
+                      onClick={() => onDelete?.(invoice.id, invoice.number ?? '')}
                     >
                       <Trash2 className="h-4 w-4 text-destructive" />
                     </Button>
@@ -270,7 +270,7 @@ export function InvoiceList({ invoices, isLoading, onDelete, filters, onFilterCh
                   <div>
                     <p className="font-semibold">{invoice.number}</p>
                     <p className="text-sm text-muted-foreground">
-                      {invoice.client?.name || `Client #${invoice.client_id}`}
+                      {`Client #${invoice.client_id}`}
                     </p>
                   </div>
                   <Badge variant={getStatusBadgeVariant(invoice.status)}>
@@ -287,7 +287,7 @@ export function InvoiceList({ invoices, isLoading, onDelete, filters, onFilterCh
                 </div>
                 <div className="flex justify-between text-sm font-semibold">
                   <span>Total:</span>
-                  <span>{formatCurrency(invoice.total, invoice.currency)}</span>
+                  <span>{formatCurrency(invoice.total ?? 0, invoice.currency ?? 'NGN')}</span>
                 </div>
                 <div className="flex gap-2 pt-2">
                   <Button variant="outline" size="sm" className="flex-1" asChild>
@@ -305,7 +305,7 @@ export function InvoiceList({ invoices, isLoading, onDelete, filters, onFilterCh
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => onDelete?.(invoice.id, invoice.number)}
+                    onClick={() => onDelete?.(invoice.id, invoice.number ?? '')}
                   >
                     <Trash2 className="h-4 w-4 text-destructive" />
                   </Button>

@@ -89,7 +89,7 @@ export function ProfileSettingsForm() {
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
       <ImageUpload
-        value={user?.avatar_url}
+        value={user?.avatar_url ?? undefined}
         onChange={handleAvatarChange}
         type="avatar"
         label="Profile Picture"

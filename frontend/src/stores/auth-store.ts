@@ -186,7 +186,7 @@ export const useAuthStore = create<AuthState>()(
       },
       
       setToken: (token: string, refreshToken?: string) => {
-        setTokens(token, refreshToken);
+        setTokens(token, refreshToken ?? '');
       },
     }),
     {

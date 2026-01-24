@@ -88,7 +88,7 @@ export function BusinessSettingsForm() {
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
       <ImageUpload
-        value={user?.company_logo_url}
+        value={user?.company_logo_url ?? undefined}
         onChange={handleLogoChange}
         type="logo"
         label="Company Logo"

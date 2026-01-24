@@ -19,7 +19,7 @@ import type { Client } from '@/types/api';
 interface ClientListProps {
   clients: Client[];
   isLoading?: boolean;
-  onDelete?: (id: number, name: string) => void;
+  onDelete?: (id: string, name: string) => void;
 }
 
 export function ClientList({ clients, isLoading, onDelete }: ClientListProps) {
@@ -27,7 +27,7 @@ export function ClientList({ clients, isLoading, onDelete }: ClientListProps) {
 
   const filteredClients = clients.filter((client) =>
     client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    client.email.toLowerCase().includes(searchTerm.toLowerCase())
+    (client.email?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false)
   );
 
   if (isLoading) {

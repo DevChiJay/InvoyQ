@@ -41,9 +41,15 @@ export function InvoicePreview({
     );
   };
 
-  const subtotal = invoice.subtotal || invoice.items.reduce((sum, item) => sum + item.amount, 0);
-  const taxAmount = (subtotal * (invoice.tax || 0)) / 100;
-  const total = invoice.total || subtotal + taxAmount;
+  // Convert string values to numbers for calculations
+  const subtotal = invoice.subtotal !== null && invoice.subtotal !== undefined
+    ? parseFloat(invoice.subtotal)
+    : invoice.items.reduce((sum, item) => sum + parseFloat(item.amount), 0);
+  const taxValue = invoice.tax !== null && invoice.tax !== undefined ? parseFloat(invoice.tax) : 0;
+  const taxAmount = (subtotal * taxValue) / 100;
+  const total = invoice.total !== null && invoice.total !== undefined
+    ? parseFloat(invoice.total)
+    : subtotal + taxAmount;
 
   return (
     <Card className="shadow-lg">
@@ -79,7 +85,7 @@ export function InvoicePreview({
           {/* Invoice Title & Status */}
           <div className="text-left sm:text-right">
             <h2 className="text-3xl sm:text-4xl font-bold text-foreground mb-2">INVOICE</h2>
-            <p className="text-lg font-semibold text-muted-foreground mb-3">#{invoice.number}</p>
+            <p className="text-lg font-semibold text-muted-foreground mb-3">#{invoice.number ?? 'unknown'}</p>
             {getStatusBadge(invoice.status)}
           </div>
         </div>
@@ -147,10 +153,10 @@ export function InvoicePreview({
                     <td className="py-4 px-2 text-sm text-foreground">{item.description}</td>
                     <td className="py-4 px-2 text-sm text-foreground text-right">{Number(item.quantity)}</td>
                     <td className="py-4 px-2 text-sm text-foreground text-right">
-                      {formatCurrency(item.unit_price, invoice.currency)}
+                      {formatCurrency(parseFloat(item.unit_price), invoice.currency ?? 'NGN')}
                     </td>
                     <td className="py-4 px-2 text-sm font-semibold text-foreground text-right">
-                      {formatCurrency(item.amount, invoice.currency)}
+                      {formatCurrency(parseFloat(item.amount), invoice.currency ?? 'NGN')}
                     </td>
                   </tr>
                 ))}
@@ -164,17 +170,17 @@ export function InvoicePreview({
           <div className="w-full sm:w-80 space-y-3">
             <div className="flex justify-between py-2 border-b border-border">
               <span className="text-sm text-muted-foreground">Subtotal:</span>
-              <span className="text-sm font-semibold text-foreground">{formatCurrency(subtotal, invoice.currency)}</span>
+              <span className="text-sm font-semibold text-foreground">{formatCurrency(subtotal, invoice.currency ?? 'NGN')}</span>
             </div>
-            {invoice.tax > 0 && (
+            {taxValue > 0 && (
               <div className="flex justify-between py-2 border-b border-border">
-                <span className="text-sm text-muted-foreground">Tax ({invoice.tax}%):</span>
-                <span className="text-sm font-semibold text-foreground">{formatCurrency(taxAmount, invoice.currency)}</span>
+                <span className="text-sm text-muted-foreground">Tax ({taxValue}%):</span>
+                <span className="text-sm font-semibold text-foreground">{formatCurrency(taxAmount, invoice.currency ?? 'NGN')}</span>
               </div>
             )}
             <div className="flex justify-between py-3 px-4 bg-muted rounded-lg">
               <span className="text-lg font-bold text-foreground">Total:</span>
-              <span className="text-lg font-bold text-foreground">{formatCurrency(total, invoice.currency)}</span>
+              <span className="text-lg font-bold text-foreground">{formatCurrency(total, invoice.currency ?? 'NGN')}</span>
             </div>
           </div>
         </div>
