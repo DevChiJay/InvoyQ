@@ -48,6 +48,26 @@ export default function RootLayout() {
     }
   }, [segments, isReady]);
 
+  // Handle navigation based on auth and onboarding state
+  useEffect(() => {
+    if (!isReady) return;
+
+    const inAuthGroup = segments[0] === '(auth)';
+    const inTabsGroup = segments[0] === '(tabs)';
+
+    // First time user - show onboarding
+    if (!hasSeenOnboarding && !inAuthGroup) {
+      router.replace('/(auth)/onboarding');
+    }
+    // User has seen onboarding but not logged in
+    else if (hasSeenOnboarding && !hasToken && !inAuthGroup) {
+      router.replace('/(auth)/login');
+    }
+    // User is logged in but not in tabs
+    else if (hasToken && !inTabsGroup) {
+      router.replace('/(tabs)');
+    }
+  }, [isReady, hasSeenOnboarding, hasToken, segments]);
 
   if (!isReady) {
     return (

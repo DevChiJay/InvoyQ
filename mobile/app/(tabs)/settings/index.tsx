@@ -1,5 +1,6 @@
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Image, Linking } from 'react-native';
 import { Stack, router } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '@/hooks/useAuth';
 import { useTheme } from '@/hooks/useTheme';
 import { Card } from '@/components/ui/Card';
@@ -11,6 +12,7 @@ import { Ionicons } from '@expo/vector-icons';
 export default function SettingsScreen() {
   const { user, logout } = useAuth();
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
 
   const handleLogout = async () => {
     Alert.alert(
@@ -30,7 +32,10 @@ export default function SettingsScreen() {
   return (
     <ScrollView
       style={[styles.container, { backgroundColor: colors.background }]}
-      contentContainerStyle={styles.content}
+      contentContainerStyle={[
+        styles.content,
+        { paddingBottom: Math.max(insets.bottom + 80, 100) }
+      ]}
     >
       <Stack.Screen
         options={{

@@ -11,6 +11,7 @@ import {
   Alert,
   Image,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '@/hooks/useAuth';
 import { router } from 'expo-router';
 import { useTheme } from '@/hooks/useTheme';
@@ -22,6 +23,7 @@ import { Typography } from '@/constants/typography';
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const { login, isLoggingIn, loginError } = useAuth();
   const { colors } = useTheme();
 
@@ -35,7 +37,7 @@ export default function LoginScreen() {
 
   return (
     <KeyboardAvoidingView
-      style={[styles.container, { backgroundColor: colors.background }]}
+      style={[styles.container]}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <ScrollView
@@ -51,58 +53,77 @@ export default function LoginScreen() {
         </View>
 
         <View style={styles.header}>
-          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
+          <Text style={[styles.subtitle]}>
             Sign in to your account
           </Text>
         </View>
 
-        <Card variant="elevated" style={styles.formCard}>
+        <View style={styles.formContainer}>
           <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: colors.text }]}>Email</Text>
-            <TextInput
-              style={[
-                styles.input,
-                {
-                  backgroundColor: colors.inputBackground,
-                  borderColor: colors.border,
-                  color: colors.text,
-                },
-              ]}
-              placeholder="you@example.com"
-              placeholderTextColor={colors.textSecondary}
-              value={email}
-              onChangeText={setEmail}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              autoCorrect={false}
-            />
+            <Text style={[styles.label]}>Email</Text>
+            <View style={styles.inputWrapper}>
+              <Ionicons name="mail-outline" size={20} color="rgba(107, 114, 128, 0.7)" style={styles.inputIcon} />
+              <TextInput
+                style={[
+                  styles.input,
+                  styles.inputWithIcon,
+                  {
+                    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                    borderColor: 'rgba(255, 255, 255, 0.3)',
+                    color: '#1F2937',
+                  },
+                ]}
+                placeholder="you@example.com"
+                placeholderTextColor="rgba(107, 114, 128, 0.7)"
+                value={email}
+                onChangeText={setEmail}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                autoCorrect={false}
+              />
+            </View>
           </View>
 
           <View style={styles.inputGroup}>
             <View style={styles.passwordHeader}>
-              <Text style={[styles.label, { color: colors.text }]}>Password</Text>
+              <Text style={[styles.label]}>Password</Text>
               <TouchableOpacity onPress={() => router.push('/(auth)/forgot-password')}>
-                <Text style={[styles.forgotPasswordLink, { color: colors.primary }]}>
-                  Forgot?
+                <Text style={[styles.forgotPasswordLink]}>
+                  Forgot Password?
                 </Text>
               </TouchableOpacity>
             </View>
-            <TextInput
-              style={[
-                styles.input,
-                {
-                  backgroundColor: colors.inputBackground,
-                  borderColor: colors.border,
-                  color: colors.text,
-                },
-              ]}
-              placeholder="••••••••"
-              placeholderTextColor={colors.textSecondary}
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry
-              autoCapitalize="none"
-            />
+            <View style={styles.inputWrapper}>
+              <Ionicons name="lock-closed-outline" size={20} color="rgba(107, 114, 128, 0.7)" style={styles.inputIcon} />
+              <TextInput
+                style={[
+                  styles.input,
+                  styles.inputWithIcon,
+                  styles.inputWithRightIcon,
+                  {
+                    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                    borderColor: 'rgba(255, 255, 255, 0.3)',
+                    color: '#1F2937',
+                  },
+                ]}
+                placeholder="••••••••"
+                placeholderTextColor="rgba(107, 114, 128, 0.7)"
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry={!showPassword}
+                autoCapitalize="none"
+              />
+              <TouchableOpacity 
+                onPress={() => setShowPassword(!showPassword)}
+                style={styles.eyeIcon}
+              >
+                <Ionicons 
+                  name={showPassword ? "eye-off-outline" : "eye-outline"} 
+                  size={20} 
+                  color="rgba(107, 114, 128, 0.7)" 
+                />
+              </TouchableOpacity>
+            </View>
           </View>
 
           {loginError && (
@@ -127,12 +148,12 @@ export default function LoginScreen() {
             onPress={() => router.push('/(auth)/register')}
             style={styles.linkContainer}
           >
-            <Text style={[styles.linkText, { color: colors.textSecondary }]}>
+            <Text style={[styles.linkText]}>
               Don't have an account?{' '}
-              <Text style={{ color: colors.primary, fontWeight: '600' }}>Sign Up</Text>
+              <Text style={{ fontWeight: '600' }}>Sign Up</Text>
             </Text>
           </TouchableOpacity>
-        </Card>
+        </View>
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -141,11 +162,12 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#6366F120', // Warm orange background
   },
   scrollContent: {
     flexGrow: 1,
     justifyContent: 'center',
-    padding: Spacing.lg,
+    padding: Spacing.xl,
   },
   logoContainer: {
     alignItems: 'center',
@@ -163,15 +185,37 @@ const styles = StyleSheet.create({
     fontSize: Typography.sizes['2xl'],
     fontWeight: Typography.weights.bold,
     marginBottom: Spacing.xs,
+    color: '#fff',
   },
   subtitle: {
     fontSize: Typography.sizes.md,
   },
-  formCard: {
-    padding: Spacing.xl,
+  formContainer: {
+    width: '100%',
   },
   inputGroup: {
     marginBottom: Spacing.lg,
+  },
+  inputWrapper: {
+    position: 'relative',
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  inputIcon: {
+    position: 'absolute',
+    left: Spacing.md,
+    zIndex: 1,
+  },
+  inputWithIcon: {
+    paddingLeft: 44,
+  },
+  inputWithRightIcon: {
+    paddingRight: 44,
+  },
+  eyeIcon: {
+    position: 'absolute',
+    right: Spacing.md,
+    padding: Spacing.xs,
   },
   passwordHeader: {
     flexDirection: 'row',
@@ -189,10 +233,16 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.xs,
   },
   input: {
+    flex: 1,
     borderWidth: 1,
-    borderRadius: BorderRadius.md,
-    padding: Spacing.md,
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.lg,
     fontSize: Typography.sizes.md,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   errorContainer: {
     padding: Spacing.sm,
