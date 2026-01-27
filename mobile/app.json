@@ -66,7 +66,7 @@
         "origin": false
       },
       "eas": {
-        "projectId": "a1a84042-cc7c-41a9-a61f-f77023d9242a"
+        "projectId": "PROJECT_ID"
       }
     },
     "owner": "taichijay",
@@ -74,7 +74,7 @@
       "policy": "appVersion"
     },
     "updates": {
-      "url": "https://u.expo.dev/a1a84042-cc7c-41a9-a61f-f77023d9242a"
+      "url": "https://u.expo.dev/"
     }
   }
 }

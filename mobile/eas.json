@@ -15,8 +15,8 @@
         "buildType": "apk"
       },
       "env": {
-        "EXPO_PUBLIC_API_BASE_URL": "https://api.invoyq.com",
-        "EXPO_PUBLIC_FRONTEND_URL": "https://invoyq.com"
+        "EXPO_PUBLIC_API_BASE_URL": "https://api.liveUrl.com",
+        "EXPO_PUBLIC_FRONTEND_URL": "https://liveUrl.com"
       },
       "channel": "preview"
     },
@@ -26,8 +26,8 @@
         "buildType": "app-bundle"
       },
       "env": {
-        "EXPO_PUBLIC_API_BASE_URL": "https://api.invoyq.com",
-        "EXPO_PUBLIC_FRONTEND_URL": "https://invoyq.com"
+        "EXPO_PUBLIC_API_BASE_URL": "https://api.liveUrl.com",
+        "EXPO_PUBLIC_FRONTEND_URL": "https://liveUrl.com"
       },
       "channel": "production"
     }

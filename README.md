@@ -1,13 +1,14 @@
-# InvoIQ
+# InvoyQ
 
-AI-powered invoice and client management system with automated extraction from chat screenshots.
+Modern invoice and inventory management platform with AI-powered document extraction. Built for businesses to manage clients, products, invoices, and expenses seamlessly across web and mobile.
 
 ## 📁 Project Structure
 
 ```
-InvoIQ/
-├── backend/          # FastAPI backend with AI extraction
-└── frontend/         # Next.js frontend with React
+InvoyQ/
+├── backend/          # FastAPI + MongoDB backend with AI extraction
+├── frontend/         # Next.js web application
+└── mobile/           # React Native (Expo) mobile app
 ```
 
 ## 🚀 Quick Start
@@ -18,13 +19,11 @@ cd backend
 python -m venv venv
 source venv/bin/activate  # Windows: venv\Scripts\activate
 pip install -r requirements.txt
-cp .env.example .env      # Configure your environment variables
+cp .env.example .env
 uvicorn app.main:app --reload
 ```
 
-**Tech Stack:** FastAPI, SQLAlchemy, PostgreSQL, OpenAI API
-
-See [backend/README.md](./backend/README.md) for detailed setup and API documentation.
+**Stack:** FastAPI • MongoDB • OpenAI API • JWT Auth • Email Service
 
 ### Frontend
 ```bash
@@ -33,25 +32,53 @@ npm install
 npm run dev
 ```
 
-**Tech Stack:** Next.js 15, React, TypeScript, TailwindCSS, shadcn/ui
+**Stack:** Next.js 15 • React • TypeScript • TailwindCSS • shadcn/ui
 
-See [frontend/README.md](./frontend/README.md) for detailed setup and configuration.
+### Mobile
+```bash
+cd mobile
+npm install
+npx expo start
+```
 
-## ✨ Key Features
+**Stack:** Expo SDK 52+ • React Native • TypeScript • React Query • Axios
 
-- 🤖 **AI Extraction**: Extract invoice details from chat screenshots using OpenAI
-- 📄 **Invoice Management**: Create, track, and manage invoices with PDF generation
-- 👥 **Client Management**: Organize and maintain client records
-- 💳 **Payment Integration**: Paystack and Stripe subscription management
-- 🔐 **Authentication**: JWT-based secure user authentication
-- 📧 **Email Reminders**: Automated payment reminder system
-- 💰 **Multi-Currency**: Support for multiple currencies
+## ✨ Features
 
-## 🔗 API & Frontend
+- 🤖 **AI Document Extraction** - Extract invoice data from screenshots using OpenAI
+- 📄 **Invoice Management** - Create, track, send invoices with PDF generation
+- 📦 **Inventory & Products** - Manage product catalog with stock tracking
+- 👥 **Client Management** - Organize customer records and history
+- 💰 **Expense Tracking** - Monitor business expenses with categorization
+- 🔐 **Secure Authentication** - JWT-based auth with refresh tokens
+- 📧 **Email Notifications** - Automated invoices and payment reminders
+- 💳 **Payment Integration** - Paystack and Stripe support
+- 📱 **Cross-Platform** - Web and native mobile apps (iOS/Android)
+- 🌐 **Offline Support** - Mobile app works offline with sync
+- 🎨 **Modern UI** - Consistent design across all platforms
 
-- **Backend API**: `http://localhost:8000`
+## 🔗 Development URLs
+
+- **API**: `http://localhost:8000`
 - **API Docs**: `http://localhost:8000/docs`
-- **Frontend**: `http://localhost:3000`
+- **Web App**: `http://localhost:3000`
+- **Mobile**: Expo Go app (scan QR code)
+
+## 🧪 Testing
+
+```bash
+# Backend tests
+cd backend
+pytest
+
+# Frontend tests  
+cd frontend
+npm test
+```
+
+## 📦 Database
+
+MongoDB with indexed collections for clients, products, invoices, expenses, and users. See [backend/db/indexes_spec.py](backend/db/indexes_spec.py) for schema details.
 
 ## 📝 License
 
@@ -59,4 +86,4 @@ MIT
 
 ---
 
-For detailed documentation, please refer to the README files in each project folder.
+For detailed setup instructions and documentation, see the README files in each project folder.
