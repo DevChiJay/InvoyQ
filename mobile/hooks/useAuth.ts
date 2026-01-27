@@ -41,7 +41,13 @@ export function useAuth() {
     mutationFn: authApi.login,
     onSuccess: async (data) => {
       // Tokens are already stored in authApi.login
-      queryClient.invalidateQueries({ queryKey: AUTH_KEYS.currentUser });
+      // Wait a brief moment to ensure tokens are fully written to SecureStore
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // Invalidate and refetch current user
+      await queryClient.invalidateQueries({ queryKey: AUTH_KEYS.currentUser });
+      await queryClient.refetchQueries({ queryKey: AUTH_KEYS.currentUser });
+      
       router.replace('/(tabs)');
     },
   });

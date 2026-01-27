@@ -17,9 +17,15 @@ export const authApi = {
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     });
     
-    // Store both access and refresh tokens
+    // Store both access and refresh tokens and ensure they're fully written
     const tokenData: Token = response.data;
     await tokenStorage.setTokens(tokenData.access_token, tokenData.refresh_token);
+    
+    // Verify tokens were stored successfully
+    const storedToken = await tokenStorage.getToken();
+    if (!storedToken) {
+      throw new Error('Failed to store authentication token');
+    }
     
     return tokenData;
   },

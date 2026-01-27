@@ -52,17 +52,20 @@ export default function RootLayout() {
     const inTabsGroup = segments[0] === '(tabs)';
 
     // First time user - show onboarding
-  if (!hasSeenOnboarding) {
-    hasNavigated.current = true;
-    router.replace('/(auth)/onboarding');
-  } else if (!hasToken) {
-    hasNavigated.current = true;
-    router.replace('/(auth)/login');
-  } else if (!inTabsGroup) {
-    hasNavigated.current = true;
-    router.replace('/(tabs)');
-  }
-}, [isReady, hasSeenOnboarding, hasToken]);
+    if (!hasSeenOnboarding) {
+      hasNavigated.current = true;
+      router.replace('/(auth)/onboarding');
+    } else if (!hasToken) {
+      // Only redirect to login if not already in auth group
+      if (!inAuthGroup) {
+        hasNavigated.current = true;
+        router.replace('/(auth)/login');
+      }
+    } else if (!inTabsGroup) {
+      hasNavigated.current = true;
+      router.replace('/(tabs)');
+    }
+  }, [isReady, hasSeenOnboarding, hasToken, segments]);
 
 
   return (
