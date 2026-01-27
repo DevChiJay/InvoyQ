@@ -844,7 +844,6 @@ export default function CreateInvoiceScreen() {
         <View style={styles.modalOverlay}>
           <View style={[styles.modalContent, { backgroundColor: colors.surface, paddingBottom: insets.bottom }]}>
             <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
-            <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
               <Text style={[styles.modalTitle, { color: colors.text }]}>Add Custom Item</Text>
               <TouchableOpacity onPress={() => setShowCustomItemModal(false)}>
                 <Ionicons name="close" size={24} color={colors.text} />
@@ -901,7 +900,6 @@ export default function CreateInvoiceScreen() {
             </View>
           </View>
         </View>
-        </View>
       </Modal>
 
       {/* Create Client Modal */}
@@ -911,7 +909,6 @@ export default function CreateInvoiceScreen() {
           style={styles.modalOverlay}
         >
           <View style={[styles.modalContent, { backgroundColor: colors.surface, paddingBottom: insets.bottom }]}>
-            <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
             <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
               <Text style={[styles.modalTitle, { color: colors.text }]}>Create New Client</Text>
               <TouchableOpacity onPress={() => setShowCreateClientModal(false)}>
@@ -973,7 +970,6 @@ export default function CreateInvoiceScreen() {
                 style={styles.button}
               />
             </View>
-          </View>
           </View>
         </KeyboardAvoidingView>
       </Modal>
@@ -1152,7 +1148,7 @@ const styles = StyleSheet.create({
   },
   modalBody: {
     padding: 16,
-    flex: 1,
+    maxHeight: 400,
   },
   modalFooter: {
     flexDirection: 'row',
