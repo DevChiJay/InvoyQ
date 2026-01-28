@@ -1,6 +1,8 @@
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Image, Linking } from 'react-native';
 import { Stack, router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import * as Updates from 'expo-updates';
+import { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useTheme } from '@/hooks/useTheme';
 import { Card } from '@/components/ui/Card';
@@ -13,6 +15,27 @@ export default function SettingsScreen() {
   const { user, logout } = useAuth();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
+  const [isChecking, setIsChecking] = useState(false);
+  const [updateMessage, setUpdateMessage] = useState<string | null>(null);
+
+  const {
+    currentlyRunning,
+    isUpdateAvailable,
+    isUpdatePending
+  } = Updates.useUpdates();
+
+  useEffect(() => {
+    if (isUpdatePending) {
+      // Update has successfully downloaded; apply it now
+      Alert.alert(
+        'Update Ready',
+        'A new update has been downloaded. The app will restart to apply the update.',
+        [
+          { text: 'OK', onPress: () => Updates.reloadAsync() }
+        ]
+      );
+    }
+  }, [isUpdatePending]);
 
   const handleLogout = async () => {
     Alert.alert(
@@ -23,6 +46,45 @@ export default function SettingsScreen() {
         { text: 'Logout', style: 'destructive', onPress: () => logout() },
       ]
     );
+  };
+
+  const handleCheckForUpdates = async () => {
+    // Updates are only available in production builds, not in Expo Go or development
+    if (!Updates.isEnabled) {
+      Alert.alert(
+        'Updates Not Available',
+        'App updates are only available in production builds. This feature is disabled in development mode.',
+        [{ text: 'OK' }]
+      );
+      return;
+    }
+
+    try {
+      setIsChecking(true);
+      setUpdateMessage(null);
+      
+      const update = await Updates.checkForUpdateAsync();
+      
+      if (update.isAvailable) {
+        setUpdateMessage('Downloading update...');
+        await Updates.fetchUpdateAsync();
+        setUpdateMessage('Update downloaded! Restarting...');
+      } else {
+        setUpdateMessage('You are already on the latest version!');
+        setTimeout(() => setUpdateMessage(null), 3000);
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      console.error('Update check error:', error);
+      Alert.alert(
+        'Update Error',
+        `Failed to check for updates: ${errorMessage}`,
+        [{ text: 'OK' }]
+      );
+      setUpdateMessage(null);
+    } finally {
+      setIsChecking(false);
+    }
   };
 
   const handleProfilePress = () => {
@@ -140,6 +202,41 @@ export default function SettingsScreen() {
         variant="outline"
         style={styles.logoutButton}
       />
+
+      {/* Update Check Section */}
+      <Card variant="elevated" style={styles.updateCard}>
+        <View style={styles.updateContent}>
+          <View style={styles.updateHeader}>
+            <Ionicons name="sync-outline" size={24} color={colors.primary} />
+            <View style={styles.updateInfo}>
+              <Text style={[styles.updateTitle, { color: colors.text }]}>
+                App Updates
+              </Text>
+              <Text style={[styles.updateSubtitle, { color: colors.textSecondary }]}>
+                {currentlyRunning.isEmbeddedLaunch
+                  ? 'Running built-in version'
+                  : 'Running updated version'}
+              </Text>
+            </View>
+          </View>
+          
+          {updateMessage && (
+            <View style={[styles.updateMessageContainer, { backgroundColor: colors.primaryLight + '20' }]}>
+              <Text style={[styles.updateMessage, { color: colors.primary }]}>
+                {updateMessage}
+              </Text>
+            </View>
+          )}
+          
+          <Button
+            title={isChecking ? "Checking..." : "Check for Updates"}
+            onPress={handleCheckForUpdates}
+            variant="primary"
+            style={styles.updateButton}
+            disabled={isChecking}
+          />
+        </View>
+      </Card>
 
       <Text style={[styles.version, { color: colors.textTertiary }]}>
         Version 1.0.0
@@ -261,6 +358,41 @@ const styles = StyleSheet.create({
   logoutButton: {
     marginTop: Spacing.lg,
     marginBottom: Spacing.md,
+  },
+  updateCard: {
+    marginBottom: Spacing.md,
+  },
+  updateContent: {
+    padding: Spacing.md,
+  },
+  updateHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: Spacing.md,
+  },
+  updateInfo: {
+    marginLeft: Spacing.sm,
+    flex: 1,
+  },
+  updateTitle: {
+    fontSize: Typography.sizes.md,
+    fontWeight: Typography.weights.semibold,
+    marginBottom: 2,
+  },
+  updateSubtitle: {
+    fontSize: Typography.sizes.sm,
+  },
+  updateMessageContainer: {
+    padding: Spacing.sm,
+    borderRadius: BorderRadius.sm,
+    marginBottom: Spacing.md,
+  },
+  updateMessage: {
+    fontSize: Typography.sizes.sm,
+    textAlign: 'center',
+  },
+  updateButton: {
+    width: '100%',
   },
   version: {
     fontSize: Typography.sizes.sm,

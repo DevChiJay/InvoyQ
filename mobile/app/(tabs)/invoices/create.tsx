@@ -187,7 +187,13 @@ export default function CreateInvoiceScreen() {
     try {
       const validated = clientSchema.parse(newClient);
       
-      const result = await createClient.mutateAsync(validated as any);
+      // Remove empty email field to avoid backend validation error
+      const clientData: any = { ...validated };
+      if (!clientData.email || clientData.email.trim() === '') {
+        delete clientData.email;
+      }
+      
+      const result = await createClient.mutateAsync(clientData);
       
       // Set the newly created client as selected
       handleChange('client_id', result.id);
