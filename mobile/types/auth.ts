@@ -30,6 +30,7 @@ export interface RegisterRequest {
   email: string;
   full_name: string;
   password: string;
+  registration_source?: string;
 }
 
 export interface UserUpdate {

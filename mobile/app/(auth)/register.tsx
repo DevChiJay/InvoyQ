@@ -47,7 +47,7 @@ export default function RegisterScreen() {
       return;
     }
 
-    register({ email, full_name: fullName, password }, {
+    register({ email, full_name: fullName, password, registration_source: 'mobile' }, {
       onSuccess: () => {
         router.replace(`/(auth)/email-sent?email=${encodeURIComponent(email)}`);
       },

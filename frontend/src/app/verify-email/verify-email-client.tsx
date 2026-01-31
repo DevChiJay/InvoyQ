@@ -4,16 +4,18 @@ import { useSearchParams, useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
-import { CheckCircle2, XCircle, Loader2, Mail } from 'lucide-react'
+import { CheckCircle2, XCircle, Loader2, Mail, Smartphone } from 'lucide-react'
 
 export default function VerifyEmailClient() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const token = searchParams.get('token')
+  const source = searchParams.get('source') // Get source from URL
 
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading')
   const [message, setMessage] = useState('')
   const [email, setEmail] = useState('')
+  const [registrationSource, setRegistrationSource] = useState<string>('web')
 
   useEffect(() => {
     const verifyEmail = async () => {
@@ -31,6 +33,7 @@ export default function VerifyEmailClient() {
           setStatus('success')
           setMessage(data.message || 'Email verified successfully!')
           setEmail(data.email || '')
+          setRegistrationSource(data.registration_source || source || 'web')
         } else {
           setStatus('error')
           setMessage(data.detail || 'Verification failed. The link may be expired or invalid.')
@@ -42,7 +45,7 @@ export default function VerifyEmailClient() {
     }
 
     verifyEmail()
-  }, [token])
+  }, [token, source])
 
   const handleResendEmail = () => {
     router.push('/resend-verification')
@@ -97,9 +100,23 @@ export default function VerifyEmailClient() {
                   {email}
                 </p>
               )}
-              <p className="text-sm text-muted-foreground pt-2">
-                You can now log in to your account and start using InvoYQ!
-              </p>
+              {registrationSource === 'mobile' ? (
+                <div className="pt-4 space-y-3">
+                  <div className="flex items-center justify-center gap-2 p-4 bg-blue-50 dark:bg-blue-950 rounded-lg">
+                    <Smartphone className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                    <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                      Please open the InvoYQ mobile app to continue
+                    </p>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Your email has been verified! Return to the mobile app and log in with your credentials.
+                  </p>
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground pt-2">
+                  You can now log in to your account and start using InvoYQ!
+                </p>
+              )}
             </div>
           )}
 
@@ -114,7 +131,7 @@ export default function VerifyEmailClient() {
         </CardContent>
 
         <CardFooter className="flex flex-col gap-2">
-          {status === 'success' && (
+          {status === 'success' && registrationSource !== 'mobile' && (
             <Button onClick={handleGoToLogin} className="w-full">
               Go to Login
             </Button>

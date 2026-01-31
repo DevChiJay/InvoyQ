@@ -9,6 +9,7 @@ class UserBase(BaseModel):
 
 class UserCreate(UserBase):
     password: str
+    registration_source: Optional[str] = "web"  # "web" or "mobile"
     
     @field_validator('password')
     @classmethod
@@ -65,6 +66,7 @@ class EmailVerificationResponse(BaseModel):
     """Response after successful email verification"""
     message: str
     email: str
+    registration_source: Optional[str] = None
 
 
 class ResendVerificationRequest(BaseModel):

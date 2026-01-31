@@ -33,7 +33,7 @@ def generate_verification_token() -> str:
     return secrets.token_urlsafe(32)
 
 
-async def send_verification_email(user_id: str, email: str, full_name: str, db: AsyncIOMotorDatabase) -> bool:
+async def send_verification_email(user_id: str, email: str, full_name: str, db: AsyncIOMotorDatabase, registration_source: str = "web") -> bool:
     """Generate verification token and send email to user"""
     user_repo = UserRepository(db)
     
@@ -49,8 +49,8 @@ async def send_verification_email(user_id: str, email: str, full_name: str, db: 
         }
     )
     
-    # Create verification URL
-    verification_url = f"{settings.FRONTEND_URL}/verify-email?token={verification_token}"
+    # Create verification URL with source parameter
+    verification_url = f"{settings.FRONTEND_URL}/verify-email?token={verification_token}&source={registration_source}"
     
     # Send email
     return email_service.send_verification_email(
@@ -73,12 +73,19 @@ async def register(user_in: UserCreate, db: AsyncIOMotorDatabase = Depends(get_d
         email=user_in.email,
         full_name=user_in.full_name,
         hashed_password=get_password_hash(user_in.password),
-        is_verified=False
+        is_verified=False,
+        registration_source=user_in.registration_source or "web"
     )
     
     # Send verification email (don't fail registration if email fails)
     try:
-        await send_verification_email(user.id, user.email, user.full_name, db)
+        await send_verification_email(
+            user.id, 
+            user.email, 
+            user.full_name, 
+            db,
+            user_in.registration_source or "web"
+        )
     except Exception as e:
         # Log error but don't fail registration
         print(f"Failed to send verification email: {e}")
@@ -142,7 +149,8 @@ async def verify_email(token: str, db: AsyncIOMotorDatabase = Depends(get_databa
     
     return {
         "message": "Email verified successfully! You can now log in.",
-        "email": user.email
+        "email": user.email,
+        "registration_source": user.registration_source or "web"
     }
 
 
@@ -162,7 +170,13 @@ async def resend_verification(request: ResendVerificationRequest, db: AsyncIOMot
     
     # Send verification email
     try:
-        success = await send_verification_email(user.id, user.email, user.full_name, db)
+        success = await send_verification_email(
+            user.id, 
+            user.email, 
+            user.full_name, 
+            db,
+            user.registration_source or "web"
+        )
         if not success:
             raise HTTPException(status_code=500, detail="Failed to send verification email. Please try again later.")
     except Exception as e:

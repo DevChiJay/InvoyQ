@@ -50,6 +50,9 @@ class UserInDB(UserOut):
     password_reset_token: Optional[str] = None
     password_reset_token_expires: Optional[datetime] = None
     
+    # Registration source tracking
+    registration_source: Optional[str] = "web"  # "web" or "mobile"
+    
     class Config:
         populate_by_name = True
 
@@ -136,7 +139,8 @@ class UserRepository(BaseRepository[UserInDB]):
         oauth_provider: Optional[str] = None,
         oauth_provider_id: Optional[str] = None,
         avatar_url: Optional[str] = None,
-        is_verified: bool = False
+        is_verified: bool = False,
+        registration_source: str = "web"
     ) -> UserInDB:
         """
         Create a new user.
@@ -149,6 +153,7 @@ class UserRepository(BaseRepository[UserInDB]):
             oauth_provider_id: Optional OAuth provider user ID
             avatar_url: Optional avatar URL
             is_verified: Email verification status
+            registration_source: Source of registration ("web" or "mobile")
             
         Returns:
             Created user document
@@ -157,7 +162,8 @@ class UserRepository(BaseRepository[UserInDB]):
             user = await user_repo.create_user(
                 email="test@example.com",
                 full_name="Test User",
-                hashed_password=hash_password("secret")
+                hashed_password=hash_password("secret"),
+                registration_source="mobile"
             )
         """
         doc = {
@@ -171,6 +177,7 @@ class UserRepository(BaseRepository[UserInDB]):
             "oauth_provider": oauth_provider,
             "oauth_provider_id": oauth_provider_id,
             "avatar_url": avatar_url,
+            "registration_source": registration_source,
             "created_at": datetime.utcnow(),
             "updated_at": datetime.utcnow()
         }
