@@ -78,6 +78,7 @@ export const productCreateSchema = z.object({
   sku: z.string().min(1, 'SKU is required').max(100, 'SKU must be less than 100 characters').trim(),
   name: z.string().min(1, 'Name is required').max(255, 'Name must be less than 255 characters'),
   description: z.string().max(1000, 'Description must be less than 1000 characters').optional().or(z.literal('')),
+  category: z.string().max(100, 'Category must be less than 100 characters').optional().or(z.literal('')),
   unit_price: z.string().regex(/^\d+(\.\d{1,2})?$/, 'Invalid price format').refine((val) => parseFloat(val) > 0, 'Price must be greater than 0'),
   tax_rate: z.string().regex(/^\d+(\.\d{1,2})?$/, 'Invalid tax rate format').refine((val) => {
     const num = parseFloat(val);

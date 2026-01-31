@@ -292,6 +292,38 @@ export default function CreateInvoiceScreen() {
     setShowProductModal(false);
   };
 
+  // Get unique categories
+  const categories = React.useMemo(() => {
+    const categorySet = new Set<string>();
+    products.forEach(product => {
+      if (product.category && product.category.trim()) {
+        categorySet.add(product.category);
+      }
+    });
+    return Array.from(categorySet).sort();
+  }, [products]);
+
+  // Add all products from a category
+  const handleAddCategory = (category: string) => {
+    const productsInCategory = products.filter(p => p.category === category);
+    
+    const newItems: ProductItem[] = productsInCategory.map(product => ({
+      id: `${Date.now()}-${product.id}`,
+      product_id: product.id,
+      name: product.name,
+      quantity: 1,
+      unit_price: parseFloat(product.unit_price),
+      tax_rate: parseFloat(product.tax_rate || '0'),
+      amount: parseFloat(product.unit_price),
+    }));
+
+    setLineItems((prev) => [...prev, ...newItems]);
+    setShowCategoryModal(false);
+  };
+
+  // Category modal state
+  const [showCategoryModal, setShowCategoryModal] = useState(false);
+
   const handleAddCustomItem = () => {
     // Validate custom item
     if (!customItem.description.trim()) {
@@ -579,6 +611,15 @@ export default function CreateInvoiceScreen() {
               style={styles.addButton}
               icon={<Ionicons name="cube-outline" size={18} color={colors.primary} />}
             />
+            {categories.length > 0 && (
+              <Button
+                title="Add Category"
+                onPress={() => setShowCategoryModal(true)}
+                variant="outline"
+                style={styles.addButton}
+                icon={<Ionicons name="folder-outline" size={18} color={colors.primary} />}
+              />
+            )}
             <Button
               title="Add Custom"
               onPress={() => setShowCustomItemModal(true)}
@@ -934,6 +975,52 @@ export default function CreateInvoiceScreen() {
         </View>
       </Modal>
 
+      {/* Category Modal */}
+      <Modal visible={showCategoryModal} animationType="slide" transparent>
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { backgroundColor: colors.surface, paddingBottom: insets.bottom }]}>
+            <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
+              <Text style={[styles.modalTitle, { color: colors.text }]}>Select Category</Text>
+              <TouchableOpacity onPress={() => setShowCategoryModal(false)}>
+                <Ionicons name="close" size={24} color={colors.text} />
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.modalBody}>
+              <FlatList
+                data={categories}
+                keyExtractor={(item) => item}
+                renderItem={({ item: category }) => {
+                  const productCount = products.filter(p => p.category === category).length;
+                  return (
+                    <TouchableOpacity
+                      style={[styles.listItem, { borderBottomColor: colors.border }]}
+                      onPress={() => handleAddCategory(category)}
+                    >
+                      <View style={styles.categoryRow}>
+                        <Ionicons name="folder" size={24} color={colors.primary} />
+                        <View style={styles.categoryInfo}>
+                          <Text style={[styles.categoryName, { color: colors.text }]}>{category}</Text>
+                          <Text style={[styles.categoryCount, { color: colors.textSecondary }]}>
+                            {productCount} {productCount === 1 ? 'product' : 'products'}
+                          </Text>
+                        </View>
+                        <Ionicons name="add-circle-outline" size={24} color={colors.primary} />
+                      </View>
+                    </TouchableOpacity>
+                  );
+                }}
+                ListEmptyComponent={
+                  <View style={styles.emptyList}>
+                    <Text style={[styles.emptyText, { color: colors.textSecondary }]}>No categories found</Text>
+                  </View>
+                }
+              />
+            </View>
+          </View>
+        </View>
+      </Modal>
+
       {/* Create Client Modal */}
       <Modal visible={showCreateClientModal} animationType="slide" transparent>
         <KeyboardAvoidingView
@@ -1215,6 +1302,26 @@ const styles = StyleSheet.create({
   },
   emptyContainer: {
     padding: 32,
+    alignItems: 'center',
+  },
+  categoryRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  categoryInfo: {
+    flex: 1,
+  },
+  categoryName: {
+    fontSize: 16,
+    fontWeight: '500',
+    marginBottom: 2,
+  },
+  categoryCount: {
+    fontSize: 14,
+  },
+  emptyList: {
+    padding: 40,
     alignItems: 'center',
   },
 });

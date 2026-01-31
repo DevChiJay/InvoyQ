@@ -1,9 +1,11 @@
 'use client';
 
+import { useState, useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { productCreateSchema, productUpdateSchema } from '@/lib/validations';
 import { Product } from '@/types/api';
+import { useProductStore } from '@/stores/product-store';
 import { Button } from '@/components/ui/button';
 import {
   Form,
@@ -35,6 +37,27 @@ interface ProductFormProps {
 export function ProductForm({ product, onSubmit, isSubmitting }: ProductFormProps) {
   const isEdit = !!product;
   const schema = isEdit ? productUpdateSchema : productCreateSchema;
+  const { products, fetchProducts } = useProductStore();
+
+  // Fetch products to get existing categories
+  useEffect(() => {
+    fetchProducts({});
+  }, [fetchProducts]);
+
+  // Get unique categories from existing products
+  const existingCategories = useMemo(() => {
+    const categorySet = new Set<string>();
+    products.forEach(p => {
+      if (p.category && p.category.trim()) {
+        categorySet.add(p.category);
+      }
+    });
+    return Array.from(categorySet).sort();
+  }, [products]);
+
+  const [categoryMode, setCategoryMode] = useState<'existing' | 'custom'>(
+    product?.category && existingCategories.includes(product.category) ? 'existing' : 'custom'
+  );
 
   const form = useForm({
     resolver: zodResolver(schema),
@@ -42,6 +65,7 @@ export function ProductForm({ product, onSubmit, isSubmitting }: ProductFormProp
       sku: product?.sku || '',
       name: product?.name || '',
       description: product?.description || '',
+      category: product?.category || '',
       unit_price: product?.unit_price || '',
       tax_rate: product?.tax_rate || '0.00',
       currency: product?.currency || 'NGN',
@@ -49,6 +73,14 @@ export function ProductForm({ product, onSubmit, isSubmitting }: ProductFormProp
       is_active: product?.is_active ?? true,
     },
   });
+
+  // Update category mode when form value changes
+  useEffect(() => {
+    const currentCategory = form.watch('category');
+    if (currentCategory && existingCategories.includes(currentCategory)) {
+      setCategoryMode('existing');
+    }
+  }, [form.watch('category'), existingCategories]);
 
   const handleSubmit = async (data: any) => {
     // Schema already handles quantity_available conversion via preprocess
@@ -115,6 +147,66 @@ export function ProductForm({ product, onSubmit, isSubmitting }: ProductFormProp
                 />
               </FormControl>
               <FormDescription>Max 1000 characters</FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        {/* Category */}
+        <FormField
+          control={form.control}
+          name="category"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Category</FormLabel>
+              {existingCategories.length > 0 ? (
+                <div className="space-y-2">
+                  <Select
+                    value={categoryMode === 'existing' ? field.value : 'custom'}
+                    onValueChange={(value) => {
+                      if (value === 'custom') {
+                        setCategoryMode('custom');
+                        field.onChange('');
+                      } else {
+                        setCategoryMode('existing');
+                        field.onChange(value);
+                      }
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select or enter new category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="custom">
+                        <span className="text-muted-foreground">+ Select or Enter new category</span>
+                      </SelectItem>
+                      {existingCategories.map((cat) => (
+                        <SelectItem key={cat} value={cat}>
+                          {cat}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {categoryMode === 'custom' && (
+                    <FormControl>
+                      <Input
+                        placeholder="Enter new category"
+                        {...field}
+                        value={field.value !== undefined && field.value !== null ? String(field.value) : ''}
+                      />
+                    </FormControl>
+                  )}
+                </div>
+              ) : (
+                <FormControl>
+                  <Input
+                    placeholder="Electronics, Furniture, etc."
+                    {...field}
+                    value={field.value !== undefined && field.value !== null ? String(field.value) : ''}
+                  />
+                </FormControl>
+              )}
+              <FormDescription>Optional - Max 100 characters</FormDescription>
               <FormMessage />
             </FormItem>
           )}

@@ -4,6 +4,7 @@ export interface ProductOut {
   sku: string;
   name: string;
   description: string | null;
+  category: string | null;
   unit_price: string; // Decimal as string
   tax_rate: string;
   currency: string;
@@ -17,6 +18,7 @@ export interface ProductCreate {
   sku: string;
   name: string;
   description?: string;
+  category?: string;
   unit_price: number;
   tax_rate?: number;
   currency?: string;

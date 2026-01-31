@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/select';
 import { Loader2, Plus, Trash2, UserPlus, Package, AlertCircle } from 'lucide-react';
 import { ClientFormModal } from '@/components/clients/client-form-modal';
-import type { Invoice, InvoiceCreate, InvoiceUpdate, InvoiceItem, Client } from '@/types/api';
+import type { Invoice, InvoiceCreate, InvoiceUpdate, InvoiceItem, Client, ProductItemReference } from '@/types/api';
 import { useClients } from '@/lib/hooks/use-clients';
 import { useProductStore } from '@/stores/product-store';
 import { CURRENCIES, DEFAULT_CURRENCY } from '@/lib/currency';
@@ -139,6 +139,28 @@ export function InvoiceForm({
 
   // Calculate totals
   const subtotal = items.reduce((sum, item) => sum + item.amount, 0);
+  
+  // Auto-calculate weighted average tax rate from items
+  const calculatedTax = useMemo(() => {
+    if (items.length > 0 && items.some(item => item.tax_rate > 0)) {
+      const totalAmount = items.reduce((sum, item) => sum + item.amount, 0);
+      if (totalAmount > 0) {
+        const weightedTax = items.reduce((sum, item) => {
+          return sum + (item.amount * item.tax_rate);
+        }, 0) / totalAmount;
+        return Math.round(weightedTax * 100) / 100;
+      }
+    }
+    return formData.tax;
+  }, [items, formData.tax]);
+  
+  // Update tax when calculated tax changes
+  useEffect(() => {
+    if (calculatedTax !== formData.tax && items.some(item => item.tax_rate > 0)) {
+      handleChange('tax', calculatedTax);
+    }
+  }, [calculatedTax]);
+
   const discountAmount = (subtotal * formData.discount) / 100;
   const subtotalAfterDiscount = subtotal - discountAmount;
   const taxAmount = (subtotalAfterDiscount * formData.tax) / 100;
@@ -166,7 +188,7 @@ export function InvoiceForm({
     
     newItems[index] = {
       product_id: product.id,
-      description: product.name + (product.description ? ` - ${product.description}` : ''),
+      description: product.name,
       quantity,
       unit_price: unitPrice,
       tax_rate: parseFloat(product.tax_rate || '0'),
@@ -199,6 +221,40 @@ export function InvoiceForm({
     }
   };
 
+  // Get unique categories from products
+  const categories = useMemo(() => {
+    const categorySet = new Set<string>();
+    activeProducts.forEach(product => {
+      if (product.category && product.category.trim()) {
+        categorySet.add(product.category);
+      }
+    });
+    return Array.from(categorySet).sort();
+  }, [activeProducts]);
+
+  // Add products by category
+  const handleAddCategory = (category: string) => {
+    const productsInCategory = activeProducts.filter(
+      p => p.category === category
+    );
+    
+    const newItems = productsInCategory.map(product => {
+      const unitPrice = parseFloat(product.unit_price);
+      const quantity = 1;
+      
+      return {
+        product_id: product.id,
+        description: product.name,
+        quantity,
+        unit_price: unitPrice,
+        tax_rate: parseFloat(product.tax_rate || '0'),
+        amount: quantity * unitPrice,
+      };
+    });
+    
+    setItems([...items, ...newItems]);
+  };
+
   const validate = () => {
     const newErrors: Record<string, string> = {};
 
@@ -226,32 +282,38 @@ export function InvoiceForm({
     e.preventDefault();
 
     if (validate()) {
-      // Convert numbers to strings for API
-      const formattedItems: InvoiceItem[] = items
+      // Separate product items (from catalog) and custom items (manual entries)
+      const productItems: ProductItemReference[] = [];
+      const customItems: InvoiceItem[] = [];
+      
+      items
         .filter((item) => item.description.trim())
-        .map(item => ({
-          product_id: item.product_id,
-          description: item.description,
-          quantity: item.quantity.toString(),
-          unit_price: item.unit_price.toFixed(2),
-          tax_rate: item.tax_rate.toFixed(2),
-          amount: item.amount.toFixed(2),
-        }));
-
-      // Extract product items for inventory reduction
-      const productItems = items
-        .filter((item) => item.product_id && item.description.trim())
-        .map(item => ({
-          product_id: item.product_id!,
-          quantity: item.quantity.toString(),
-        }));
+        .forEach(item => {
+          if (item.product_id) {
+            // This is a product from catalog - add to product_items for inventory tracking
+            productItems.push({
+              product_id: item.product_id,
+              quantity: item.quantity.toString(),
+            });
+          } else {
+            // This is a custom item - add to items array
+            customItems.push({
+              product_id: null,
+              description: item.description,
+              quantity: item.quantity.toString(),
+              unit_price: item.unit_price.toFixed(2),
+              tax_rate: item.tax_rate.toFixed(2),
+              amount: item.amount.toFixed(2),
+            });
+          }
+        });
 
       const submitData: InvoiceCreate = {
         client_id: formData.client_id,
         issued_date: formData.issued_date,
         due_date: formData.due_date,
         currency: formData.currency,
-        items: formattedItems,
+        items: customItems.length > 0 ? customItems : undefined,
         product_items: productItems.length > 0 ? productItems : undefined,
         subtotal: subtotal.toFixed(2),
         discount: formData.discount.toString(),
@@ -454,6 +516,20 @@ export function InvoiceForm({
                   </Button>
                 </Link>
               )}
+              {categories.length > 0 && (
+                <Select onValueChange={handleAddCategory}>
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="Add Category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categories.map((category) => (
+                      <SelectItem key={category} value={category}>
+                        {category}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
               <Button type="button" variant="outline" size="sm" onClick={addItem}>
                 <Plus className="mr-2 h-4 w-4" />
                 Add Item
@@ -530,7 +606,15 @@ export function InvoiceForm({
                     type="number"
                     min="1"
                     value={item.quantity}
-                    onChange={(e) => updateItem(index, 'quantity', parseInt(e.target.value) || 1)}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      if (value === '') {
+                        updateItem(index, 'quantity', 1);
+                      } else {
+                        updateItem(index, 'quantity', parseInt(value) || 1);
+                      }
+                    }}
+                    onFocus={(e) => e.target.select()}
                     disabled={isLoading}
                   />
                 </div>
@@ -540,9 +624,17 @@ export function InvoiceForm({
                     id={`item-price-${index}`}
                     type="number"
                     min="0"
-                  step="0.01"
+                    step="0.01"
                     value={item.unit_price}
-                    onChange={(e) => updateItem(index, 'unit_price', parseFloat(e.target.value) || 0)}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      if (value === '') {
+                        updateItem(index, 'unit_price', 0);
+                      } else {
+                        updateItem(index, 'unit_price', parseFloat(value) || 0);
+                      }
+                    }}
+                    onFocus={(e) => e.target.select()}
                     disabled={isLoading}
                   />
                 </div>
@@ -589,20 +681,36 @@ export function InvoiceForm({
               max="100"
               step="0.01"
               value={formData.discount}
-              onChange={(e) => handleChange('discount', parseFloat(e.target.value) || 0)}
+              onChange={(e) => {
+                const value = e.target.value;
+                if (value === '') {
+                  handleChange('discount', 0);
+                } else {
+                  handleChange('discount', parseFloat(value) || 0);
+                }
+              }}
+              onFocus={(e) => e.target.select()}
               disabled={isLoading}
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="tax">Tax (%)</Label>
+            <Label htmlFor="tax">Tax (%) - Auto-calculated from items</Label>
             <Input
               id="tax"
               type="number"
               min="0"
               step="0.01"
               value={formData.tax}
-              onChange={(e) => handleChange('tax', parseFloat(e.target.value) || 0)}
+              onChange={(e) => {
+                const value = e.target.value;
+                if (value === '') {
+                  handleChange('tax', 0);
+                } else {
+                  handleChange('tax', parseFloat(value) || 0);
+                }
+              }}
+              onFocus={(e) => e.target.select()}
               disabled={isLoading}
             />
           </div>

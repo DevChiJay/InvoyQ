@@ -276,6 +276,7 @@ export interface Product {
   sku: string;  // unique per user, max 100 chars
   name: string;  // max 255 chars
   description: string | null;  // max 1000 chars
+  category: string | null;  // max 100 chars, optional
   unit_price: string;  // Decimal as string
   tax_rate: string;  // Decimal as string (percentage, 0-100)
   currency: string;  // ISO 4217, uppercase
@@ -289,6 +290,7 @@ export interface ProductCreate {
   sku: string;
   name: string;
   description?: string;
+  category?: string;
   unit_price: string;  // Decimal as string
   tax_rate?: string;  // Default "0.00"
   currency?: string;  // Default "NGN"
@@ -300,6 +302,7 @@ export interface ProductUpdate {
   sku?: string;
   name?: string;
   description?: string;
+  category?: string;
   unit_price?: string;  // Decimal as string
   tax_rate?: string;
   currency?: string;

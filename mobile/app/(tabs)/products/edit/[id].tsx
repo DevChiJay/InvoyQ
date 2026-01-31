@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Switch, KeyboardAvoidingView, Platform } from 'react-native';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/hooks/useTheme';
-import { useProduct, useUpdateProduct } from '@/hooks/useProducts';
+import { useProduct, useUpdateProduct, useProducts } from '@/hooks/useProducts';
 import { FormField, Input, TextArea, NumberInput, Select, Button, SelectOption } from '@/components/ui';
 import { validateForm, hasErrors, sanitizeFormData, getFieldError } from '@/utils/formHelpers';
 import { showError } from '@/utils/alerts';
@@ -14,6 +14,7 @@ const productSchema = z.object({
   sku: z.string().min(1, 'SKU is required'),
   name: z.string().min(1, 'Name is required'),
   description: z.string().optional(),
+  category: z.string().optional(),
   unit_price: z.string().min(1, 'Unit price is required'),
   tax_rate: z.string().optional(),
   currency: z.string().min(1, 'Currency is required'),
@@ -33,17 +34,37 @@ export default function EditProductScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { data: product, isLoading } = useProduct(id);
   const updateProduct = useUpdateProduct();
+  const { data: productsData } = useProducts();
+
+  // Get existing categories
+  const existingCategories = useMemo(() => {
+    const products = productsData?.pages?.flatMap((page) => page.items) || [];
+    const categorySet = new Set<string>();
+    products.forEach(p => {
+      if (p.category && p.category.trim()) {
+        categorySet.add(p.category);
+      }
+    });
+    return Array.from(categorySet).sort();
+  }, [productsData]);
+
+  const categoryOptions: SelectOption[] = [
+    { label: '+ Select or Enter new category', value: '__custom__' },
+    ...existingCategories.map(cat => ({ label: cat, value: cat })),
+  ];
 
   const [formData, setFormData] = useState({
     sku: '',
     name: '',
     description: '',
+    category: '',
     unit_price: '',
     tax_rate: '',
     currency: 'NGN',
     is_active: true,
   });
 
+  const [categoryMode, setCategoryMode] = useState<'existing' | 'custom'>('custom');
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
@@ -52,13 +73,20 @@ export default function EditProductScreen() {
         sku: product.sku || '',
         name: product.name || '',
         description: product.description || '',
+        category: product.category || '',
         unit_price: product.unit_price || '',
         tax_rate: product.tax_rate || '',
         currency: product.currency || 'NGN',
         is_active: product.is_active,
       });
+      // Set category mode based on whether the product's category exists in the list
+      if (product.category && existingCategories.includes(product.category)) {
+        setCategoryMode('existing');
+      } else if (product.category) {
+        setCategoryMode('custom');
+      }
     }
-  }, [product]);
+  }, [product, existingCategories]);
 
   const handleChange = (field: string, value: string | boolean) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -84,6 +112,7 @@ export default function EditProductScreen() {
         sku: sanitized.sku,
         name: sanitized.name,
         description: sanitized.description || undefined,
+        category: sanitized.category || undefined,
         unit_price: parseFloat(sanitized.unit_price || '0'),
         tax_rate: sanitized.tax_rate ? parseFloat(sanitized.tax_rate) : undefined,
         currency: sanitized.currency,
@@ -167,6 +196,47 @@ export default function EditProductScreen() {
             error={!!errors.description}
             numberOfLines={3}
           />
+        </FormField>
+
+        <FormField label="Category" error={getFieldError(errors, 'category')}>
+          {existingCategories.length > 0 ? (
+            <>
+              <Select
+                value={categoryMode === 'existing' ? formData.category : '__custom__'}
+                onChange={(value) => {
+                  if (value === '__custom__') {
+                    setCategoryMode('custom');
+                    handleChange('category', '');
+                  } else {
+                    setCategoryMode('existing');
+                    handleChange('category', value);
+                  }
+                }}
+                options={categoryOptions}
+                placeholder="Select or enter new"
+                error={!!errors.category}
+              />
+              {categoryMode === 'custom' && (
+                <View style={{ marginTop: 8 }}>
+                  <Input
+                    value={formData.category}
+                    onChangeText={(value) => handleChange('category', value)}
+                    placeholder="Enter new category"
+                    error={!!errors.category}
+                    autoCapitalize="words"
+                  />
+                </View>
+              )}
+            </>
+          ) : (
+            <Input
+              value={formData.category}
+              onChangeText={(value) => handleChange('category', value)}
+              placeholder="e.g. Electronics, Furniture"
+              error={!!errors.category}
+              autoCapitalize="words"
+            />
+          )}
         </FormField>
 
         <FormField label="Currency" required error={getFieldError(errors, 'currency')}>
