@@ -174,17 +174,15 @@ export default function InvoiceDetailPage() {
             <Bell className="mr-2 h-4 w-4" />
             {sendInvoiceEmail.isPending ? 'Sending...' : 'Send Invoice'}
           </Button>
-          <ProFeatureGate feature="Email reminders">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleSendReminder}
-              disabled={sendReminder.isPending || invoice.status === 'paid'}
-            >
-              <Bell className="mr-2 h-4 w-4" />
-              {sendReminder.isPending ? 'Sending...' : 'Send Reminder'}
-            </Button>
-          </ProFeatureGate>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleSendReminder}
+            disabled={sendReminder.isPending || invoice.status === 'paid'}
+          >
+            <Bell className="mr-2 h-4 w-4" />
+            {sendReminder.isPending ? 'Sending...' : 'Send Reminder'}
+          </Button>
           <Button variant="outline" size="sm" asChild>
             <Link href={`/dashboard/invoices/${invoice.id}/edit`}>
               <Pencil className="mr-2 h-4 w-4" />

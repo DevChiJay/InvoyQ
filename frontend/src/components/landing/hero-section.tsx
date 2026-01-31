@@ -21,22 +21,22 @@ export default function HeroSection() {
           {/* Badge */}
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-[#6366F1]/30 bg-white/90 dark:border-[#6366F1]/50 dark:bg-[#6366F1]/10 text-[#6366F1] dark:text-[#E2E8F0] text-sm font-medium mb-8 shadow-sm backdrop-blur-sm">
             <Sparkles className="h-4 w-4" />
-            AI-Powered Invoice Management
+            Professional Invoice Management
           </div>
 
           {/* Headline */}
           <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-extrabold tracking-tight text-gray-900 dark:text-[#E2E8F0] mb-6">
-            Extract Invoice Data
+            Manage Your Business
             <br />
             <span className="bg-gradient-to-r from-[#6366F1] via-[#14B8A6] to-[#FACC15] bg-clip-text text-transparent">
-              Instantly with AI
+              Invoices with Ease
             </span>
           </h1>
 
           {/* Subheadline */}
           <p className="text-xl sm:text-2xl text-gray-600 dark:text-[#E2E8F0]/80 max-w-3xl mx-auto mb-12 leading-relaxed">
-            Save hours of manual data entry. InvoYQ uses AI to extract invoice details from images and text, 
-            then helps you manage clients and get paid faster.
+            Create professional invoices, track payments, manage clients and expenses all in one place. 
+            Get paid faster with InvoYQ.
           </p>
 
           {/* CTA Buttons */}
