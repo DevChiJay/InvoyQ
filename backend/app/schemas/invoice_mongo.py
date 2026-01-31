@@ -99,6 +99,7 @@ class InvoiceBase(BaseModel):
     issued_date: Optional[date] = None
     due_date: Optional[date] = None
     currency: str = Field(default="NGN", min_length=3, max_length=3, description="ISO 4217 currency code")
+    discount: Decimal = Field(default=Decimal("0.00"), ge=0, le=100, description="Discount percentage (0-100)")
     subtotal: Optional[Decimal] = Field(None, ge=0)
     tax: Optional[Decimal] = Field(None, ge=0)
     total: Optional[Decimal] = Field(None, ge=0)
@@ -124,6 +125,7 @@ class InvoiceUpdate(BaseModel):
     issued_date: Optional[date] = None
     due_date: Optional[date] = None
     currency: Optional[str] = Field(None, min_length=3, max_length=3)
+    discount: Optional[Decimal] = Field(None, ge=0, le=100)
     subtotal: Optional[Decimal] = Field(None, ge=0)
     tax: Optional[Decimal] = Field(None, ge=0)
     total: Optional[Decimal] = Field(None, ge=0)
@@ -166,6 +168,7 @@ class InvoiceInDB(BaseModel):
     issued_date: Optional[date] = None
     due_date: Optional[date] = None
     currency: str
+    discount: Decimal = Decimal("0.00")
     subtotal: Decimal
     tax: Decimal
     total: Decimal

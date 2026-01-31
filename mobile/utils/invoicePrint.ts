@@ -15,6 +15,15 @@ export const generateInvoiceHTML = (invoice: InvoiceOut): string => {
   };
 
   const statusColor = statusColors[invoice.status] || '#6B7280';
+  
+  // Calculate totals with discount
+  const subtotal = parseFloat(invoice.subtotal || '0');
+  const discount = parseFloat(invoice.discount || '0');
+  const discountAmount = (subtotal * discount) / 100;
+  const subtotalAfterDiscount = subtotal - discountAmount;
+  const tax = parseFloat(invoice.tax || '0');
+  const taxAmount = (subtotalAfterDiscount * tax) / 100;
+  const total = parseFloat(invoice.total || '0');
 
   return `
     <!DOCTYPE html>
@@ -462,15 +471,21 @@ export const generateInvoiceHTML = (invoice: InvoiceOut): string => {
           <div class="totals-section">
             <div class="total-row">
               <span class="total-label">Subtotal</span>
-              <span class="total-value">${formatCurrency(parseFloat(invoice.subtotal || '0'), invoice.currency)}</span>
+              <span class="total-value">${formatCurrency(subtotal, invoice.currency)}</span>
             </div>
+            ${discount > 0 ? `
+            <div class="total-row">
+              <span class="total-label">Discount (${discount}%)</span>
+              <span class="total-value" style="color: #EF4444;">-${formatCurrency(discountAmount, invoice.currency)}</span>
+            </div>
+            ` : ''}
             <div class="total-row">
               <span class="total-label">Tax</span>
-              <span class="total-value">${formatCurrency(parseFloat(invoice.tax || '0'), invoice.currency)}</span>
+              <span class="total-value">${formatCurrency(taxAmount, invoice.currency)}</span>
             </div>
             <div class="total-row grand-total">
               <span class="total-label">Total</span>
-              <span class="total-value">${formatCurrency(parseFloat(invoice.total || '0'), invoice.currency)}</span>
+              <span class="total-value">${formatCurrency(total, invoice.currency)}</span>
             </div>
           </div>
           

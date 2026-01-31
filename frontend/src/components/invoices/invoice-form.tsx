@@ -108,6 +108,7 @@ export function InvoiceForm({
       ? new Date(invoice.due_date).toISOString().split('T')[0]
       : extractedData?.invoice_details?.due_date || new Date().toISOString().split('T')[0],
     currency: invoice?.currency || DEFAULT_CURRENCY,
+    discount: invoice?.discount ? parseFloat(invoice.discount) : 0,
     tax: invoice?.tax ?? extractedData?.financial?.tax ?? 0,
     status: invoice?.status || 'paid' as const,
     notes: invoice?.notes || extractedData?.notes || '',
@@ -138,8 +139,10 @@ export function InvoiceForm({
 
   // Calculate totals
   const subtotal = items.reduce((sum, item) => sum + item.amount, 0);
-  const taxAmount = (subtotal * formData.tax) / 100;
-  const total = subtotal + taxAmount;
+  const discountAmount = (subtotal * formData.discount) / 100;
+  const subtotalAfterDiscount = subtotal - discountAmount;
+  const taxAmount = (subtotalAfterDiscount * formData.tax) / 100;
+  const total = subtotalAfterDiscount + taxAmount;
 
   // Handle product selection
   const handleProductSelect = (index: number, productId: string) => {
@@ -251,6 +254,7 @@ export function InvoiceForm({
         items: formattedItems,
         product_items: productItems.length > 0 ? productItems : undefined,
         subtotal: subtotal.toFixed(2),
+        discount: formData.discount.toString(),
         tax: formData.tax.toString(),
         total: total.toFixed(2),
         status: formData.status,
@@ -577,6 +581,20 @@ export function InvoiceForm({
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
+            <Label htmlFor="discount">Discount (%)</Label>
+            <Input
+              id="discount"
+              type="number"
+              min="0"
+              max="100"
+              step="0.01"
+              value={formData.discount}
+              onChange={(e) => handleChange('discount', parseFloat(e.target.value) || 0)}
+              disabled={isLoading}
+            />
+          </div>
+
+          <div className="space-y-2">
             <Label htmlFor="tax">Tax (%)</Label>
             <Input
               id="tax"
@@ -594,6 +612,12 @@ export function InvoiceForm({
               <span className="text-muted-foreground">Subtotal:</span>
               <span>{formatCurrency(subtotal, formData.currency)}</span>
             </div>
+            {formData.discount > 0 && (
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Discount ({formData.discount}%):</span>
+                <span className="text-destructive">-{formatCurrency(discountAmount, formData.currency)}</span>
+              </div>
+            )}
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Tax ({formData.tax}%):</span>
               <span>{formatCurrency(taxAmount, formData.currency)}</span>

@@ -45,11 +45,14 @@ export function InvoicePreview({
   const subtotal = invoice.subtotal !== null && invoice.subtotal !== undefined
     ? parseFloat(invoice.subtotal)
     : invoice.items.reduce((sum, item) => sum + parseFloat(item.amount), 0);
+  const discount = invoice.discount !== null && invoice.discount !== undefined ? parseFloat(invoice.discount) : 0;
+  const discountAmount = (subtotal * discount) / 100;
+  const subtotalAfterDiscount = subtotal - discountAmount;
   const taxValue = invoice.tax !== null && invoice.tax !== undefined ? parseFloat(invoice.tax) : 0;
-  const taxAmount = (subtotal * taxValue) / 100;
+  const taxAmount = (subtotalAfterDiscount * taxValue) / 100;
   const total = invoice.total !== null && invoice.total !== undefined
     ? parseFloat(invoice.total)
-    : subtotal + taxAmount;
+    : subtotalAfterDiscount + taxAmount;
 
   return (
     <Card className="shadow-lg border-[3px] border-black">
@@ -172,6 +175,12 @@ export function InvoicePreview({
               <span className="text-sm text-muted-foreground">Subtotal:</span>
               <span className="text-sm font-semibold text-foreground">{formatCurrency(subtotal, invoice.currency ?? 'NGN')}</span>
             </div>
+            {discount > 0 && (
+              <div className="flex justify-between py-2 border-b-[2px] border-gray-300">
+                <span className="text-sm text-muted-foreground">Discount ({discount}%):</span>
+                <span className="text-sm font-semibold text-destructive">-{formatCurrency(discountAmount, invoice.currency ?? 'NGN')}</span>
+              </div>
+            )}
             {taxValue > 0 && (
               <div className="flex justify-between py-2 border-b-[2px] border-gray-300">
                 <span className="text-sm text-muted-foreground">Tax ({taxValue}%):</span>

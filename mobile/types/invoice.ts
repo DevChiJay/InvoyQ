@@ -19,6 +19,7 @@ export interface InvoiceOut {
   issued_date: string | null;
   due_date: string | null;
   currency: string;
+  discount: string;
   subtotal: string | null;
   tax: string | null;
   total: string | null;
@@ -37,6 +38,7 @@ export interface InvoiceCreate {
   issued_date?: string;
   due_date?: string;
   currency?: string;
+  discount?: number;
   notes?: string;
   items?: InvoiceItemCreate[];
   product_items?: ProductItemReference[];

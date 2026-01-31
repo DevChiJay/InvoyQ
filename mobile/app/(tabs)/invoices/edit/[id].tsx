@@ -49,6 +49,7 @@ export default function EditInvoiceScreen() {
     issued_date: new Date(),
     due_date: new Date(),
     currency: 'NGN',
+    discount: 0,
     notes: '',
   });
 
@@ -69,6 +70,7 @@ export default function EditInvoiceScreen() {
         issued_date: invoice.issued_date ? new Date(invoice.issued_date) : new Date(),
         due_date: invoice.due_date ? new Date(invoice.due_date) : new Date(),
         currency: invoice.currency || 'NGN',
+        discount: invoice.discount ? parseFloat(invoice.discount) : 0,
         notes: invoice.notes || '',
       });
 
@@ -136,15 +138,19 @@ export default function EditInvoiceScreen() {
       return sum + amount;
     }, 0);
 
+    const discountAmount = (subtotal * formData.discount) / 100;
+    const subtotalAfterDiscount = subtotal - discountAmount;
+
     const tax = lineItems.reduce((sum, item) => {
       const amount = item.quantity * item.unit_price;
-      const taxAmount = (amount * item.tax_rate) / 100;
+      const amountAfterDiscount = amount - (amount * formData.discount) / 100;
+      const taxAmount = (amountAfterDiscount * item.tax_rate) / 100;
       return sum + taxAmount;
     }, 0);
 
-    const total = subtotal + tax;
+    const total = subtotalAfterDiscount + tax;
 
-    return { subtotal, tax, total };
+    return { subtotal, discountAmount, subtotalAfterDiscount, tax, total };
   };
 
   const handleSubmit = async () => {
@@ -174,6 +180,7 @@ export default function EditInvoiceScreen() {
         issued_date: formData.issued_date.toISOString(),
         due_date: formData.due_date.toISOString(),
         currency: formData.currency,
+        discount: formData.discount,
         notes: formData.notes || undefined,
         items,
       };
@@ -275,6 +282,17 @@ export default function EditInvoiceScreen() {
           />
         </FormField>
 
+        <FormField label="Discount (%)">
+          <NumberInput
+            value={formData.discount.toString()}
+            onChangeValue={(value) => handleChange('discount', parseFloat(value) || 0)}
+            placeholder="0"
+            decimals={2}
+            min={0}
+            max={100}
+          />
+        </FormField>
+
         {/* Line Items Section */}
         <View style={styles.sectionHeader}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Line Items</Text>
@@ -352,6 +370,15 @@ export default function EditInvoiceScreen() {
               {formatCurrency(totals.subtotal, formData.currency)}
             </Text>
           </View>
+
+          {formData.discount > 0 && (
+            <View style={styles.totalRow}>
+              <Text style={[styles.totalLabel, { color: colors.textSecondary }]}>Discount ({formData.discount}%)</Text>
+              <Text style={[styles.totalValue, { color: colors.error }]}>
+                -{formatCurrency(totals.discountAmount, formData.currency)}
+              </Text>
+            </View>
+          )}
 
           <View style={styles.totalRow}>
             <Text style={[styles.totalLabel, { color: colors.textSecondary }]}>Tax</Text>

@@ -262,6 +262,12 @@ export default function InvoiceDetailScreen() {
                 <Text style={[styles.detailText, { color: colors.text }]}>{invoice.client.phone}</Text>
               </View>
             )}
+            {invoice.client.address && (
+              <View style={styles.detailRow}>
+                <Ionicons name="location-outline" size={20} color={colors.primary} />
+                <Text style={[styles.detailText, { color: colors.text }]}>{invoice.client.address}</Text>
+              </View>
+            )}
           </Card>
         )}
 
@@ -331,12 +337,26 @@ export default function InvoiceDetailScreen() {
             </Text>
           </View>
 
-          <View style={styles.totalRow}>
-            <Text style={[styles.totalRowLabel, { color: colors.textSecondary }]}>Tax</Text>
-            <Text style={[styles.totalRowValue, { color: colors.text }]}>
-              {formatCurrency(parseFloat(invoice.tax || '0'), invoice.currency)}
-            </Text>
-          </View>
+          {parseFloat(invoice.discount || '0') > 0 && (
+            <View style={styles.totalRow}>
+              <Text style={[styles.totalRowLabel, { color: colors.textSecondary }]}>Discount ({invoice.discount}%)</Text>
+              <Text style={[styles.totalRowValue, { color: colors.error }]}>
+                -{formatCurrency((parseFloat(invoice.subtotal || '0') * parseFloat(invoice.discount || '0')) / 100, invoice.currency)}
+              </Text>
+            </View>
+          )}
+
+          {parseFloat(invoice.tax || '0') > 0 && (
+            <View style={styles.totalRow}>
+              <Text style={[styles.totalRowLabel, { color: colors.textSecondary }]}>Tax ({invoice.tax}%)</Text>
+              <Text style={[styles.totalRowValue, { color: colors.text }]}>
+                {formatCurrency(
+                  ((parseFloat(invoice.subtotal || '0') - (parseFloat(invoice.subtotal || '0') * parseFloat(invoice.discount || '0')) / 100) * parseFloat(invoice.tax || '0')) / 100,
+                  invoice.currency
+                )}
+              </Text>
+            </View>
+          )}
 
           <View style={[styles.totalRow, styles.grandTotal, { borderTopColor: colors.border }]}>
             <Text style={[styles.grandTotalLabel, { color: colors.text }]}>Total</Text>

@@ -110,6 +110,7 @@ export default function CreateInvoiceScreen() {
     issued_date: new Date(),
     due_date: new Date(), // Today
     currency: 'NGN',
+    discount: 0,
     status: 'paid',
     notes: '',
   });
@@ -349,13 +350,17 @@ export default function CreateInvoiceScreen() {
 
   const calculateTotals = () => {
     const subtotal = lineItems.reduce((sum, item) => sum + item.amount, 0);
+    const discountAmount = (subtotal * formData.discount) / 100;
+    const subtotalAfterDiscount = subtotal - discountAmount;
     const tax = lineItems.reduce((sum, item) => {
-      const taxAmount = (item.amount * item.tax_rate) / 100;
+      const itemSubtotal = item.amount;
+      const itemAfterDiscount = itemSubtotal - (itemSubtotal * formData.discount) / 100;
+      const taxAmount = (itemAfterDiscount * item.tax_rate) / 100;
       return sum + taxAmount;
     }, 0);
-    const total = subtotal + tax;
+    const total = subtotalAfterDiscount + tax;
 
-    return { subtotal, tax, total };
+    return { subtotal, discountAmount, subtotalAfterDiscount, tax, total };
   };
 
   const handleSubmit = async () => {
@@ -407,6 +412,7 @@ export default function CreateInvoiceScreen() {
         issued_date: validated.issued_date.toISOString().split('T')[0],
         due_date: validated.due_date.toISOString().split('T')[0],
         currency: validated.currency,
+        discount: formData.discount,
         subtotal: totals.subtotal.toString(),
         tax: totals.tax.toString(),
         total: totals.total.toString(),
@@ -543,6 +549,17 @@ export default function CreateInvoiceScreen() {
               numberOfLines={3}
             />
           </FormField>
+
+          <FormField label="Discount (%)">
+            <NumberInput
+              value={formData.discount.toString()}
+              onChangeValue={(value) => handleChange('discount', parseFloat(value) || 0)}
+              placeholder="0"
+              min={0}
+              max={100}
+              decimalPlaces={2}
+            />
+          </FormField>
         </Card>
 
         {/* Line Items */}
@@ -661,6 +678,15 @@ export default function CreateInvoiceScreen() {
                 {formatCurrency(totals.subtotal, formData.currency)}
               </Text>
             </View>
+
+            {formData.discount > 0 && (
+              <View style={styles.totalRow}>
+                <Text style={[styles.totalLabel, { color: colors.textSecondary }]}>Discount ({formData.discount}%)</Text>
+                <Text style={[styles.totalValue, { color: colors.error }]}>
+                  -{formatCurrency(totals.discountAmount, formData.currency)}
+                </Text>
+              </View>
+            )}
 
             <View style={styles.totalRow}>
               <Text style={[styles.totalLabel, { color: colors.textSecondary }]}>Tax</Text>

@@ -107,6 +107,7 @@ export interface Invoice {
   issued_date: string | null;  // YYYY-MM-DD
   due_date: string | null;  // YYYY-MM-DD
   currency: string;  // ISO 4217 (NGN, USD, etc.)
+  discount: string;  // Decimal as string (percentage 0-100)
   subtotal: string | null;  // Decimal as string
   tax: string | null;  // Decimal as string
   total: string | null;  // Decimal as string
@@ -132,6 +133,7 @@ export interface InvoiceCreate {
   issued_date?: string;
   due_date?: string;
   currency?: string;
+  discount?: string;  // Decimal as string (percentage 0-100)
   subtotal?: string;  // Decimal as string
   tax?: string;  // Decimal as string
   total?: string;  // Decimal as string
@@ -148,6 +150,7 @@ export interface InvoiceUpdate {
   issued_date?: string;
   due_date?: string;
   currency?: string;
+  discount?: string;  // Decimal as string (percentage 0-100)
   subtotal?: string;  // Decimal as string
   tax?: string;  // Decimal as string
   total?: string;  // Decimal as string
