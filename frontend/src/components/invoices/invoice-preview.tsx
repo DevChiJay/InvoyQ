@@ -52,7 +52,7 @@ export function InvoicePreview({
     : subtotal + taxAmount;
 
   return (
-    <Card className="shadow-lg">
+    <Card className="shadow-lg border-[3px] border-black">
       <CardContent className="p-8 sm:p-12">
         {/* Invoice Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start gap-6 mb-12">
@@ -90,13 +90,13 @@ export function InvoicePreview({
           </div>
         </div>
 
-        <Separator className="my-8" />
+        <Separator className="my-8 border-t-[3px] border-black" />
 
         {/* Bill To & Invoice Details */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 mb-12">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 mb-12 pb-8 border-y-[2px] border-black py-8">
           {/* Bill To */}
           <div>
-            <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">Bill To</h3>
+            <h3 className="text-xs font-bold text-black uppercase tracking-wider mb-3">Bill To</h3>
             <div className="space-y-1">
               <p className="font-bold text-foreground text-lg">{client?.name || 'Unknown Client'}</p>
               {client?.email && <p className="text-sm text-muted-foreground">{client.email}</p>}
@@ -109,7 +109,7 @@ export function InvoicePreview({
 
           {/* Invoice Details */}
           <div>
-            <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">Invoice Details</h3>
+            <h3 className="text-xs font-bold text-black uppercase tracking-wider mb-3">Invoice Details</h3>
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Created:</span>
@@ -129,30 +129,30 @@ export function InvoicePreview({
 
         {/* Items Table */}
         <div className="mb-8">
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto border-[2px] border-black rounded-lg">
             <table className="w-full">
-              <thead>
-                <tr className="border-b-2 border-border">
-                  <th className="text-left py-3 px-2 text-xs font-bold text-muted-foreground uppercase tracking-wider">
+              <thead className="bg-gray-200">
+                <tr className="border-b-[3px] border-black">
+                  <th className="text-left py-3 px-2 text-xs font-bold text-black uppercase tracking-wider border-r-[2px] border-black">
                     Description
                   </th>
-                  <th className="text-right py-3 px-2 text-xs font-bold text-muted-foreground uppercase tracking-wider w-16">
+                  <th className="text-right py-3 px-2 text-xs font-bold text-black uppercase tracking-wider w-16 border-r-[2px] border-black">
                     Qty
                   </th>
-                  <th className="text-right py-3 px-2 text-xs font-bold text-muted-foreground uppercase tracking-wider w-28">
+                  <th className="text-right py-3 px-2 text-xs font-bold text-black uppercase tracking-wider w-28 border-r-[2px] border-black">
                     Unit Price
                   </th>
-                  <th className="text-right py-3 px-2 text-xs font-bold text-muted-foreground uppercase tracking-wider w-32">
+                  <th className="text-right py-3 px-2 text-xs font-bold text-black uppercase tracking-wider w-32">
                     Amount
                   </th>
                 </tr>
               </thead>
               <tbody>
                 {invoice.items.map((item, index) => (
-                  <tr key={index} className="border-b border-border">
-                    <td className="py-4 px-2 text-sm text-foreground">{item.description}</td>
-                    <td className="py-4 px-2 text-sm text-foreground text-right">{Number(item.quantity)}</td>
-                    <td className="py-4 px-2 text-sm text-foreground text-right">
+                  <tr key={index} className="border-b-[2px] border-gray-300">
+                    <td className="py-4 px-2 text-sm text-foreground border-r-[2px] border-gray-300">{item.description}</td>
+                    <td className="py-4 px-2 text-sm text-foreground text-right border-r-[2px] border-gray-300">{Number(item.quantity)}</td>
+                    <td className="py-4 px-2 text-sm text-foreground text-right border-r-[2px] border-gray-300">
                       {formatCurrency(parseFloat(item.unit_price), invoice.currency ?? 'NGN')}
                     </td>
                     <td className="py-4 px-2 text-sm font-semibold text-foreground text-right">
@@ -168,19 +168,19 @@ export function InvoicePreview({
         {/* Totals */}
         <div className="flex justify-end mb-12">
           <div className="w-full sm:w-80 space-y-3">
-            <div className="flex justify-between py-2 border-b border-border">
+            <div className="flex justify-between py-2 border-b-[2px] border-gray-300">
               <span className="text-sm text-muted-foreground">Subtotal:</span>
               <span className="text-sm font-semibold text-foreground">{formatCurrency(subtotal, invoice.currency ?? 'NGN')}</span>
             </div>
             {taxValue > 0 && (
-              <div className="flex justify-between py-2 border-b border-border">
+              <div className="flex justify-between py-2 border-b-[2px] border-gray-300">
                 <span className="text-sm text-muted-foreground">Tax ({taxValue}%):</span>
                 <span className="text-sm font-semibold text-foreground">{formatCurrency(taxAmount, invoice.currency ?? 'NGN')}</span>
               </div>
             )}
-            <div className="flex justify-between py-3 px-4 bg-muted rounded-lg">
+            <div className="flex justify-between py-3 px-4 border-t-[3px] border-black pt-4">
               <span className="text-lg font-bold text-foreground">Total:</span>
-              <span className="text-lg font-bold text-foreground">{formatCurrency(total, invoice.currency ?? 'NGN')}</span>
+              <span className="text-lg font-bold text-black">{formatCurrency(total, invoice.currency ?? 'NGN')}</span>
             </div>
           </div>
         </div>
@@ -188,9 +188,9 @@ export function InvoicePreview({
         {/* Notes */}
         {invoice.notes && (
           <>
-            <Separator className="my-8" />
-            <div>
-              <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">Notes</h3>
+            <Separator className="my-8 border-t-[2px] border-black" />
+            <div className="border-[2px] border-black rounded-lg p-6">
+              <h3 className="text-xs font-bold text-black uppercase tracking-wider mb-3">Notes</h3>
               <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">
                 {invoice.notes}
               </p>
@@ -199,7 +199,7 @@ export function InvoicePreview({
         )}
 
         {/* Footer */}
-        <Separator className="my-8" />
+        <Separator className="my-8 border-t-[2px] border-black" />
         <div className="text-center">
           <p className="text-xs text-muted-foreground">
             Thank you for your business! • Generated by InvoYQ

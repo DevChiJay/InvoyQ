@@ -39,6 +39,8 @@ export const generateInvoiceHTML = (invoice: InvoiceOut): string => {
             max-width: 100%;
             margin: 0 auto;
             background: white;
+            border: 3px solid #000000;
+            padding: 20px;
           }
           
           /* Support for A4 and Letter size */
@@ -49,6 +51,7 @@ export const generateInvoiceHTML = (invoice: InvoiceOut): string => {
             
             .invoice-container {
               max-width: 800px;
+              padding: 30px;
             }
           }
           
@@ -58,7 +61,7 @@ export const generateInvoiceHTML = (invoice: InvoiceOut): string => {
             align-items: flex-start;
             margin-bottom: 30px;
             padding-bottom: 20px;
-            border-bottom: 2px solid #E5E7EB;
+            border-bottom: 3px solid #000000;
             flex-wrap: wrap;
             gap: 20px;
           }
@@ -146,8 +149,8 @@ export const generateInvoiceHTML = (invoice: InvoiceOut): string => {
             gap: 40px;
             margin-bottom: 30px;
             padding: 15px 0;
-            border-top: 1px solid #E5E7EB;
-            border-bottom: 1px solid #E5E7EB;
+            border-top: 2px solid #000000;
+            border-bottom: 2px solid #000000;
           }
           
           .date-item {
@@ -173,36 +176,40 @@ export const generateInvoiceHTML = (invoice: InvoiceOut): string => {
             border-collapse: collapse;
             margin-bottom: 30px;
             font-size: 14px;
+            border: 2px solid #000000;
           }
           
           .items-table thead {
-            background-color: #F9FAFB;
+            background-color: #E5E7EB;
           }
           
           .items-table th {
             text-align: left;
             padding: 10px 8px;
             font-size: 11px;
-            font-weight: 600;
-            color: #6B7280;
+            font-weight: 700;
+            color: #000000;
             text-transform: uppercase;
             letter-spacing: 0.5px;
-            border-bottom: 2px solid #E5E7EB;
+            border-bottom: 3px solid #000000;
+            border-right: 2px solid #000000;
           }
           
           .items-table th:last-child,
           .items-table td:last-child {
             text-align: right;
+            border-right: none;
           }
           
           .items-table tbody tr {
-            border-bottom: 1px solid #F3F4F6;
+            border-bottom: 2px solid #CCCCCC;
           }
           
           .items-table td {
             padding: 10px 8px;
             color: #374151;
             font-size: 13px;
+            border-right: 2px solid #CCCCCC;
           }
           
           .item-description {
@@ -240,7 +247,7 @@ export const generateInvoiceHTML = (invoice: InvoiceOut): string => {
           }
           
           .grand-total {
-            border-top: 2px solid #E5E7EB;
+            border-top: 3px solid #000000;
             margin-top: 10px;
             padding-top: 15px;
           }
@@ -254,11 +261,11 @@ export const generateInvoiceHTML = (invoice: InvoiceOut): string => {
           .grand-total .total-value {
             font-size: 24px;
             font-weight: 700;
-            color: #3B82F6;
+            color: #000000;
           }
           
           .notes-section {
-            background-color: #F9FAFB;
+            border: 2px solid #000000;
             padding: 20px;
             border-radius: 8px;
             margin-bottom: 30px;
@@ -280,13 +287,17 @@ export const generateInvoiceHTML = (invoice: InvoiceOut): string => {
           .footer {
             text-align: center;
             padding-top: 30px;
-            border-top: 1px solid #E5E7EB;
-            color: #9CA3AF;
+            border-top: 2px solid #000000;
+            color: #6B7280;
             font-size: 12px;
           }
           
           /* Responsive text sizes for small paper */
           @media (max-width: 600px) {
+            .invoice-container {
+              padding: 15px;
+            }
+            
             .business-info h1 {
               font-size: 20px;
             }
@@ -317,8 +328,13 @@ export const generateInvoiceHTML = (invoice: InvoiceOut): string => {
           /* Thermal printer support (58mm, 80mm) */
           @media (max-width: 400px) {
             body {
-              padding: 10px 5px;
+              padding: 5px;
               font-size: 12px;
+            }
+            
+            .invoice-container {
+              padding: 10px;
+              border-width: 2px;
             }
             
             .header {
@@ -333,6 +349,11 @@ export const generateInvoiceHTML = (invoice: InvoiceOut): string => {
             .dates-section {
               flex-direction: column;
               gap: 10px;
+            }
+            
+            .items-table th,
+            .items-table td {
+              border-right-width: 1px;
             }
           }
           
