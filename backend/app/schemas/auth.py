@@ -16,6 +16,12 @@ class AccessToken(BaseModel):
     token_type: str
 
 
+class GoogleAuthRequest(BaseModel):
+    """Request for mobile Google authentication with ID token"""
+    id_token: str
+    device_id: str | None = None
+
+
 class ChangePassword(BaseModel):
     current_password: str
     new_password: str

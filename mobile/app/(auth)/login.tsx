@@ -17,6 +17,7 @@ import { router } from 'expo-router';
 import { useTheme } from '@/hooks/useTheme';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
+import { GoogleSignInButton } from '@/components/auth/GoogleSignInButton';
 import { Spacing, BorderRadius } from '@/constants/colors';
 import { Typography } from '@/constants/typography';
 
@@ -144,6 +145,17 @@ export default function LoginScreen() {
             style={styles.loginButton}
           />
 
+          <View style={styles.dividerContainer}>
+            <View style={styles.divider} />
+            <Text style={styles.dividerText}>OR</Text>
+            <View style={styles.divider} />
+          </View>
+
+          <GoogleSignInButton 
+            mode="login"
+            onSuccess={() => router.replace('/(tabs)')}
+          />
+
           <TouchableOpacity
             onPress={() => router.push('/(auth)/register')}
             style={styles.linkContainer}
@@ -255,8 +267,22 @@ const styles = StyleSheet.create({
   },
   loginButton: {
     marginTop: Spacing.md,
+  },  dividerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: Spacing.lg,
   },
-  linkContainer: {
+  divider: {
+    flex: 1,
+    height: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+  },
+  dividerText: {
+    marginHorizontal: Spacing.md,
+    fontSize: Typography.sizes.sm,
+    fontWeight: Typography.weights.medium,
+    color: 'rgba(255, 255, 255, 0.7)',
+  },  linkContainer: {
     marginTop: Spacing.lg,
     alignItems: 'center',
   },

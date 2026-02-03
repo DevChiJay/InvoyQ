@@ -11,7 +11,7 @@ from app.core.config import settings
 from app.db.mongo import get_database
 from app.repositories.user_repository import UserRepository
 from app.repositories.refresh_token_repository import RefreshTokenRepository
-from app.schemas.auth import Token, TokenRefresh, AccessToken
+from app.schemas.auth import Token, TokenRefresh, AccessToken, GoogleAuthRequest
 from app.schemas.user import UserCreate, UserOut, EmailVerificationResponse, ResendVerificationRequest, PasswordResetRequest
 from app.core.security import verify_password, get_password_hash
 from app.services.email import email_service
@@ -301,6 +301,96 @@ async def google_callback(code: str, db: AsyncIOMotorDatabase = Depends(get_data
         raise HTTPException(status_code=400, detail=f"Invalid token: {str(e)}")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"OAuth error: {str(e)}")
+
+
+@router.post("/google/mobile", response_model=Token)
+async def google_mobile_auth(
+    auth_request: GoogleAuthRequest,
+    db: AsyncIOMotorDatabase = Depends(get_database)
+):
+    """
+    Authenticate mobile users with Google ID token.
+    Mobile apps use native Google Sign-In and send the ID token directly.
+    """
+    if not settings.GOOGLE_CLIENT_ID:
+        raise HTTPException(status_code=500, detail="Google OAuth not configured")
+    
+    try:
+        user_repo = UserRepository(db)
+        refresh_token_repo = RefreshTokenRepository(db)
+        
+        # Verify the ID token from Google
+        id_info = id_token.verify_oauth2_token(
+            auth_request.id_token,
+            google_requests.Request(),
+            settings.GOOGLE_CLIENT_ID
+        )
+        
+        # Extract user information
+        google_user_id = id_info["sub"]
+        email = id_info.get("email")
+        full_name = id_info.get("name", "")
+        avatar_url = id_info.get("picture")
+        email_verified = id_info.get("email_verified", False)
+        
+        if not email:
+            raise HTTPException(status_code=400, detail="Email not provided by Google")
+        
+        # Check if user exists by email or OAuth ID
+        user = await user_repo.get_by_email(email)
+        if not user:
+            user = await user_repo.get_by_oauth(provider="google", provider_id=google_user_id)
+        
+        if user:
+            # Update existing user with Google OAuth info if not already set
+            update_data = {}
+            if not user.oauth_provider:
+                update_data["oauth_provider"] = "google"
+                update_data["oauth_provider_id"] = google_user_id
+            if not user.avatar_url and avatar_url:
+                update_data["avatar_url"] = avatar_url
+            # Mark as verified if Google says email is verified
+            if email_verified and not user.is_verified:
+                update_data["is_verified"] = True
+            
+            if update_data:
+                await user_repo.update(user.id, update_data)
+                # Refresh user object
+                user = await user_repo.get_by_id(user.id)
+        else:
+            # Create new user with Google OAuth
+            user = await user_repo.create_user(
+                email=email,
+                full_name=full_name,
+                oauth_provider="google",
+                oauth_provider_id=google_user_id,
+                avatar_url=avatar_url,
+                is_verified=email_verified,
+                hashed_password=None,
+                registration_source="mobile"
+            )
+        
+        # Generate JWT access token
+        access_token = create_access_token({"sub": user.id})
+        
+        # Create refresh token
+        refresh_token_doc = await refresh_token_repo.create_refresh_token(
+            user_id=user.id,
+            expires_delta=timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS),
+            device_id=auth_request.device_id
+        )
+        
+        return {
+            "access_token": access_token,
+            "refresh_token": refresh_token_doc.token,
+            "token_type": "bearer"
+        }
+        
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=f"Invalid ID token: {str(e)}")
+    except Exception as e:
+        print(f"Mobile Google auth error: {e}")
+        raise HTTPException(status_code=500, detail=f"Authentication error: {str(e)}")
 
 
 @router.post("/refresh", response_model=Token)

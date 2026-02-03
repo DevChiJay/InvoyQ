@@ -18,6 +18,7 @@ import { router } from 'expo-router';
 import { useTheme } from '@/hooks/useTheme';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
+import { GoogleSignInButton } from '@/components/auth/GoogleSignInButton';
 import { Spacing, BorderRadius } from '@/constants/colors';
 import { Typography } from '@/constants/typography';
 
@@ -215,6 +216,17 @@ export default function RegisterScreen() {
             style={styles.registerButton}
           />
 
+          <View style={styles.dividerContainer}>
+            <View style={styles.divider} />
+            <Text style={styles.dividerText}>OR</Text>
+            <View style={styles.divider} />
+          </View>
+
+          <GoogleSignInButton 
+            mode="register"
+            onSuccess={() => router.replace('/(tabs)')}
+          />
+
           <View style={styles.privacyContainer}>
             <Text style={[styles.privacyText]}>
               By continuing, you agree to our{' '}
@@ -328,6 +340,22 @@ const styles = StyleSheet.create({
   },
   registerButton: {
     marginTop: Spacing.md,
+  },
+  dividerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: Spacing.lg,
+  },
+  divider: {
+    flex: 1,
+    height: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+  },
+  dividerText: {
+    marginHorizontal: Spacing.md,
+    fontSize: Typography.sizes.sm,
+    fontWeight: Typography.weights.medium,
+    color: 'rgba(255, 255, 255, 0.7)',
   },
   privacyContainer: {
     marginTop: Spacing.md,
