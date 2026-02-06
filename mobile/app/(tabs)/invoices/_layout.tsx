@@ -22,12 +22,10 @@ export default function InvoicesLayout() {
         return;
       }
 
-      // Check if we're on a detail or edit screen (not index or create)
+      // Check if we're on a detail screen (not index, create, or edit)
       const currentSegment = segments[segments.length - 1];
       const isDetailScreen =
-        currentSegment &&
-        (currentSegment.toString().match(/^[a-f0-9-]{36}$/i) || // [id] route
-          pathname.includes("/edit/"));
+        currentSegment && currentSegment.toString().match(/^[a-f0-9-]{36}$/i); // [id] route
 
       // If on detail screen, push index to top of stack
       if (isDetailScreen && !pathname.includes("/invoices/index")) {
