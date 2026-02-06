@@ -1,12 +1,14 @@
 import { Stack, router, useSegments, usePathname } from "expo-router";
-import { TouchableOpacity } from "react-native";
+import { TouchableOpacity, Platform } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "@/hooks/useTheme";
 import { useFocusEffect } from "@react-navigation/native";
 import { useRef, useCallback } from "react";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function ProductsLayout() {
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
   const segments = useSegments();
   const pathname = usePathname();
   const isFirstRender = useRef(true);
@@ -48,6 +50,9 @@ export default function ProductsLayout() {
         gestureDirection: "horizontal",
         animation: "slide_from_right",
         headerBackTitleVisible: false,
+        ...(Platform.OS === "android" && {
+          headerStatusBarHeight: insets.top,
+        }),
         headerLeft: ({ canGoBack }) =>
           canGoBack ? (
             <TouchableOpacity

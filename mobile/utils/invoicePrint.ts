@@ -1,5 +1,5 @@
-import { InvoiceOut } from '@/types/invoice';
-import { formatCurrency, formatDate } from './formatters';
+import { InvoiceOut } from "@/types/invoice";
+import { formatCurrency, formatDate } from "./formatters";
 
 /**
  * Generates HTML content for printing an invoice
@@ -7,23 +7,23 @@ import { formatCurrency, formatDate } from './formatters';
  */
 export const generateInvoiceHTML = (invoice: InvoiceOut): string => {
   const statusColors: Record<string, string> = {
-    draft: '#6B7280',
-    sent: '#3B82F6',
-    paid: '#10B981',
-    overdue: '#EF4444',
-    cancelled: '#9CA3AF',
+    draft: "#6B7280",
+    sent: "#3B82F6",
+    paid: "#10B981",
+    overdue: "#EF4444",
+    cancelled: "#9CA3AF",
   };
 
-  const statusColor = statusColors[invoice.status] || '#6B7280';
-  
+  const statusColor = statusColors[invoice.status] || "#6B7280";
+
   // Calculate totals with discount
-  const subtotal = parseFloat(invoice.subtotal || '0');
-  const discount = parseFloat(invoice.discount || '0');
+  const subtotal = parseFloat(invoice.subtotal || "0");
+  const discount = parseFloat(invoice.discount || "0");
   const discountAmount = (subtotal * discount) / 100;
   const subtotalAfterDiscount = subtotal - discountAmount;
-  const tax = parseFloat(invoice.tax || '0');
+  const tax = parseFloat(invoice.tax || "0");
   const taxAmount = (subtotalAfterDiscount * tax) / 100;
-  const total = parseFloat(invoice.total || '0');
+  const total = parseFloat(invoice.total || "0");
 
   return `
     <!DOCTYPE html>
@@ -68,8 +68,8 @@ export const generateInvoiceHTML = (invoice: InvoiceOut): string => {
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
-            margin-bottom: 30px;
-            padding-bottom: 20px;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
             border-bottom: 3px solid #000000;
             flex-wrap: wrap;
             gap: 20px;
@@ -95,13 +95,13 @@ export const generateInvoiceHTML = (invoice: InvoiceOut): string => {
           .business-info h1 {
             font-size: 24px;
             font-weight: 700;
-            color: #111827;
+            color: #000000;
             margin-bottom: 10px;
           }
           
           .business-info p {
-            color: #6B7280;
-            font-size: 13px;
+            color: #000000;
+            font-size: 20px;
             margin-bottom: 4px;
           }
           
@@ -111,9 +111,9 @@ export const generateInvoiceHTML = (invoice: InvoiceOut): string => {
           }
           
           .invoice-number {
-            font-size: 20px;
+            font-size: 22px;
             font-weight: 700;
-            color: #111827;
+            color: #000000;
             margin-bottom: 8px;
           }
           
@@ -121,70 +121,88 @@ export const generateInvoiceHTML = (invoice: InvoiceOut): string => {
             display: inline-block;
             padding: 6px 12px;
             border-radius: 16px;
-            font-size: 12px;
+            font-size: 16px;
             font-weight: 700;
             text-transform: uppercase;
             background-color: ${statusColor}20;
-            color: ${statusColor};
+            color: #000000;
           }
           
           .client-section {
-            margin-bottom: 30px;
+            margin-bottom: 20px;
           }
           
           .section-title {
-            font-size: 14px;
-            font-weight: 600;
-            color: #6B7280;
+            font-size: 18px;
+            font-weight: 700;
+            color: #000000;
             text-transform: uppercase;
             letter-spacing: 0.5px;
             margin-bottom: 8px;
           }
           
           .client-name {
-            font-size: 18px;
+            font-size: 22px;
             font-weight: 600;
-            color: #111827;
+            color: #000000;
             margin-bottom: 4px;
           }
           
           .client-details {
-            color: #6B7280;
-            font-size: 14px;
+            color: #000000;
+            font-size: 21px;
           }
           
-          .dates-section {
+          .info-dates-container {
             display: flex;
-            gap: 40px;
-            margin-bottom: 30px;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 30px;
+            margin-bottom: 20px;
             padding: 15px 0;
             border-top: 2px solid #000000;
             border-bottom: 2px solid #000000;
           }
           
-          .date-item {
+          .info-dates-container .client-section {
             flex: 1;
+            margin-bottom: 0;
+          }
+          
+          .dates-section {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            min-width: 200px;
+          }
+          
+          .date-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            gap: 15px;
           }
           
           .date-label {
-            font-size: 12px;
-            color: #6B7280;
+            font-size: 14px;
+            font-weight: 700;
+            color: #000000;
             text-transform: uppercase;
             letter-spacing: 0.5px;
-            margin-bottom: 4px;
+            white-space: nowrap;
           }
           
           .date-value {
-            font-size: 16px;
+            font-size: 18px;
             font-weight: 600;
-            color: #111827;
+            color: #000000;
           }
           
           .items-table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 30px;
-            font-size: 14px;
+            margin-bottom: 20px;
+            font-size: 18px;
             border: 2px solid #000000;
           }
           
@@ -194,8 +212,8 @@ export const generateInvoiceHTML = (invoice: InvoiceOut): string => {
           
           .items-table th {
             text-align: left;
-            padding: 10px 8px;
-            font-size: 11px;
+            padding: 8px 6px;
+            font-size: 15px;
             font-weight: 700;
             color: #000000;
             text-transform: uppercase;
@@ -215,20 +233,22 @@ export const generateInvoiceHTML = (invoice: InvoiceOut): string => {
           }
           
           .items-table td {
-            padding: 10px 8px;
-            color: #374151;
-            font-size: 13px;
+            padding: 8px 6px;
+            color: #000000;
+            font-size: 17px;
+            font-weight: 700;
             border-right: 2px solid #CCCCCC;
           }
           
           .item-description {
-            font-weight: 500;
-            color: #111827;
+            font-weight: 700;
+            color: #000000;
           }
           
           .item-details {
-            font-size: 12px;
-            color: #6B7280;
+            font-size: 16px;
+            font-weight: 700;
+            color: #000000;
             margin-top: 4px;
           }
           
@@ -236,69 +256,72 @@ export const generateInvoiceHTML = (invoice: InvoiceOut): string => {
             margin-left: auto;
             width: 100%;
             max-width: 300px;
-            margin-bottom: 30px;
+            margin-bottom: 15px;
           }
           
           .total-row {
             display: flex;
             justify-content: space-between;
-            padding: 10px 0;
-            font-size: 14px;
+            padding: 8px 0;
+            font-size: 18px;
           }
           
           .total-label {
-            color: #6B7280;
+            font-weight: 700;
+            color: #000000;
           }
           
           .total-value {
             font-weight: 600;
-            color: #111827;
+            color: #000000;
           }
           
           .grand-total {
             border-top: 3px solid #000000;
-            margin-top: 10px;
-            padding-top: 15px;
+            margin-top: 8px;
+            padding-top: 12px;
           }
           
           .grand-total .total-label {
-            font-size: 16px;
+            font-size: 20px;
             font-weight: 700;
-            color: #111827;
+            color: #000000;
           }
           
           .grand-total .total-value {
-            font-size: 24px;
+            font-size: 32px;
             font-weight: 700;
             color: #000000;
           }
           
           .notes-section {
             border: 2px solid #000000;
-            padding: 20px;
+            padding: 15px;
             border-radius: 8px;
-            margin-bottom: 30px;
+            margin-bottom: 15px;
           }
           
           .notes-title {
-            font-size: 14px;
-            font-weight: 600;
-            color: #111827;
+            font-size: 18px;
+            font-weight: 700;
+            color: #000000;
             margin-bottom: 8px;
           }
           
           .notes-text {
-            color: #6B7280;
-            font-size: 14px;
+            font-weight: 600;
+            color: #000000;
+            font-size: 18px;
             line-height: 1.6;
           }
           
           .footer {
             text-align: center;
-            padding-top: 30px;
+            padding-top: 15px;
             border-top: 2px solid #000000;
-            color: #6B7280;
-            font-size: 12px;
+            font-weight: 600;
+            color: #000000;
+            font-size: 16px;
           }
           
           /* Responsive text sizes for small paper */
@@ -308,25 +331,25 @@ export const generateInvoiceHTML = (invoice: InvoiceOut): string => {
             }
             
             .business-info h1 {
-              font-size: 20px;
+              font-size: 22px;
             }
             
             .business-info p {
-              font-size: 12px;
+              font-size: 17px;
             }
             
             .invoice-number {
-              font-size: 18px;
+              font-size: 20px;
             }
             
             .items-table {
-              font-size: 12px;
+              font-size: 15px;
             }
             
             .items-table th,
             .items-table td {
               padding: 8px 5px;
-              font-size: 11px;
+              font-size: 14px;
             }
             
             .totals-section {
@@ -355,8 +378,12 @@ export const generateInvoiceHTML = (invoice: InvoiceOut): string => {
               text-align: left;
             }
             
-            .dates-section {
+            .info-dates-container {
               flex-direction: column;
+              gap: 15px;
+            }
+            
+            .dates-section {
               gap: 10px;
             }
             
@@ -394,50 +421,67 @@ export const generateInvoiceHTML = (invoice: InvoiceOut): string => {
           <!-- Header -->
           <div class="header">
             <div class="business-info">
-              ${invoice.user_business_info?.company_logo_url ? `
+              ${
+                invoice.user_business_info?.company_logo_url
+                  ? `
                 <div class="logo-container">
                   <img src="${invoice.user_business_info.company_logo_url}" alt="Company Logo" />
                 </div>
-              ` : ''}
-              <h1>${invoice.user_business_info?.company_name || invoice.user_business_info?.full_name || 'Your Business'}</h1>
-              ${invoice.user_business_info?.company_address ? `<p>${invoice.user_business_info.company_address}</p>` : ''}
-              ${invoice.user_business_info?.phone ? `<p>Phone: ${invoice.user_business_info.phone}</p>` : ''}
-              ${invoice.user_business_info?.email ? `<p>Email: ${invoice.user_business_info.email}</p>` : ''}
-              ${invoice.user_business_info?.tax_id ? `<p>Tax ID: ${invoice.user_business_info.tax_id}</p>` : ''}
+              `
+                  : ""
+              }
+              <h1>${invoice.user_business_info?.company_name || invoice.user_business_info?.full_name || "Your Business"}</h1>
+              ${invoice.user_business_info?.company_address ? `<p>${invoice.user_business_info.company_address}</p>` : ""}
+              ${invoice.user_business_info?.phone ? `<p>Phone: ${invoice.user_business_info.phone}</p>` : ""}
+              ${invoice.user_business_info?.email ? `<p>Email: ${invoice.user_business_info.email}</p>` : ""}
+              ${invoice.user_business_info?.tax_id ? `<p>Tax ID: ${invoice.user_business_info.tax_id}</p>` : ""}
             </div>
             <div class="invoice-details">
-              <div class="invoice-number">INVOICE ${invoice.number || 'DRAFT'}</div>
+              <div class="invoice-number">INVOICE ${invoice.number || "DRAFT"}</div>
               <span class="status-badge">${invoice.status}</span>
             </div>
           </div>
           
-          <!-- Client Information -->
-          ${invoice.client ? `
-          <div class="client-section">
-            <div class="section-title">Bill To</div>
-            <div class="client-name">${invoice.client.name}</div>
-            <div class="client-details">
-              ${invoice.client.email ? `<div>${invoice.client.email}</div>` : ''}
-              ${invoice.client.phone ? `<div>${invoice.client.phone}</div>` : ''}
-              ${invoice.client.address ? `<div>${invoice.client.address}</div>` : ''}
+          <!-- Client Information and Dates -->
+          <div class="info-dates-container">
+            ${
+              invoice.client
+                ? `
+            <div class="client-section">
+              <div class="section-title">Bill To</div>
+              <div class="client-name">${invoice.client.name}</div>
+              <div class="client-details">
+                ${invoice.client.email ? `<div>${invoice.client.email}</div>` : ""}
+                ${invoice.client.phone ? `<div>${invoice.client.phone}</div>` : ""}
+                ${invoice.client.address ? `<div>${invoice.client.address}</div>` : ""}
+              </div>
             </div>
-          </div>
-          ` : ''}
-          
-          <!-- Dates -->
-          <div class="dates-section">
-            ${invoice.issued_date ? `
-            <div class="date-item">
-              <div class="date-label">Issue Date</div>
-              <div class="date-value">${formatDate(invoice.issued_date)}</div>
+            `
+                : ""
+            }
+            
+            <div class="dates-section">
+              ${
+                invoice.issued_date
+                  ? `
+              <div class="date-item">
+                <div class="date-label">Issue Date:</div>
+                <div class="date-value">${formatDate(invoice.issued_date)}</div>
+              </div>
+              `
+                  : ""
+              }
+              ${
+                invoice.due_date
+                  ? `
+              <div class="date-item">
+                <div class="date-label">Due Date:</div>
+                <div class="date-value">${formatDate(invoice.due_date)}</div>
+              </div>
+              `
+                  : ""
+              }
             </div>
-            ` : ''}
-            ${invoice.due_date ? `
-            <div class="date-item">
-              <div class="date-label">Due Date</div>
-              <div class="date-value">${formatDate(invoice.due_date)}</div>
-            </div>
-            ` : ''}
           </div>
           
           <!-- Line Items -->
@@ -452,18 +496,21 @@ export const generateInvoiceHTML = (invoice: InvoiceOut): string => {
               </tr>
             </thead>
             <tbody>
-              ${invoice.items.map(item => `
+              ${invoice.items
+                .map(
+                  (item) => `
                 <tr>
                   <td>
                     <div class="item-description">${item.description}</div>
-                    ${parseFloat(item.tax_rate) > 0 ? `<div class="item-details">Tax Rate: ${item.tax_rate}%</div>` : ''}
                   </td>
                   <td>${item.quantity}</td>
                   <td>${formatCurrency(parseFloat(item.unit_price), invoice.currency)}</td>
                   <td>${item.tax_rate}%</td>
                   <td>${formatCurrency(parseFloat(item.amount), invoice.currency)}</td>
                 </tr>
-              `).join('')}
+              `,
+                )
+                .join("")}
             </tbody>
           </table>
           
@@ -473,12 +520,16 @@ export const generateInvoiceHTML = (invoice: InvoiceOut): string => {
               <span class="total-label">Subtotal</span>
               <span class="total-value">${formatCurrency(subtotal, invoice.currency)}</span>
             </div>
-            ${discount > 0 ? `
+            ${
+              discount > 0
+                ? `
             <div class="total-row">
               <span class="total-label">Discount (${discount}%)</span>
-              <span class="total-value" style="color: #EF4444;">-${formatCurrency(discountAmount, invoice.currency)}</span>
+              <span class="total-value" style="color: #EF4444; font-weight: 700;">-${formatCurrency(discountAmount, invoice.currency)}</span>
             </div>
-            ` : ''}
+            `
+                : ""
+            }
             <div class="total-row">
               <span class="total-label">Tax</span>
               <span class="total-value">${formatCurrency(taxAmount, invoice.currency)}</span>
@@ -490,12 +541,16 @@ export const generateInvoiceHTML = (invoice: InvoiceOut): string => {
           </div>
           
           <!-- Notes -->
-          ${invoice.notes ? `
+          ${
+            invoice.notes
+              ? `
           <div class="notes-section">
             <div class="notes-title">Notes</div>
-            <div class="notes-text">${invoice.notes.replace(/\n/g, '<br>')}</div>
+            <div class="notes-text">${invoice.notes.replace(/\n/g, "<br>")}</div>
           </div>
-          ` : ''}
+          `
+              : ""
+          }
           
           <!-- Footer -->
           <div class="footer">
