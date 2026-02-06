@@ -89,9 +89,9 @@ export default function FeaturesSection() {
                       <Icon className="h-6 w-6 text-[#6366F1] dark:text-[#14B8A6]" />
                     </div>
                     {feature.isPro && (
-                      <BadgeComponent className="bg-gradient-to-r from-[#6366F1] to-[#14B8A6] text-white border-none">
+                      <Badge className="bg-gradient-to-r from-[#6366F1] to-[#14B8A6] text-white border-none">
                         PRO
-                      </BadgeComponent>
+                      </Badge>
                     )}
                   </div>
                   <CardTitle className="text-lg">{feature.title}</CardTitle>
