@@ -1,44 +1,75 @@
-import { View, Text, FlatList, ScrollView, TouchableOpacity, StyleSheet, RefreshControl } from 'react-native';
-import { Stack, router } from 'expo-router';
-import { useProducts } from '@/hooks/useProducts';
-import { useTheme } from '@/hooks/useTheme';
-import { useDebounce } from '@/hooks/useDebounce';
-import { useFilterState } from '@/hooks/useFilterState';
-import { Card, Badge, SearchBar, FilterChip, EmptyState, SkeletonList, ErrorState } from '@/components/ui';
-import { Spacing } from '@/constants/colors';
-import { Typography } from '@/constants/typography';
-import { Ionicons } from '@expo/vector-icons';
-import { useState, useMemo, useEffect } from 'react';
+import {
+  View,
+  Text,
+  FlatList,
+  ScrollView,
+  TouchableOpacity,
+  StyleSheet,
+  RefreshControl,
+} from "react-native";
+import { Stack, router } from "expo-router";
+import { useProducts } from "@/hooks/useProducts";
+import { useTheme } from "@/hooks/useTheme";
+import { useDebounce } from "@/hooks/useDebounce";
+import { useFilterState } from "@/hooks/useFilterState";
+import {
+  Card,
+  Badge,
+  SearchBar,
+  FilterChip,
+  EmptyState,
+  SkeletonList,
+  ErrorState,
+} from "@/components/ui";
+import { Spacing } from "@/constants/colors";
+import { Typography } from "@/constants/typography";
+import { Ionicons } from "@expo/vector-icons";
+import { useState, useMemo, useEffect } from "react";
 
-type FilterType = 'all' | 'in-stock' | 'low-stock' | 'out-of-stock' | 'active' | 'inactive';
+type FilterType =
+  | "all"
+  | "in-stock"
+  | "low-stock"
+  | "out-of-stock"
+  | "active"
+  | "inactive";
 
 export default function ProductsScreen() {
   const { colors } = useTheme();
-  const { filterState, isLoaded, updateFilter } = useFilterState('products');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [filter, setFilter] = useState<FilterType>('all');
+  const { filterState, isLoaded, updateFilter } = useFilterState("products");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filter, setFilter] = useState<FilterType>("all");
   const debouncedSearch = useDebounce(searchQuery, 300);
-  const { data, isLoading, error, fetchNextPage, hasNextPage, isFetchingNextPage, refetch } = useProducts();
+  const {
+    data,
+    isLoading,
+    error,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    refetch,
+  } = useProducts();
   const [refreshing, setRefreshing] = useState(false);
 
   // Restore filter state
   useEffect(() => {
     if (isLoaded) {
       if (filterState.searchQuery) setSearchQuery(filterState.searchQuery);
-      if (filterState.selectedFilter) setFilter(filterState.selectedFilter as FilterType);
+      if (filterState.selectedFilter)
+        setFilter(filterState.selectedFilter as FilterType);
     }
   }, [isLoaded]);
 
   // Save filter state
   useEffect(() => {
     if (isLoaded && debouncedSearch) {
-      updateFilter('searchQuery', debouncedSearch);
+      updateFilter("searchQuery", debouncedSearch);
     }
   }, [debouncedSearch, isLoaded]);
 
   useEffect(() => {
-    if (isLoaded && filter !== 'all') {
-      updateFilter('selectedFilter', filter);
+    if (isLoaded && filter !== "all") {
+      updateFilter("selectedFilter", filter);
     }
   }, [filter, isLoaded]);
 
@@ -61,23 +92,25 @@ export default function ProductsScreen() {
         (product) =>
           product.name.toLowerCase().includes(query) ||
           product.sku.toLowerCase().includes(query) ||
-          product.description?.toLowerCase().includes(query)
+          product.description?.toLowerCase().includes(query),
       );
     }
 
     // Apply filter
-    if (filter !== 'all') {
+    if (filter !== "all") {
       filtered = filtered.filter((product) => {
         switch (filter) {
-          case 'in-stock':
+          case "in-stock":
             return product.quantity_available > 10;
-          case 'low-stock':
-            return product.quantity_available > 0 && product.quantity_available <= 10;
-          case 'out-of-stock':
+          case "low-stock":
+            return (
+              product.quantity_available > 0 && product.quantity_available <= 10
+            );
+          case "out-of-stock":
             return product.quantity_available === 0;
-          case 'active':
+          case "active":
             return product.is_active;
-          case 'inactive':
+          case "inactive":
             return !product.is_active;
           default:
             return true;
@@ -89,15 +122,21 @@ export default function ProductsScreen() {
   }, [products, debouncedSearch, filter]);
 
   const getStockCount = (type: FilterType) => {
-    if (type === 'all') return products.length;
+    if (type === "all") return products.length;
     return products.filter((p) => {
       switch (type) {
-        case 'in-stock': return p.quantity_available > 10;
-        case 'low-stock': return p.quantity_available > 0 && p.quantity_available <= 10;
-        case 'out-of-stock': return p.quantity_available === 0;
-        case 'active': return p.is_active;
-        case 'inactive': return !p.is_active;
-        default: return true;
+        case "in-stock":
+          return p.quantity_available > 10;
+        case "low-stock":
+          return p.quantity_available > 0 && p.quantity_available <= 10;
+        case "out-of-stock":
+          return p.quantity_available === 0;
+        case "active":
+          return p.is_active;
+        case "inactive":
+          return !p.is_active;
+        default:
+          return true;
       }
     }).length;
   };
@@ -107,7 +146,7 @@ export default function ProductsScreen() {
       <View style={[styles.container, { backgroundColor: colors.background }]}>
         <Stack.Screen
           options={{
-            title: 'Products',
+            title: "Products",
             headerStyle: { backgroundColor: colors.surface },
             headerTintColor: colors.text,
           }}
@@ -122,7 +161,7 @@ export default function ProductsScreen() {
       <View style={[styles.container, { backgroundColor: colors.background }]}>
         <Stack.Screen
           options={{
-            title: 'Products',
+            title: "Products",
             headerStyle: { backgroundColor: colors.surface },
             headerTintColor: colors.text,
           }}
@@ -140,12 +179,12 @@ export default function ProductsScreen() {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <Stack.Screen
         options={{
-          title: 'Products',
+          title: "Products",
           headerStyle: { backgroundColor: colors.surface },
           headerTintColor: colors.text,
           headerRight: () => (
             <TouchableOpacity
-              onPress={() => router.push('/products/create')}
+              onPress={() => router.push("/products/create")}
               style={styles.headerButton}
             >
               <Ionicons name="add" size={24} color={colors.primary} />
@@ -160,7 +199,7 @@ export default function ProductsScreen() {
           value={searchQuery}
           onChangeText={setSearchQuery}
           placeholder="Search products..."
-          onClear={() => setSearchQuery('')}
+          onClear={() => setSearchQuery("")}
         />
       </View>
 
@@ -173,42 +212,42 @@ export default function ProductsScreen() {
       >
         <FilterChip
           label="All"
-          selected={filter === 'all'}
-          onPress={() => setFilter('all')}
-          count={getStockCount('all')}
+          selected={filter === "all"}
+          onPress={() => setFilter("all")}
+          count={getStockCount("all")}
         />
         <FilterChip
           label="In Stock"
-          selected={filter === 'in-stock'}
-          onPress={() => setFilter('in-stock')}
+          selected={filter === "in-stock"}
+          onPress={() => setFilter("in-stock")}
           icon="checkmark-circle"
-          count={getStockCount('in-stock')}
+          count={getStockCount("in-stock")}
         />
         <FilterChip
           label="Low Stock"
-          selected={filter === 'low-stock'}
-          onPress={() => setFilter('low-stock')}
+          selected={filter === "low-stock"}
+          onPress={() => setFilter("low-stock")}
           icon="warning"
-          count={getStockCount('low-stock')}
+          count={getStockCount("low-stock")}
         />
         <FilterChip
           label="Out of Stock"
-          selected={filter === 'out-of-stock'}
-          onPress={() => setFilter('out-of-stock')}
+          selected={filter === "out-of-stock"}
+          onPress={() => setFilter("out-of-stock")}
           icon="close-circle"
-          count={getStockCount('out-of-stock')}
+          count={getStockCount("out-of-stock")}
         />
         <FilterChip
           label="Active"
-          selected={filter === 'active'}
-          onPress={() => setFilter('active')}
-          count={getStockCount('active')}
+          selected={filter === "active"}
+          onPress={() => setFilter("active")}
+          count={getStockCount("active")}
         />
         <FilterChip
           label="Inactive"
-          selected={filter === 'inactive'}
-          onPress={() => setFilter('inactive')}
-          count={getStockCount('inactive')}
+          selected={filter === "inactive"}
+          onPress={() => setFilter("inactive")}
+          count={getStockCount("inactive")}
         />
       </ScrollView>
 
@@ -232,14 +271,24 @@ export default function ProductsScreen() {
         ListEmptyComponent={
           <EmptyState
             icon="pricetag-outline"
-            title={searchQuery || filter !== 'all' ? 'No products found' : 'No products yet'}
-            message={
-              searchQuery || filter !== 'all'
-                ? 'No products match your search or filter'
-                : 'Add products to track inventory'
+            title={
+              searchQuery || filter !== "all"
+                ? "No products found"
+                : "No products yet"
             }
-            actionLabel={!searchQuery && filter === 'all' ? 'Add Product' : undefined}
-            onAction={!searchQuery && filter === 'all' ? () => router.push('/products/create') : undefined}
+            message={
+              searchQuery || filter !== "all"
+                ? "No products match your search or filter"
+                : "Add products to track inventory"
+            }
+            actionLabel={
+              !searchQuery && filter === "all" ? "Add Product" : undefined
+            }
+            onAction={
+              !searchQuery && filter === "all"
+                ? () => router.push("/products/create")
+                : undefined
+            }
           />
         }
         ListFooterComponent={
@@ -250,7 +299,14 @@ export default function ProductsScreen() {
           ) : null
         }
         renderItem={({ item }) => (
-          <TouchableOpacity onPress={() => router.push(`/products/${item.id}`)}>
+          <TouchableOpacity
+            onPress={() =>
+              router.push({
+                pathname: `/products/${item.id}`,
+                params: { from: "list" },
+              })
+            }
+          >
             <Card variant="elevated" style={styles.productCard}>
               <View style={styles.productHeader}>
                 <View style={styles.productInfo}>
@@ -262,21 +318,25 @@ export default function ProductsScreen() {
                   </Text>
                 </View>
                 <Badge
-                  label={item.is_active ? 'Active' : 'Inactive'}
-                  variant={item.is_active ? 'success' : 'default'}
+                  label={item.is_active ? "Active" : "Inactive"}
+                  variant={item.is_active ? "success" : "default"}
                   size="sm"
                 />
               </View>
 
               <View style={styles.productDetails}>
                 <View style={styles.detailRow}>
-                  <Text style={[styles.label, { color: colors.textSecondary }]}>Price:</Text>
+                  <Text style={[styles.label, { color: colors.textSecondary }]}>
+                    Price:
+                  </Text>
                   <Text style={[styles.value, { color: colors.text }]}>
                     {item.currency} {parseFloat(item.unit_price).toFixed(2)}
                   </Text>
                 </View>
                 <View style={styles.detailRow}>
-                  <Text style={[styles.label, { color: colors.textSecondary }]}>Stock:</Text>
+                  <Text style={[styles.label, { color: colors.textSecondary }]}>
+                    Stock:
+                  </Text>
                   <Text
                     style={[
                       styles.value,
@@ -285,8 +345,8 @@ export default function ProductsScreen() {
                           item.quantity_available > 10
                             ? colors.success
                             : item.quantity_available > 0
-                            ? colors.warning
-                            : colors.error,
+                              ? colors.warning
+                              : colors.error,
                       },
                     ]}
                   >
@@ -304,11 +364,11 @@ export default function ProductsScreen() {
           </TouchableOpacity>
         )}
       />
-      
+
       {/* Floating Action Button */}
       <TouchableOpacity
         style={[styles.fab, { backgroundColor: colors.primary }]}
-        onPress={() => router.push('/products/create')}
+        onPress={() => router.push("/products/create")}
         activeOpacity={0.8}
       >
         <Ionicons name="add" size={28} color="#FFFFFF" />
@@ -323,23 +383,23 @@ const styles = StyleSheet.create({
   },
   centered: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   headerButton: {
     padding: 8,
   },
   fab: {
-    position: 'absolute',
+    position: "absolute",
     right: 20,
     bottom: 120,
     width: 56,
     height: 56,
     borderRadius: 28,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     elevation: 6,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 4,
@@ -362,12 +422,12 @@ const styles = StyleSheet.create({
   },
   productCard: {
     marginBottom: Spacing.md,
-    position: 'relative',
+    position: "relative",
   },
   productHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
     marginBottom: Spacing.sm,
   },
   productInfo: {
@@ -386,8 +446,8 @@ const styles = StyleSheet.create({
     gap: Spacing.xs,
   },
   detailRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
   },
   label: {
     fontSize: Typography.sizes.sm,
@@ -397,14 +457,14 @@ const styles = StyleSheet.create({
     fontWeight: Typography.weights.medium,
   },
   chevron: {
-    position: 'absolute',
+    position: "absolute",
     right: 16,
-    top: '50%',
+    top: "50%",
     marginTop: -10,
   },
   footer: {
     paddingVertical: Spacing.md,
-    alignItems: 'center',
+    alignItems: "center",
   },
   errorText: {
     fontSize: Typography.sizes.md,

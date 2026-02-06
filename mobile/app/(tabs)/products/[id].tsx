@@ -1,32 +1,52 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Modal } from 'react-native';
-import { Stack, router, useLocalSearchParams } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useTheme } from '@/hooks/useTheme';
-import { useProduct, useDeleteProduct, useAdjustProductQuantity } from '@/hooks/useProducts';
-import { Card, Button, Badge, NumberInput, FormField } from '@/components/ui';
-import { confirmDelete, showError, showSuccess } from '@/utils/alerts';
-import { formatCurrency } from '@/utils/formatters';
+import React, { useState } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  ActivityIndicator,
+  Modal,
+} from "react-native";
+import { Stack, router, useLocalSearchParams } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useTheme } from "@/hooks/useTheme";
+import {
+  useProduct,
+  useDeleteProduct,
+  useAdjustProductQuantity,
+} from "@/hooks/useProducts";
+import { Card, Button, Badge, NumberInput, FormField } from "@/components/ui";
+import { confirmDelete, showError, showSuccess } from "@/utils/alerts";
+import { formatCurrency } from "@/utils/formatters";
 
 export default function ProductDetailScreen() {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, from } = useLocalSearchParams<{ id: string; from?: string }>();
   const { data: product, isLoading } = useProduct(id);
   const deleteProduct = useDeleteProduct();
   const adjustQuantity = useAdjustProductQuantity();
   const [showAdjustModal, setShowAdjustModal] = useState(false);
-  const [adjustmentValue, setAdjustmentValue] = useState('');
+  const [adjustmentValue, setAdjustmentValue] = useState("");
+
+  const handleBack = () => {
+    if (from === "dashboard") {
+      router.push("/(tabs)");
+    } else {
+      router.back();
+    }
+  };
 
   const handleDelete = () => {
     if (!product) return;
     confirmDelete(product.name, async () => {
       try {
         await deleteProduct.mutateAsync(id);
-        router.back();
+        handleBack();
       } catch (error: any) {
-        showError(error.response?.data?.detail || 'Failed to delete product');
+        showError(error.response?.data?.detail || "Failed to delete product");
       }
     });
   };
@@ -39,17 +59,17 @@ export default function ProductDetailScreen() {
     try {
       await adjustQuantity.mutateAsync({ id, adjustment: delta });
       setShowAdjustModal(false);
-      setAdjustmentValue('');
-      showSuccess('Quantity adjusted successfully');
+      setAdjustmentValue("");
+      showSuccess("Quantity adjusted successfully");
     } catch (error: any) {
-      showError(error.response?.data?.detail || 'Failed to adjust quantity');
+      showError(error.response?.data?.detail || "Failed to adjust quantity");
     }
   };
 
   const getStockBadge = () => {
     if (!product) return null;
     const qty = product.quantity_available;
-    
+
     if (qty === 0) {
       return <Badge variant="error" label="Out of Stock" />;
     } else if (qty <= 10) {
@@ -61,7 +81,13 @@ export default function ProductDetailScreen() {
 
   if (isLoading) {
     return (
-      <View style={[styles.container, styles.centered, { backgroundColor: colors.background }]}>
+      <View
+        style={[
+          styles.container,
+          styles.centered,
+          { backgroundColor: colors.background },
+        ]}
+      >
         <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
@@ -69,8 +95,16 @@ export default function ProductDetailScreen() {
 
   if (!product) {
     return (
-      <View style={[styles.container, styles.centered, { backgroundColor: colors.background }]}>
-        <Text style={[styles.errorText, { color: colors.textSecondary }]}>Product not found</Text>
+      <View
+        style={[
+          styles.container,
+          styles.centered,
+          { backgroundColor: colors.background },
+        ]}
+      >
+        <Text style={[styles.errorText, { color: colors.textSecondary }]}>
+          Product not found
+        </Text>
       </View>
     );
   }
@@ -79,15 +113,21 @@ export default function ProductDetailScreen() {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <Stack.Screen
         options={{
-          title: 'Product Details',
+          title: "Product Details",
           headerStyle: { backgroundColor: colors.surface },
           headerTintColor: colors.text,
           headerRight: () => (
             <View style={styles.headerActions}>
-              <TouchableOpacity onPress={handleEdit} style={styles.headerButton}>
+              <TouchableOpacity
+                onPress={handleEdit}
+                style={styles.headerButton}
+              >
                 <Ionicons name="pencil" size={22} color={colors.primary} />
               </TouchableOpacity>
-              <TouchableOpacity onPress={handleDelete} style={styles.headerButton}>
+              <TouchableOpacity
+                onPress={handleDelete}
+                style={styles.headerButton}
+              >
                 <Ionicons name="trash-outline" size={22} color={colors.error} />
               </TouchableOpacity>
             </View>
@@ -95,17 +135,25 @@ export default function ProductDetailScreen() {
         }}
       />
 
-      <ScrollView style={styles.content} contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, 16) }} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={styles.content}
+        contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, 16) }}
+        showsVerticalScrollIndicator={false}
+      >
         {/* Product Info Card */}
         <Card style={styles.card}>
           <View style={styles.row}>
             <View style={styles.flex}>
-              <Text style={[styles.productName, { color: colors.text }]}>{product.name}</Text>
-              <Text style={[styles.sku, { color: colors.textSecondary }]}>SKU: {product.sku}</Text>
+              <Text style={[styles.productName, { color: colors.text }]}>
+                {product.name}
+              </Text>
+              <Text style={[styles.sku, { color: colors.textSecondary }]}>
+                SKU: {product.sku}
+              </Text>
             </View>
             {!product.is_active && <Badge variant="default" label="Inactive" />}
           </View>
-          
+
           <View style={styles.priceRow}>
             <Text style={[styles.price, { color: colors.primary }]}>
               {formatCurrency(parseFloat(product.unit_price), product.currency)}
@@ -117,7 +165,9 @@ export default function ProductDetailScreen() {
         {/* Description Card */}
         {product.description && (
           <Card style={styles.card}>
-            <Text style={[styles.cardTitle, { color: colors.text }]}>Description</Text>
+            <Text style={[styles.cardTitle, { color: colors.text }]}>
+              Description
+            </Text>
             <Text style={[styles.description, { color: colors.textSecondary }]}>
               {product.description}
             </Text>
@@ -126,8 +176,10 @@ export default function ProductDetailScreen() {
 
         {/* Stock Management Card */}
         <Card style={styles.card}>
-          <Text style={[styles.cardTitle, { color: colors.text }]}>Stock Management</Text>
-          
+          <Text style={[styles.cardTitle, { color: colors.text }]}>
+            Stock Management
+          </Text>
+
           <View style={styles.stockRow}>
             <Text style={[styles.stockLabel, { color: colors.textSecondary }]}>
               Current Stock
@@ -162,15 +214,23 @@ export default function ProductDetailScreen() {
 
         {/* Details Card */}
         <Card style={styles.card}>
-          <Text style={[styles.cardTitle, { color: colors.text }]}>Details</Text>
-          
+          <Text style={[styles.cardTitle, { color: colors.text }]}>
+            Details
+          </Text>
+
           <View style={styles.detailRow}>
-            <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Currency</Text>
-            <Text style={[styles.detailValue, { color: colors.text }]}>{product.currency}</Text>
+            <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>
+              Currency
+            </Text>
+            <Text style={[styles.detailValue, { color: colors.text }]}>
+              {product.currency}
+            </Text>
           </View>
 
           <View style={styles.detailRow}>
-            <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Tax Rate</Text>
+            <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>
+              Tax Rate
+            </Text>
             <Text style={[styles.detailValue, { color: colors.text }]}>
               {parseFloat(product.tax_rate).toFixed(2)}%
             </Text>
@@ -186,9 +246,13 @@ export default function ProductDetailScreen() {
         onRequestClose={() => setShowAdjustModal(false)}
       >
         <View style={styles.modalOverlay}>
-          <View style={[styles.modalContent, { backgroundColor: colors.surface }]}>
+          <View
+            style={[styles.modalContent, { backgroundColor: colors.surface }]}
+          >
             <View style={styles.modalHeader}>
-              <Text style={[styles.modalTitle, { color: colors.text }]}>Adjust Quantity</Text>
+              <Text style={[styles.modalTitle, { color: colors.text }]}>
+                Adjust Quantity
+              </Text>
               <TouchableOpacity onPress={() => setShowAdjustModal(false)}>
                 <Ionicons name="close" size={24} color={colors.text} />
               </TouchableOpacity>
@@ -217,7 +281,9 @@ export default function ProductDetailScreen() {
               />
               <Button
                 title="Apply"
-                onPress={() => handleAdjustQuantity(parseInt(adjustmentValue || '0'))}
+                onPress={() =>
+                  handleAdjustQuantity(parseInt(adjustmentValue || "0"))
+                }
                 variant="primary"
                 style={styles.button}
                 disabled={!adjustmentValue || adjustQuantity.isPending}
@@ -235,11 +301,11 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   centered: {
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   headerActions: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 8,
   },
   headerButton: {
@@ -253,34 +319,34 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   row: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
   },
   flex: {
     flex: 1,
   },
   productName: {
     fontSize: 24,
-    fontWeight: '600',
+    fontWeight: "600",
     marginBottom: 4,
   },
   sku: {
     fontSize: 14,
   },
   priceRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginTop: 16,
   },
   price: {
     fontSize: 28,
-    fontWeight: '700',
+    fontWeight: "700",
   },
   cardTitle: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
     marginBottom: 12,
   },
   description: {
@@ -288,9 +354,9 @@ const styles = StyleSheet.create({
     lineHeight: 24,
   },
   stockRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 16,
   },
   stockLabel: {
@@ -298,18 +364,18 @@ const styles = StyleSheet.create({
   },
   stockValue: {
     fontSize: 20,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   quickActions: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 8,
   },
   quickButton: {
     flex: 1,
   },
   detailRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
     paddingVertical: 8,
   },
   detailLabel: {
@@ -317,15 +383,15 @@ const styles = StyleSheet.create({
   },
   detailValue: {
     fontSize: 16,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   errorText: {
     fontSize: 16,
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'flex-end',
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "flex-end",
   },
   modalContent: {
     borderTopLeftRadius: 20,
@@ -333,14 +399,14 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 16,
   },
   modalTitle: {
     fontSize: 20,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   modalBody: {
     marginBottom: 16,
@@ -350,7 +416,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   modalFooter: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 12,
   },
   button: {

@@ -1,13 +1,42 @@
-import { Stack, router } from 'expo-router';
-import { TouchableOpacity } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { useTheme } from '@/hooks/useTheme';
+import { Stack, router, useSegments, usePathname } from "expo-router";
+import { TouchableOpacity } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { useTheme } from "@/hooks/useTheme";
+import { useFocusEffect } from "@react-navigation/native";
+import { useRef, useCallback } from "react";
 
 export default function ExpensesLayout() {
   const { colors } = useTheme();
+  const segments = useSegments();
+  const pathname = usePathname();
+  const isFirstRender = useRef(true);
+
+  // Reset stack to show list view when navigating to this tab from another tab
+  useFocusEffect(
+    useCallback(() => {
+      // Skip on first render
+      if (isFirstRender.current) {
+        isFirstRender.current = false;
+        return;
+      }
+
+      // Check if we're on a detail or edit screen (not index or create)
+      const currentSegment = segments[segments.length - 1];
+      const isDetailScreen =
+        currentSegment &&
+        (currentSegment.toString().match(/^[a-f0-9-]{36}$/i) || // [id] route
+          pathname.includes("/edit/"));
+
+      // If on detail screen, push index to top of stack
+      if (isDetailScreen && !pathname.includes("/expenses/index")) {
+        router.push("/expenses");
+      }
+    }, [segments, pathname]),
+  );
 
   return (
     <Stack
+      initialRouteName="index"
       screenOptions={{
         headerShown: true,
         headerStyle: {
@@ -16,8 +45,8 @@ export default function ExpensesLayout() {
         headerTintColor: colors.text,
         headerShadowVisible: false,
         gestureEnabled: true,
-        gestureDirection: 'horizontal',
-        animation: 'slide_from_right',
+        gestureDirection: "horizontal",
+        animation: "slide_from_right",
         headerBackTitleVisible: false,
         headerLeft: ({ canGoBack }) =>
           canGoBack ? (
@@ -31,22 +60,10 @@ export default function ExpensesLayout() {
           ) : null,
       }}
     >
-      <Stack.Screen 
-        name="index" 
-        options={{ headerShown: true }}
-      />
-      <Stack.Screen 
-        name="create" 
-        options={{ headerShown: true }}
-      />
-      <Stack.Screen 
-        name="[id]" 
-        options={{ headerShown: true }}
-      />
-      <Stack.Screen 
-        name="edit/[id]" 
-        options={{ headerShown: true }}
-      />
+      <Stack.Screen name="index" options={{ headerShown: true }} />
+      <Stack.Screen name="create" options={{ headerShown: true }} />
+      <Stack.Screen name="[id]" options={{ headerShown: true }} />
+      <Stack.Screen name="edit/[id]" options={{ headerShown: true }} />
     </Stack>
   );
 }

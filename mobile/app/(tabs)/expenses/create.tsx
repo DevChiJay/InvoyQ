@@ -1,39 +1,61 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, KeyboardAvoidingView, Platform } from 'react-native';
-import { Stack, router } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useTheme } from '@/hooks/useTheme';
-import { useCreateExpense } from '@/hooks/useExpenses';
-import { FormField, Input, TextArea, NumberInput, Select, DatePicker, Button, SelectOption } from '@/components/ui';
-import { validateForm, hasErrors, sanitizeFormData, getFieldError } from '@/utils/formHelpers';
-import { showError } from '@/utils/alerts';
-import { z } from 'zod';
+import React, { useState } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  KeyboardAvoidingView,
+  Platform,
+} from "react-native";
+import { Stack, router } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useTheme } from "@/hooks/useTheme";
+import { useCreateExpense } from "@/hooks/useExpenses";
+import {
+  FormField,
+  Input,
+  TextArea,
+  NumberInput,
+  Select,
+  DatePicker,
+  Button,
+  SelectOption,
+} from "@/components/ui";
+import {
+  validateForm,
+  hasErrors,
+  sanitizeFormData,
+  getFieldError,
+} from "@/utils/formHelpers";
+import { showError } from "@/utils/alerts";
+import { z } from "zod";
 
 const expenseSchema = z.object({
-  category: z.string().min(1, 'Category is required'),
-  description: z.string().min(1, 'Description is required'),
-  amount: z.string().min(1, 'Amount is required'),
-  currency: z.string().min(1, 'Currency is required'),
-  expense_date: z.date({ required_error: 'Date is required' }),
+  category: z.string().min(1, "Category is required"),
+  description: z.string().min(1, "Description is required"),
+  amount: z.string().min(1, "Amount is required"),
+  currency: z.string().min(1, "Currency is required"),
+  expense_date: z.date({ required_error: "Date is required" }),
 });
 
 const categoryOptions: SelectOption[] = [
-  { label: 'Food & Dining', value: 'food-dining', icon: 'restaurant' },
-  { label: 'Transportation', value: 'transportation', icon: 'car' },
-  { label: 'Office Supplies', value: 'office-supplies', icon: 'briefcase' },
-  { label: 'Utilities', value: 'utilities', icon: 'flash' },
-  { label: 'Rent', value: 'rent', icon: 'home' },
-  { label: 'Salaries', value: 'salaries', icon: 'people' },
-  { label: 'Marketing', value: 'marketing', icon: 'megaphone' },
-  { label: 'Other', value: 'other', icon: 'ellipsis-horizontal' },
+  { label: "Food & Dining", value: "food-dining", icon: "restaurant" },
+  { label: "Transportation", value: "transportation", icon: "car" },
+  { label: "Office Supplies", value: "office-supplies", icon: "briefcase" },
+  { label: "Utilities", value: "utilities", icon: "flash" },
+  { label: "Rent", value: "rent", icon: "home" },
+  { label: "Salaries", value: "salaries", icon: "people" },
+  { label: "Marketing", value: "marketing", icon: "megaphone" },
+  { label: "Other", value: "other", icon: "ellipsis-horizontal" },
 ];
 
 const currencyOptions: SelectOption[] = [
-  { label: 'NGN - Nigerian Naira', value: 'NGN' },
-  { label: 'USD - US Dollar', value: 'USD' },
-  { label: 'EUR - Euro', value: 'EUR' },
-  { label: 'GBP - British Pound', value: 'GBP' },
+  { label: "NGN - Nigerian Naira", value: "NGN" },
+  { label: "USD - US Dollar", value: "USD" },
+  { label: "EUR - Euro", value: "EUR" },
+  { label: "GBP - British Pound", value: "GBP" },
 ];
 
 export default function CreateExpenseScreen() {
@@ -42,12 +64,12 @@ export default function CreateExpenseScreen() {
   const createExpense = useCreateExpense();
 
   const [formData, setFormData] = useState({
-    category: '',
-    description: '',
-    amount: '',
-    currency: 'NGN',
+    category: "",
+    description: "",
+    amount: "",
+    currency: "NGN",
     expense_date: new Date(),
-    vendor: '',
+    vendor: "",
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -74,16 +96,16 @@ export default function CreateExpenseScreen() {
       const apiData = {
         category: formData.category,
         description: formData.description,
-        amount: parseFloat(formData.amount || '0'),
+        amount: parseFloat(formData.amount || "0"),
         currency: formData.currency,
-        expense_date: formData.expense_date.toISOString().split('T')[0],
+        expense_date: formData.expense_date.toISOString().split("T")[0],
         vendor: formData.vendor || undefined,
       };
 
-      await createExpense.mutateAsync(apiData);
-      router.back();
+      const newExpense = await createExpense.mutateAsync(apiData);
+      router.replace(`/expenses/${newExpense.id}`);
     } catch (error: any) {
-      showError(error.response?.data?.detail || 'Failed to create expense');
+      showError(error.response?.data?.detail || "Failed to create expense");
     }
   };
 
@@ -91,11 +113,14 @@ export default function CreateExpenseScreen() {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <Stack.Screen
         options={{
-          title: 'New Expense',
+          title: "New Expense",
           headerStyle: { backgroundColor: colors.surface },
           headerTintColor: colors.text,
           headerLeft: () => (
-            <TouchableOpacity onPress={() => router.back()} style={styles.headerButton}>
+            <TouchableOpacity
+              onPress={() => router.back()}
+              style={styles.headerButton}
+            >
               <Ionicons name="close" size={24} color={colors.text} />
             </TouchableOpacity>
           ),
@@ -104,7 +129,7 @@ export default function CreateExpenseScreen() {
 
       <KeyboardAvoidingView
         style={styles.keyboardView}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
         keyboardVerticalOffset={100}
       >
         <ScrollView
@@ -113,68 +138,99 @@ export default function CreateExpenseScreen() {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-        <FormField label="Category" required error={getFieldError(errors, 'category')}>
-          <Select
-            value={formData.category}
-            onChange={(value) => handleChange('category', value)}
-            options={categoryOptions}
-            placeholder="Select category"
-            error={!!errors.category}
-          />
-        </FormField>
+          <FormField
+            label="Category"
+            required
+            error={getFieldError(errors, "category")}
+          >
+            <Select
+              value={formData.category}
+              onChange={(value) => handleChange("category", value)}
+              options={categoryOptions}
+              placeholder="Select category"
+              error={!!errors.category}
+            />
+          </FormField>
 
-        <FormField label="Amount" required error={getFieldError(errors, 'amount')}>
-          <NumberInput
-            value={formData.amount}
-            onChangeValue={(value) => handleChange('amount', value)}
-            placeholder="0.00"
-            error={!!errors.amount}
-            decimals={2}
-            min={0}
-          />
-        </FormField>
+          <FormField
+            label="Amount"
+            required
+            error={getFieldError(errors, "amount")}
+          >
+            <NumberInput
+              value={formData.amount}
+              onChangeValue={(value) => handleChange("amount", value)}
+              placeholder="0.00"
+              error={!!errors.amount}
+              decimals={2}
+              min={0}
+            />
+          </FormField>
 
-        <FormField label="Currency" required error={getFieldError(errors, 'currency')}>
-          <Select
-            value={formData.currency}
-            onChange={(value) => handleChange('currency', value)}
-            options={currencyOptions}
-            placeholder="Select currency"
-            error={!!errors.currency}
-          />
-        </FormField>
+          <FormField
+            label="Currency"
+            required
+            error={getFieldError(errors, "currency")}
+          >
+            <Select
+              value={formData.currency}
+              onChange={(value) => handleChange("currency", value)}
+              options={currencyOptions}
+              placeholder="Select currency"
+              error={!!errors.currency}
+            />
+          </FormField>
 
-        <FormField label="Date" required error={getFieldError(errors, 'expense_date')}>
-          <DatePicker
-            value={formData.expense_date}
-            onChange={(value) => handleChange('expense_date', value)}
-            mode="date"
-            error={!!errors.expense_date}
-          />
-        </FormField>
+          <FormField
+            label="Date"
+            required
+            error={getFieldError(errors, "expense_date")}
+          >
+            <DatePicker
+              value={formData.expense_date}
+              onChange={(value) => handleChange("expense_date", value)}
+              mode="date"
+              error={!!errors.expense_date}
+            />
+          </FormField>
 
-        <FormField label="Description" required error={getFieldError(errors, 'description')}>
-          <TextArea
-            value={formData.description}
-            onChangeText={(value) => handleChange('description', value)}
-            placeholder="Enter expense description"
-            error={!!errors.description}
-            numberOfLines={4}
-          />
-        </FormField>
+          <FormField
+            label="Description"
+            required
+            error={getFieldError(errors, "description")}
+          >
+            <TextArea
+              value={formData.description}
+              onChangeText={(value) => handleChange("description", value)}
+              placeholder="Enter expense description"
+              error={!!errors.description}
+              numberOfLines={4}
+            />
+          </FormField>
 
-        <FormField label="Vendor (Optional)" error={getFieldError(errors, 'vendor')}>
-          <Input
-            value={formData.vendor}
-            onChangeText={(value) => handleChange('vendor', value)}
-            placeholder="Enter vendor name"
-            error={!!errors.vendor}
-          />
-        </FormField>
+          <FormField
+            label="Vendor (Optional)"
+            error={getFieldError(errors, "vendor")}
+          >
+            <Input
+              value={formData.vendor}
+              onChangeText={(value) => handleChange("vendor", value)}
+              placeholder="Enter vendor name"
+              error={!!errors.vendor}
+            />
+          </FormField>
         </ScrollView>
       </KeyboardAvoidingView>
 
-      <View style={[styles.footer, { borderTopColor: colors.border, paddingBottom: Math.max(insets.bottom, 16) }]}>
+      <View
+        style={[
+          styles.footer,
+          {
+            borderTopColor: colors.border,
+            paddingBottom: Math.max(insets.bottom, 16),
+          },
+        ]}
+      >
         <Button
           title="Cancel"
           onPress={() => router.back()}
@@ -182,7 +238,7 @@ export default function CreateExpenseScreen() {
           style={styles.button}
         />
         <Button
-          title={createExpense.isPending ? 'Saving...' : 'Save Expense'}
+          title={createExpense.isPending ? "Saving..." : "Save Expense"}
           onPress={handleSubmit}
           variant="primary"
           disabled={createExpense.isPending}
@@ -211,7 +267,7 @@ const styles = StyleSheet.create({
     paddingBottom: 100,
   },
   footer: {
-    flexDirection: 'row',
+    flexDirection: "row",
     paddingHorizontal: 16,
     paddingTop: 16,
     gap: 12,

@@ -1,32 +1,45 @@
-import { View, Text, FlatList, StyleSheet, TouchableOpacity, RefreshControl } from 'react-native';
-import { Stack, router } from 'expo-router';
-import { useInvoices } from '@/hooks/useInvoices';
-import { useTheme } from '@/hooks/useTheme';
-import { Card } from '@/components/ui/Card';
-import { Badge } from '@/components/ui/Badge';
-import { SearchBar, FilterChip, EmptyState, SkeletonList, ErrorState } from '@/components/ui';
-import { useDebounce } from '@/hooks/useDebounce';
-import { useFilterState } from '@/hooks/useFilterState';
-import { Spacing } from '@/constants/colors';
-import { Typography } from '@/constants/typography';
-import { Ionicons } from '@expo/vector-icons';
-import { formatCurrency, formatDate } from '@/utils/formatters';
-import { useState, useMemo, useEffect } from 'react';
+import {
+  View,
+  Text,
+  FlatList,
+  StyleSheet,
+  TouchableOpacity,
+  RefreshControl,
+} from "react-native";
+import { Stack, router } from "expo-router";
+import { useInvoices } from "@/hooks/useInvoices";
+import { useTheme } from "@/hooks/useTheme";
+import { Card } from "@/components/ui/Card";
+import { Badge } from "@/components/ui/Badge";
+import {
+  SearchBar,
+  FilterChip,
+  EmptyState,
+  SkeletonList,
+  ErrorState,
+} from "@/components/ui";
+import { useDebounce } from "@/hooks/useDebounce";
+import { useFilterState } from "@/hooks/useFilterState";
+import { Spacing } from "@/constants/colors";
+import { Typography } from "@/constants/typography";
+import { Ionicons } from "@expo/vector-icons";
+import { formatCurrency, formatDate } from "@/utils/formatters";
+import { useState, useMemo, useEffect } from "react";
 
 const statusFilters = [
-  { label: 'All', value: 'all' },
-  { label: 'Draft', value: 'draft' },
-  { label: 'Sent', value: 'sent' },
-  { label: 'Paid', value: 'paid' },
-  { label: 'Overdue', value: 'overdue' },
+  { label: "All", value: "all" },
+  { label: "Draft", value: "draft" },
+  { label: "Sent", value: "sent" },
+  { label: "Paid", value: "paid" },
+  { label: "Overdue", value: "overdue" },
 ];
 
 export default function InvoicesScreen() {
   const { data, isLoading, error, refetch } = useInvoices();
   const { colors } = useTheme();
-  const { filterState, isLoaded, updateFilter } = useFilterState('invoices');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedStatus, setSelectedStatus] = useState('all');
+  const { filterState, isLoaded, updateFilter } = useFilterState("invoices");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedStatus, setSelectedStatus] = useState("all");
   const [refreshing, setRefreshing] = useState(false);
   const debouncedSearch = useDebounce(searchQuery, 300);
 
@@ -37,11 +50,11 @@ export default function InvoicesScreen() {
         setSearchQuery(filterState.searchQuery);
       }
       // Only restore status if it's not 'all'
-      if (filterState.selectedStatus && filterState.selectedStatus !== 'all') {
+      if (filterState.selectedStatus && filterState.selectedStatus !== "all") {
         setSelectedStatus(filterState.selectedStatus);
-      } else if (filterState.selectedStatus === 'all') {
+      } else if (filterState.selectedStatus === "all") {
         // Clear 'all' from storage since it's the default
-        updateFilter('selectedStatus', undefined);
+        updateFilter("selectedStatus", undefined);
       }
     }
   }, [isLoaded]);
@@ -49,18 +62,18 @@ export default function InvoicesScreen() {
   // Save filter state
   useEffect(() => {
     if (isLoaded && debouncedSearch) {
-      updateFilter('searchQuery', debouncedSearch);
+      updateFilter("searchQuery", debouncedSearch);
     }
   }, [debouncedSearch, isLoaded]);
 
   useEffect(() => {
     if (isLoaded) {
       // Only save status if it's not 'all' (which is the default)
-      if (selectedStatus !== 'all') {
-        updateFilter('selectedStatus', selectedStatus);
+      if (selectedStatus !== "all") {
+        updateFilter("selectedStatus", selectedStatus);
       } else {
         // Remove from storage when set to 'all'
-        updateFilter('selectedStatus', undefined);
+        updateFilter("selectedStatus", undefined);
       }
     }
   }, [selectedStatus, isLoaded]);
@@ -73,9 +86,12 @@ export default function InvoicesScreen() {
       const matchesSearch =
         !debouncedSearch ||
         invoice.number?.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
-        invoice.client?.name?.toLowerCase().includes(debouncedSearch.toLowerCase());
+        invoice.client?.name
+          ?.toLowerCase()
+          .includes(debouncedSearch.toLowerCase());
 
-      const matchesStatus = selectedStatus === 'all' || invoice.status === selectedStatus;
+      const matchesStatus =
+        selectedStatus === "all" || invoice.status === selectedStatus;
 
       return matchesSearch && matchesStatus;
     });
@@ -85,8 +101,10 @@ export default function InvoicesScreen() {
   const filterCounts = useMemo(() => {
     const counts: Record<string, number> = { all: invoices.length };
     statusFilters.forEach((filter) => {
-      if (filter.value !== 'all') {
-        counts[filter.value] = invoices.filter((i) => i.status === filter.value).length;
+      if (filter.value !== "all") {
+        counts[filter.value] = invoices.filter(
+          (i) => i.status === filter.value,
+        ).length;
       }
     });
     return counts;
@@ -99,21 +117,24 @@ export default function InvoicesScreen() {
   };
 
   const handleInvoicePress = (id: string) => {
-    router.push(`/invoices/${id}`);
+    router.push({
+      pathname: `/invoices/${id}`,
+      params: { from: "list" },
+    });
   };
 
   const getStatusVariant = (status: string) => {
     switch (status) {
-      case 'paid':
-        return 'success';
-      case 'sent':
-        return 'info';
-      case 'overdue':
-        return 'error';
-      case 'cancelled':
-        return 'default';
+      case "paid":
+        return "success";
+      case "sent":
+        return "info";
+      case "overdue":
+        return "error";
+      case "cancelled":
+        return "default";
       default:
-        return 'warning';
+        return "warning";
     }
   };
 
@@ -122,7 +143,7 @@ export default function InvoicesScreen() {
       <View style={[styles.container, { backgroundColor: colors.background }]}>
         <Stack.Screen
           options={{
-            title: 'Invoices',
+            title: "Invoices",
             headerStyle: { backgroundColor: colors.surface },
             headerTintColor: colors.text,
           }}
@@ -137,7 +158,7 @@ export default function InvoicesScreen() {
       <View style={[styles.container, { backgroundColor: colors.background }]}>
         <Stack.Screen
           options={{
-            title: 'Invoices',
+            title: "Invoices",
             headerStyle: { backgroundColor: colors.surface },
             headerTintColor: colors.text,
           }}
@@ -155,11 +176,14 @@ export default function InvoicesScreen() {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <Stack.Screen
         options={{
-          title: 'Invoices',
+          title: "Invoices",
           headerStyle: { backgroundColor: colors.surface },
           headerTintColor: colors.text,
           headerRight: () => (
-            <TouchableOpacity onPress={() => router.push('/invoices/create')} style={styles.headerButton}>
+            <TouchableOpacity
+              onPress={() => router.push("/invoices/create")}
+              style={styles.headerButton}
+            >
               <Ionicons name="add" size={28} color={colors.primary} />
             </TouchableOpacity>
           ),
@@ -200,19 +224,35 @@ export default function InvoicesScreen() {
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContent}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} colors={[colors.primary]} />
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            colors={[colors.primary]}
+          />
         }
         ListEmptyComponent={
           <EmptyState
             icon="document-text-outline"
-            title={searchQuery || selectedStatus !== 'all' ? 'No invoices found' : 'No invoices yet'}
-            description={
-              searchQuery || selectedStatus !== 'all'
-                ? 'Try adjusting your filters'
-                : 'Create your first invoice'
+            title={
+              searchQuery || selectedStatus !== "all"
+                ? "No invoices found"
+                : "No invoices yet"
             }
-            actionLabel={!searchQuery && selectedStatus === 'all' ? 'Create Invoice' : undefined}
-            onActionPress={!searchQuery && selectedStatus === 'all' ? () => router.push('/invoices/create') : undefined}
+            description={
+              searchQuery || selectedStatus !== "all"
+                ? "Try adjusting your filters"
+                : "Create your first invoice"
+            }
+            actionLabel={
+              !searchQuery && selectedStatus === "all"
+                ? "Create Invoice"
+                : undefined
+            }
+            onActionPress={
+              !searchQuery && selectedStatus === "all"
+                ? () => router.push("/invoices/create")
+                : undefined
+            }
           />
         }
         renderItem={({ item }) => (
@@ -224,25 +264,54 @@ export default function InvoicesScreen() {
                     {item.number || `INV-${item.id.slice(-6)}`}
                   </Text>
                   {item.client && (
-                    <Text style={[styles.clientName, { color: colors.textSecondary }]}>{item.client.name}</Text>
+                    <Text
+                      style={[
+                        styles.clientName,
+                        { color: colors.textSecondary },
+                      ]}
+                    >
+                      {item.client.name}
+                    </Text>
                   )}
                 </View>
-                <Badge label={item.status.toUpperCase()} variant={getStatusVariant(item.status)} size="sm" />
+                <Badge
+                  label={item.status.toUpperCase()}
+                  variant={getStatusVariant(item.status)}
+                  size="sm"
+                />
               </View>
 
               <View style={styles.invoiceDetails}>
                 {item.issued_date && (
                   <View style={styles.detailRow}>
-                    <Ionicons name="calendar-outline" size={16} color={colors.textSecondary} />
-                    <Text style={[styles.detailText, { color: colors.textSecondary }]}>
+                    <Ionicons
+                      name="calendar-outline"
+                      size={16}
+                      color={colors.textSecondary}
+                    />
+                    <Text
+                      style={[
+                        styles.detailText,
+                        { color: colors.textSecondary },
+                      ]}
+                    >
                       Issued: {formatDate(item.issued_date)}
                     </Text>
                   </View>
                 )}
                 {item.due_date && (
                   <View style={styles.detailRow}>
-                    <Ionicons name="time-outline" size={16} color={colors.textSecondary} />
-                    <Text style={[styles.detailText, { color: colors.textSecondary }]}>
+                    <Ionicons
+                      name="time-outline"
+                      size={16}
+                      color={colors.textSecondary}
+                    />
+                    <Text
+                      style={[
+                        styles.detailText,
+                        { color: colors.textSecondary },
+                      ]}
+                    >
                       Due: {formatDate(item.due_date)}
                     </Text>
                   </View>
@@ -250,23 +319,34 @@ export default function InvoicesScreen() {
               </View>
 
               <View style={styles.totalContainer}>
-                <Text style={[styles.totalLabel, { color: colors.textSecondary }]}>Total</Text>
+                <Text
+                  style={[styles.totalLabel, { color: colors.textSecondary }]}
+                >
+                  Total
+                </Text>
                 <View style={styles.totalRow}>
                   <Text style={[styles.totalAmount, { color: colors.primary }]}>
-                    {formatCurrency(parseFloat(item.total || '0'), item.currency)}
+                    {formatCurrency(
+                      parseFloat(item.total || "0"),
+                      item.currency,
+                    )}
                   </Text>
-                  <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
+                  <Ionicons
+                    name="chevron-forward"
+                    size={20}
+                    color={colors.textSecondary}
+                  />
                 </View>
               </View>
             </Card>
           </TouchableOpacity>
         )}
       />
-      
+
       {/* Floating Action Button */}
       <TouchableOpacity
         style={[styles.fab, { backgroundColor: colors.primary }]}
-        onPress={() => router.push('/invoices/create')}
+        onPress={() => router.push("/invoices/create")}
         activeOpacity={0.8}
       >
         <Ionicons name="add" size={28} color="#FFFFFF" />
@@ -281,23 +361,23 @@ const styles = StyleSheet.create({
   },
   centered: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   headerButton: {
     padding: 8,
   },
   fab: {
-    position: 'absolute',
+    position: "absolute",
     right: 20,
     bottom: 120,
     width: 56,
     height: 56,
     borderRadius: 28,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     elevation: 6,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 4,
@@ -321,9 +401,9 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.md,
   },
   invoiceHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
     marginBottom: Spacing.sm,
   },
   invoiceInfo: {
@@ -343,28 +423,28 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.sm,
   },
   detailRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 6,
   },
   detailText: {
     fontSize: Typography.sizes.sm,
   },
   totalContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     paddingTop: Spacing.sm,
     borderTopWidth: 1,
-    borderTopColor: '#E2E8F0',
+    borderTopColor: "#E2E8F0",
   },
   totalLabel: {
     fontSize: Typography.sizes.md,
     fontWeight: Typography.weights.medium,
   },
   totalRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 4,
   },
   totalAmount: {

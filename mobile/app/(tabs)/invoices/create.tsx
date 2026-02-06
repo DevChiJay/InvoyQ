@@ -509,12 +509,12 @@ export default function CreateInvoiceScreen() {
         payload.items = customItems;
       }
 
-      await createInvoice.mutateAsync(payload as any);
+      const newInvoice = await createInvoice.mutateAsync(payload as any);
 
       Alert.alert("Success", "Invoice created successfully!", [
         {
           text: "OK",
-          onPress: () => router.back(),
+          onPress: () => router.replace(`/invoices/${newInvoice.id}`),
         },
       ]);
     } catch (error: any) {

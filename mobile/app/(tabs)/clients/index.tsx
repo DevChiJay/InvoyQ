@@ -1,19 +1,32 @@
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, RefreshControl } from 'react-native';
-import { Stack, router } from 'expo-router';
-import { useClients } from '@/hooks/useClients';
-import { useTheme } from '@/hooks/useTheme';
-import { useDebounce } from '@/hooks/useDebounce';
-import { useFilterState } from '@/hooks/useFilterState';
-import { Card, SearchBar, EmptyState, SkeletonList, ErrorState } from '@/components/ui';
-import { Spacing, BorderRadius } from '@/constants/colors';
-import { Typography } from '@/constants/typography';
-import { Ionicons } from '@expo/vector-icons';
-import { useState, useMemo, useEffect } from 'react';
+import {
+  View,
+  Text,
+  FlatList,
+  TouchableOpacity,
+  StyleSheet,
+  RefreshControl,
+} from "react-native";
+import { Stack, router } from "expo-router";
+import { useClients } from "@/hooks/useClients";
+import { useTheme } from "@/hooks/useTheme";
+import { useDebounce } from "@/hooks/useDebounce";
+import { useFilterState } from "@/hooks/useFilterState";
+import {
+  Card,
+  SearchBar,
+  EmptyState,
+  SkeletonList,
+  ErrorState,
+} from "@/components/ui";
+import { Spacing, BorderRadius } from "@/constants/colors";
+import { Typography } from "@/constants/typography";
+import { Ionicons } from "@expo/vector-icons";
+import { useState, useMemo, useEffect } from "react";
 
 export default function ClientsScreen() {
   const { colors } = useTheme();
-  const { filterState, isLoaded, updateFilter } = useFilterState('clients');
-  const [searchQuery, setSearchQuery] = useState('');
+  const { filterState, isLoaded, updateFilter } = useFilterState("clients");
+  const [searchQuery, setSearchQuery] = useState("");
   const debouncedSearch = useDebounce(searchQuery, 300);
   const { data: clients, isLoading, error, refetch } = useClients();
   const [refreshing, setRefreshing] = useState(false);
@@ -28,7 +41,7 @@ export default function ClientsScreen() {
   // Save search query to filter state
   useEffect(() => {
     if (isLoaded && debouncedSearch) {
-      updateFilter('searchQuery', debouncedSearch);
+      updateFilter("searchQuery", debouncedSearch);
     }
   }, [debouncedSearch, isLoaded]);
 
@@ -48,7 +61,7 @@ export default function ClientsScreen() {
       (client) =>
         client.name.toLowerCase().includes(query) ||
         client.email?.toLowerCase().includes(query) ||
-        client.phone?.toLowerCase().includes(query)
+        client.phone?.toLowerCase().includes(query),
     );
   }, [clients, debouncedSearch]);
 
@@ -57,7 +70,7 @@ export default function ClientsScreen() {
       <View style={[styles.container, { backgroundColor: colors.background }]}>
         <Stack.Screen
           options={{
-            title: 'Clients',
+            title: "Clients",
             headerStyle: { backgroundColor: colors.surface },
             headerTintColor: colors.text,
           }}
@@ -72,7 +85,7 @@ export default function ClientsScreen() {
       <View style={[styles.container, { backgroundColor: colors.background }]}>
         <Stack.Screen
           options={{
-            title: 'Clients',
+            title: "Clients",
             headerStyle: { backgroundColor: colors.surface },
             headerTintColor: colors.text,
           }}
@@ -90,12 +103,12 @@ export default function ClientsScreen() {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <Stack.Screen
         options={{
-          title: 'Clients',
+          title: "Clients",
           headerStyle: { backgroundColor: colors.surface },
           headerTintColor: colors.text,
           headerRight: () => (
             <TouchableOpacity
-              onPress={() => router.push('/clients/create')}
+              onPress={() => router.push("/clients/create")}
               style={styles.headerButton}
             >
               <Ionicons name="add" size={24} color={colors.primary} />
@@ -110,7 +123,7 @@ export default function ClientsScreen() {
           value={searchQuery}
           onChangeText={setSearchQuery}
           placeholder="Search clients..."
-          onClear={() => setSearchQuery('')}
+          onClear={() => setSearchQuery("")}
         />
       </View>
 
@@ -128,26 +141,40 @@ export default function ClientsScreen() {
         ListEmptyComponent={
           <EmptyState
             icon="people-outline"
-            title={searchQuery ? 'No clients found' : 'No clients yet'}
+            title={searchQuery ? "No clients found" : "No clients yet"}
             message={
               searchQuery
-                ? 'No clients match your search'
-                : 'Add your first client to get started'
+                ? "No clients match your search"
+                : "Add your first client to get started"
             }
-            actionLabel={!searchQuery ? 'Add Client' : undefined}
-            onAction={!searchQuery ? () => router.push('/clients/create') : undefined}
+            actionLabel={!searchQuery ? "Add Client" : undefined}
+            onAction={
+              !searchQuery ? () => router.push("/clients/create") : undefined
+            }
           />
         }
         renderItem={({ item }) => (
-          <TouchableOpacity onPress={() => router.push(`/clients/${item.id}`)}>
+          <TouchableOpacity
+            onPress={() =>
+              router.push({
+                pathname: `/clients/${item.id}`,
+                params: { from: "list" },
+              })
+            }
+          >
             <Card variant="elevated" style={styles.clientCard}>
               <View style={styles.clientHeader}>
-                <View style={[styles.avatar, { backgroundColor: colors.primary + '20' }]}>
+                <View
+                  style={[
+                    styles.avatar,
+                    { backgroundColor: colors.primary + "20" },
+                  ]}
+                >
                   <Text style={[styles.avatarText, { color: colors.primary }]}>
                     {item.name
-                      .split(' ')
+                      .split(" ")
                       .map((n) => n[0])
-                      .join('')
+                      .join("")
                       .toUpperCase()
                       .slice(0, 2)}
                   </Text>
@@ -158,9 +185,16 @@ export default function ClientsScreen() {
                   </Text>
                   {item.email && (
                     <View style={styles.infoRow}>
-                      <Ionicons name="mail-outline" size={14} color={colors.textSecondary} />
+                      <Ionicons
+                        name="mail-outline"
+                        size={14}
+                        color={colors.textSecondary}
+                      />
                       <Text
-                        style={[styles.infoText, { color: colors.textSecondary }]}
+                        style={[
+                          styles.infoText,
+                          { color: colors.textSecondary },
+                        ]}
                         numberOfLines={1}
                       >
                         {item.email}
@@ -169,24 +203,37 @@ export default function ClientsScreen() {
                   )}
                   {item.phone && (
                     <View style={styles.infoRow}>
-                      <Ionicons name="call-outline" size={14} color={colors.textSecondary} />
-                      <Text style={[styles.infoText, { color: colors.textSecondary }]}>
+                      <Ionicons
+                        name="call-outline"
+                        size={14}
+                        color={colors.textSecondary}
+                      />
+                      <Text
+                        style={[
+                          styles.infoText,
+                          { color: colors.textSecondary },
+                        ]}
+                      >
                         {item.phone}
                       </Text>
                     </View>
                   )}
                 </View>
-                <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
+                <Ionicons
+                  name="chevron-forward"
+                  size={20}
+                  color={colors.textSecondary}
+                />
               </View>
             </Card>
           </TouchableOpacity>
         )}
       />
-      
+
       {/* Floating Action Button */}
       <TouchableOpacity
         style={[styles.fab, { backgroundColor: colors.primary }]}
-        onPress={() => router.push('/clients/create')}
+        onPress={() => router.push("/clients/create")}
         activeOpacity={0.8}
       >
         <Ionicons name="add" size={28} color="#FFFFFF" />
@@ -201,23 +248,23 @@ const styles = StyleSheet.create({
   },
   centered: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   headerButton: {
     padding: 8,
   },
   fab: {
-    position: 'absolute',
+    position: "absolute",
     right: 20,
     bottom: 120,
     width: 56,
     height: 56,
     borderRadius: 28,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     elevation: 6,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 4,
@@ -234,15 +281,15 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.md,
   },
   clientHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
   },
   avatar: {
     width: 48,
     height: 48,
     borderRadius: BorderRadius.full,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     marginRight: Spacing.md,
   },
   avatarText: {
@@ -258,8 +305,8 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.xs,
   },
   infoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginTop: 2,
   },
   infoText: {
