@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import {
   View,
   Text,
@@ -20,6 +20,7 @@ import { useTheme } from "@/hooks/useTheme";
 import { useClients, useCreateClient } from "@/hooks/useClients";
 import { useProducts, useCreateProduct } from "@/hooks/useProducts";
 import { useCreateInvoice } from "@/hooks/useInvoices";
+import { useDebounce } from "@/hooks/useDebounce";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { FormField } from "@/components/ui/FormField";
@@ -28,6 +29,7 @@ import { TextArea } from "@/components/ui/TextArea";
 import { Select, SelectOption } from "@/components/ui/Select";
 import { DatePicker } from "@/components/ui/DatePicker";
 import { NumberInput } from "@/components/ui/NumberInput";
+import { SearchBar } from "@/components/ui/SearchBar";
 import { formatCurrency } from "@/utils/formatters";
 
 // Validation schema
@@ -125,6 +127,10 @@ export default function CreateInvoiceScreen() {
   const [showCreateClientModal, setShowCreateClientModal] = useState(false);
   const [showCreateProductModal, setShowCreateProductModal] = useState(false);
 
+  // Search states
+  const [productSearchQuery, setProductSearchQuery] = useState("");
+  const debouncedProductSearch = useDebounce(productSearchQuery, 300);
+
   // New client form
   const [newClient, setNewClient] = useState({
     name: "",
@@ -160,6 +166,18 @@ export default function CreateInvoiceScreen() {
 
   const clients = clientsData || [];
   const products = productsData?.pages?.flatMap((page) => page.items) || [];
+
+  // Filter products based on search query
+  const filteredProducts = useMemo(() => {
+    if (!debouncedProductSearch) return products;
+    const query = debouncedProductSearch.toLowerCase();
+    return products.filter(
+      (product) =>
+        product.name.toLowerCase().includes(query) ||
+        product.sku.toLowerCase().includes(query) ||
+        product.description?.toLowerCase().includes(query),
+    );
+  }, [products, debouncedProductSearch]);
 
   const clientOptions: SelectOption[] = [
     { label: "+ Create New Client", value: "__create_new__" },
@@ -282,6 +300,7 @@ export default function CreateInvoiceScreen() {
   const addProductItem = (productId: string) => {
     if (productId === "__create_new__") {
       setShowProductModal(false);
+      setProductSearchQuery(""); // Reset search
       setShowCreateProductModal(true);
       return;
     }
@@ -301,6 +320,7 @@ export default function CreateInvoiceScreen() {
 
     setLineItems((prev) => [...prev, newItem]);
     setShowProductModal(false);
+    setProductSearchQuery(""); // Reset search
   };
 
   // Get unique categories
@@ -561,6 +581,8 @@ export default function CreateInvoiceScreen() {
                 options={clientOptions}
                 placeholder="Select a client"
                 error={!!errors.client_id}
+                searchable={true}
+                searchPlaceholder="Search clients..."
               />
             </FormField>
 
@@ -940,9 +962,22 @@ export default function CreateInvoiceScreen() {
               <Text style={[styles.modalTitle, { color: colors.text }]}>
                 Select Product
               </Text>
-              <TouchableOpacity onPress={() => setShowProductModal(false)}>
+              <TouchableOpacity
+                onPress={() => {
+                  setShowProductModal(false);
+                  setProductSearchQuery(""); // Reset search
+                }}
+              >
                 <Ionicons name="close" size={24} color={colors.text} />
               </TouchableOpacity>
+            </View>
+
+            <View style={styles.searchContainer}>
+              <SearchBar
+                value={productSearchQuery}
+                onChangeText={setProductSearchQuery}
+                placeholder="Search products..."
+              />
             </View>
 
             <FlatList
@@ -961,7 +996,7 @@ export default function CreateInvoiceScreen() {
                   created_at: "",
                   updated_at: "",
                 },
-                ...products,
+                ...filteredProducts,
               ]}
               keyExtractor={(item) => item.id}
               style={styles.productList}
@@ -1643,6 +1678,10 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: 18,
     fontWeight: "600",
+  },
+  searchContainer: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
   },
   modalBody: {
     padding: 16,

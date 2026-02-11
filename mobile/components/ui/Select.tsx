@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from "react";
 import {
   View,
   Text,
@@ -7,10 +7,12 @@ import {
   FlatList,
   StyleSheet,
   ScrollView,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { useTheme } from '@/hooks/useTheme';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { useTheme } from "@/hooks/useTheme";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useDebounce } from "@/hooks/useDebounce";
+import { SearchBar } from "./SearchBar";
 
 export interface SelectOption {
   label: string;
@@ -24,14 +26,41 @@ interface SelectProps {
   options: SelectOption[];
   placeholder?: string;
   error?: boolean;
+  searchable?: boolean;
+  searchPlaceholder?: string;
 }
 
-export function Select({ value, onChange, options, placeholder, error }: SelectProps) {
+export function Select({
+  value,
+  onChange,
+  options,
+  placeholder,
+  error,
+  searchable = false,
+  searchPlaceholder = "Search...",
+}: SelectProps) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const [modalVisible, setModalVisible] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const debouncedSearch = useDebounce(searchQuery, 300);
 
   const selectedOption = options.find((opt) => opt.value === value);
+
+  // Filter options based on search query
+  const filteredOptions = useMemo(() => {
+    if (!searchable || !debouncedSearch) return options;
+    const query = debouncedSearch.toLowerCase();
+    return options.filter((option) =>
+      option.label.toLowerCase().includes(query),
+    );
+  }, [options, debouncedSearch, searchable]);
+
+  // Reset search when modal closes
+  const handleModalClose = () => {
+    setModalVisible(false);
+    setSearchQuery("");
+  };
 
   return (
     <>
@@ -62,7 +91,7 @@ export function Select({ value, onChange, options, placeholder, error }: SelectP
               },
             ]}
           >
-            {selectedOption?.label || placeholder || 'Select an option'}
+            {selectedOption?.label || placeholder || "Select an option"}
           </Text>
         </View>
         <Ionicons name="chevron-down" size={20} color={colors.textSecondary} />
@@ -72,21 +101,38 @@ export function Select({ value, onChange, options, placeholder, error }: SelectP
         visible={modalVisible}
         transparent
         animationType="slide"
-        onRequestClose={() => setModalVisible(false)}
+        onRequestClose={handleModalClose}
       >
         <View style={styles.modalOverlay}>
-        <View style={[styles.modalContent, { backgroundColor: colors.surface, paddingBottom: insets.bottom }]}>
-            <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
+          <View
+            style={[
+              styles.modalContent,
+              { backgroundColor: colors.surface, paddingBottom: insets.bottom },
+            ]}
+          >
+            <View
+              style={[styles.modalHeader, { borderBottomColor: colors.border }]}
+            >
               <Text style={[styles.modalTitle, { color: colors.text }]}>
-                {placeholder || 'Select an option'}
+                {placeholder || "Select an option"}
               </Text>
-              <TouchableOpacity onPress={() => setModalVisible(false)}>
+              <TouchableOpacity onPress={handleModalClose}>
                 <Ionicons name="close" size={24} color={colors.text} />
               </TouchableOpacity>
             </View>
 
+            {searchable && (
+              <View style={styles.searchContainer}>
+                <SearchBar
+                  value={searchQuery}
+                  onChangeText={setSearchQuery}
+                  placeholder={searchPlaceholder}
+                />
+              </View>
+            )}
+
             <FlatList
-              data={options}
+              data={filteredOptions}
               keyExtractor={(item) => item.value}
               style={styles.optionsList}
               renderItem={({ item: option }) => (
@@ -95,19 +141,23 @@ export function Select({ value, onChange, options, placeholder, error }: SelectP
                     styles.option,
                     {
                       backgroundColor:
-                        option.value === value ? colors.primaryLight : 'transparent',
+                        option.value === value
+                          ? colors.primaryLight
+                          : "transparent",
                     },
                   ]}
                   onPress={() => {
                     onChange(option.value);
-                    setModalVisible(false);
+                    handleModalClose();
                   }}
                 >
                   {option.icon && (
                     <Ionicons
                       name={option.icon}
                       size={20}
-                      color={option.value === value ? colors.primary : colors.text}
+                      color={
+                        option.value === value ? colors.primary : colors.text
+                      }
                       style={styles.icon}
                     />
                   )}
@@ -115,15 +165,20 @@ export function Select({ value, onChange, options, placeholder, error }: SelectP
                     style={[
                       styles.optionText,
                       {
-                        color: option.value === value ? colors.primary : colors.text,
-                        fontWeight: option.value === value ? '600' : '400',
+                        color:
+                          option.value === value ? colors.primary : colors.text,
+                        fontWeight: option.value === value ? "600" : "400",
                       },
                     ]}
                   >
                     {option.label}
                   </Text>
                   {option.value === value && (
-                    <Ionicons name="checkmark" size={20} color={colors.primary} />
+                    <Ionicons
+                      name="checkmark"
+                      size={20}
+                      color={colors.primary}
+                    />
                   )}
                 </TouchableOpacity>
               )}
@@ -141,13 +196,13 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: 8,
     paddingHorizontal: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
   selectContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     flex: 1,
   },
   selectText: {
@@ -158,32 +213,36 @@ const styles = StyleSheet.create({
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'flex-end',
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "flex-end",
   },
   modalContent: {
     borderTopLeftRadius: 16,
     borderTopRightRadius: 16,
-    maxHeight: '80%',
+    maxHeight: "80%",
     minHeight: 200,
   },
   modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     padding: 16,
     borderBottomWidth: 1,
   },
   modalTitle: {
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: "600",
+  },
+  searchContainer: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
   },
   optionsList: {
     maxHeight: 400,
   },
   option: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     padding: 16,
     borderRadius: 8,
     marginHorizontal: 8,

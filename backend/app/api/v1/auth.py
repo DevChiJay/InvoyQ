@@ -505,7 +505,7 @@ async def request_password_reset(
     # Send password reset email
     try:
         # Use mobile app deep link for password reset
-        reset_url = f"{settings.MOBILE_APP_SCHEME}://(auth)/reset-password?token={reset_token}"
+        reset_url = f"{settings.FRONTEND_URL}/reset-password?token={reset_token}"
         await email_service.send_password_reset_email(
             to_email=user.email,
             user_name=user.full_name,
