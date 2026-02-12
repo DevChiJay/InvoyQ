@@ -21,12 +21,40 @@ from app.schemas.product import (
     ProductUpdate,
     ProductOut,
     ProductQuantityAdjustment,
-    ProductListResponse
+    ProductListResponse,
+    ProductStatsResponse
 )
 from app.utils.pagination import paginate_query, build_pagination_metadata
 
 
 router = APIRouter()
+
+
+@router.get(
+    "/stats",
+    response_model=ProductStatsResponse,
+    summary="Get product statistics"
+)
+async def get_product_stats(
+    db: AsyncIOMotorDatabase = Depends(get_database),
+    current_user: UserInDB = Depends(get_current_user)
+):
+    """
+    Get product statistics for the authenticated user.
+    
+    Returns aggregated statistics including:
+    - Total product count
+    - Active/inactive counts
+    - Low stock and out of stock counts
+    - Total inventory value
+    
+    This endpoint is optimized for dashboard metrics.
+    """
+    repo = ProductRepository(db)
+    
+    stats = await repo.get_stats(user_id=current_user.id)
+    
+    return ProductStatsResponse(stats=stats)
 
 
 @router.post(

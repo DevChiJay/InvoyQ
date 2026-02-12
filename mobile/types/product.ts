@@ -31,3 +31,17 @@ export interface ProductUpdate extends Partial<ProductCreate> {}
 export interface ProductQuantityAdjustment {
   adjustment: number; // positive to add, negative to subtract
 }
+
+export interface ProductStats {
+  total_count: number;
+  active_count: number;
+  inactive_count: number;
+  low_stock_count: number;
+  out_of_stock_count: number;
+  total_inventory_value: string; // Decimal as string
+  currency: string;
+}
+
+export interface ProductStatsResponse {
+  stats: ProductStats;
+}

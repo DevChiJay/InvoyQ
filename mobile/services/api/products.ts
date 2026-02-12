@@ -1,17 +1,25 @@
-import { apiClient } from './client';
-import { ProductOut, ProductCreate, ProductUpdate, ProductQuantityAdjustment } from '@/types/product';
-import { PaginatedResponse } from '@/types/api';
+import { apiClient } from "./client";
+import {
+  ProductOut,
+  ProductCreate,
+  ProductUpdate,
+  ProductQuantityAdjustment,
+  ProductStatsResponse,
+} from "@/types/product";
+import { PaginatedResponse } from "@/types/api";
 
 export const productsApi = {
-  list: async (params: { 
-    is_active?: boolean; 
-    search?: string;
-    skip?: number;
-    limit?: number;
-    sort_by?: string;
-    sort_order?: number;
-  } = {}): Promise<PaginatedResponse<ProductOut>> => {
-    const response = await apiClient.get('/products', { params });
+  list: async (
+    params: {
+      is_active?: boolean;
+      search?: string;
+      skip?: number;
+      limit?: number;
+      sort_by?: string;
+      sort_order?: number;
+    } = {},
+  ): Promise<PaginatedResponse<ProductOut>> => {
+    const response = await apiClient.get("/products", { params });
     return response.data;
   },
 
@@ -21,7 +29,7 @@ export const productsApi = {
   },
 
   create: async (data: ProductCreate): Promise<ProductOut> => {
-    const response = await apiClient.post('/products', data);
+    const response = await apiClient.post("/products", data);
     return response.data;
   },
 
@@ -34,8 +42,19 @@ export const productsApi = {
     await apiClient.delete(`/products/${id}`);
   },
 
-  adjustQuantity: async (id: string, data: ProductQuantityAdjustment): Promise<ProductOut> => {
-    const response = await apiClient.patch(`/products/${id}/adjust-quantity`, data);
+  adjustQuantity: async (
+    id: string,
+    data: ProductQuantityAdjustment,
+  ): Promise<ProductOut> => {
+    const response = await apiClient.patch(
+      `/products/${id}/adjust-quantity`,
+      data,
+    );
+    return response.data;
+  },
+
+  getStats: async (): Promise<ProductStatsResponse> => {
+    const response = await apiClient.get("/products/stats");
     return response.data;
   },
 };

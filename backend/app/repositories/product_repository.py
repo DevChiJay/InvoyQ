@@ -7,9 +7,10 @@ and inventory tracking with atomic operations.
 
 from motor.motor_asyncio import AsyncIOMotorDatabase, AsyncIOMotorClientSession
 from app.repositories.base import BaseRepository
-from app.schemas.product import ProductOut, ProductCreate, ProductUpdate, ProductInDB
+from app.schemas.product import ProductOut, ProductCreate, ProductUpdate, ProductInDB, ProductStats
 from typing import List, Optional
 from datetime import datetime
+from decimal import Decimal
 
 
 class ProductRepository(BaseRepository[ProductInDB]):
@@ -364,3 +365,75 @@ class ProductRepository(BaseRepository[ProductInDB]):
             doc["_id"] = str(doc["_id"])
         
         return [ProductInDB(**doc) for doc in docs]
+    
+    async def get_stats(self, user_id: str) -> ProductStats:
+        """
+        Get product statistics for a user.
+        
+        Args:
+            user_id: User ID
+            
+        Returns:
+            Product statistics including counts, inventory value, etc.
+            
+        Example:
+            stats = await product_repo.get_stats(user_id)
+            # Returns: ProductStats(
+            #   total_count=100,
+            #   active_count=85,
+            #   low_stock_count=5,
+            #   ...
+            # )
+        """
+        # Build aggregation pipeline for comprehensive stats
+        pipeline = [
+            {"$match": {"user_id": user_id}},
+            {
+                "$facet": {
+                    "overall": [
+                        {
+                            "$group": {
+                                "_id": None,
+                                "total_count": {"$sum": 1},
+                                "active_count": {
+                                    "$sum": {"$cond": [{"$eq": ["$is_active", True]}, 1, 0]}
+                                },
+                                "inactive_count": {
+                                    "$sum": {"$cond": [{"$eq": ["$is_active", False]}, 1, 0]}
+                                },
+                                "low_stock_count": {
+                                    "$sum": {"$cond": [{"$and": [{"$lt": ["$quantity_available", 10]}, {"$gt": ["$quantity_available", 0]}]}, 1, 0]}
+                                },
+                                "out_of_stock_count": {
+                                    "$sum": {"$cond": [{"$eq": ["$quantity_available", 0]}, 1, 0]}
+                                },
+                                "total_inventory_value": {
+                                    "$sum": {
+                                        "$multiply": [
+                                            {"$toDouble": "$unit_price"},
+                                            "$quantity_available"
+                                        ]
+                                    }
+                                }
+                            }
+                        }
+                    ]
+                }
+            }
+        ]
+        
+        results = await self.collection.aggregate(pipeline).to_list(length=1)
+        
+        if results and results[0]["overall"]:
+            stats_data = results[0]["overall"][0]
+            return ProductStats(
+                total_count=stats_data.get("total_count", 0),
+                active_count=stats_data.get("active_count", 0),
+                inactive_count=stats_data.get("inactive_count", 0),
+                low_stock_count=stats_data.get("low_stock_count", 0),
+                out_of_stock_count=stats_data.get("out_of_stock_count", 0),
+                total_inventory_value=Decimal(str(stats_data.get("total_inventory_value", 0.0))),
+                currency="NGN"  # Default currency
+            )
+        
+        return ProductStats()

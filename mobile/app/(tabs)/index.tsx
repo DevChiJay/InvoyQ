@@ -14,8 +14,8 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useAuth } from "@/hooks/useAuth";
 import { useInvoices, useInvoiceStats } from "@/hooks/useInvoices";
 import { useExpenses } from "@/hooks/useExpenses";
-import { useProducts } from "@/hooks/useProducts";
-import { useClients } from "@/hooks/useClients";
+import { useProducts, useProductStats } from "@/hooks/useProducts";
+import { useClients, useClientStats } from "@/hooks/useClients";
 import { formatCurrency, formatDate } from "@/utils/formatters";
 import { router, useNavigation } from "expo-router";
 import { useTheme } from "@/hooks/useTheme";
@@ -35,10 +35,14 @@ export default function DashboardScreen() {
   const navigation = useNavigation();
   const scrollY = useRef(new Animated.Value(0)).current;
 
-  // Fetch accurate stats from dedicated endpoint
+  // Fetch accurate stats from dedicated endpoints
   const { data: statsData, isLoading: statsLoading } = useInvoiceStats();
+  const { data: clientStatsData, isLoading: clientStatsLoading } =
+    useClientStats();
+  const { data: productStatsData, isLoading: productStatsLoading } =
+    useProductStats();
 
-  // Fetch limited invoices for display in "Recent Invoices" section
+  // Fetch limited data for display in "Recent" sections
   const { data: invoices, isLoading: invoicesLoading } = useInvoices({
     limit: 5,
   });
@@ -63,14 +67,19 @@ export default function DashboardScreen() {
   const collectionRate =
     totalInvoices > 0 ? (paidInvoices / totalInvoices) * 100 : 0;
 
+  // Client and product stats from dedicated endpoints
+  const totalClients = clientStatsData?.stats?.total_count || 0;
+  const productStats = productStatsData?.stats;
+  const totalProducts = productStats?.total_count || 0;
+  const lowStockProducts = productStats?.low_stock_count || 0;
+
   const totalExpenses =
     expenses?.reduce((sum, exp) => sum + parseFloat(exp.amount), 0) || 0;
 
-  const lowStockProducts =
-    products?.filter((p) => p.quantity_available < 10).length || 0;
-
   const isLoading =
     statsLoading ||
+    clientStatsLoading ||
+    productStatsLoading ||
     invoicesLoading ||
     expensesLoading ||
     productsLoading ||
@@ -220,7 +229,7 @@ export default function DashboardScreen() {
                       <Text
                         style={[styles.quickStatValue, { color: colors.text }]}
                       >
-                        {clients?.length || 0}
+                        {totalClients}
                       </Text>
                       <Text
                         style={[
@@ -252,7 +261,7 @@ export default function DashboardScreen() {
                       <Text
                         style={[styles.quickStatValue, { color: colors.text }]}
                       >
-                        {products?.length || 0}
+                        {totalProducts}
                       </Text>
                       <Text
                         style={[

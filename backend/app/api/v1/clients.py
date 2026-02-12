@@ -6,7 +6,7 @@ from app.dependencies.auth import get_current_user
 from app.db.mongo import get_database
 from app.repositories.user_repository import UserInDB
 from app.repositories.client_repository import ClientRepository
-from app.schemas.client import ClientCreate, ClientOut, ClientUpdate
+from app.schemas.client import ClientCreate, ClientOut, ClientUpdate, ClientStatsResponse
 
 
 router = APIRouter()
@@ -33,6 +33,24 @@ async def list_clients(
         skip=skip
     )
     return clients
+
+
+@router.get("/clients/stats", response_model=ClientStatsResponse)
+async def get_client_stats(
+    db: AsyncIOMotorDatabase = Depends(get_database),
+    current_user: UserInDB = Depends(get_current_user),
+):
+    """
+    Get client statistics for the authenticated user.
+    
+    Returns aggregated statistics including total client count.
+    This endpoint is optimized for dashboard metrics.
+    """
+    client_repo = ClientRepository(db)
+    
+    stats = await client_repo.get_stats(user_id=current_user.id)
+    
+    return ClientStatsResponse(stats=stats)
 
 
 @router.post("/clients", response_model=ClientOut, status_code=status.HTTP_201_CREATED)

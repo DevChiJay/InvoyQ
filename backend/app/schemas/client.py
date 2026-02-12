@@ -24,3 +24,13 @@ class ClientOut(ClientBase):
 
     class Config:
         from_attributes = True
+
+
+class ClientStats(BaseModel):
+    """Client statistics for dashboard"""
+    total_count: int = 0
+
+
+class ClientStatsResponse(BaseModel):
+    """Response for client statistics endpoint"""
+    stats: ClientStats

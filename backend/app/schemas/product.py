@@ -134,3 +134,29 @@ class ProductItem(BaseModel):
         if v <= 0:
             raise ValueError('Quantity must be greater than 0')
         return v
+
+
+class ProductStats(BaseModel):
+    """Product statistics for dashboard"""
+    total_count: int = 0
+    active_count: int = 0
+    inactive_count: int = 0
+    low_stock_count: int = Field(default=0, description="Products with quantity < 10")
+    out_of_stock_count: int = Field(default=0, description="Products with quantity = 0")
+    total_inventory_value: Decimal = Field(default=Decimal("0.00"), description="Total value of all products (unit_price * quantity)")
+    currency: str = Field(default="NGN", description="Primary currency")
+
+    class Config:
+        json_encoders = {
+            Decimal: str,
+        }
+
+
+class ProductStatsResponse(BaseModel):
+    """Response for product statistics endpoint"""
+    stats: ProductStats
+
+    class Config:
+        json_encoders = {
+            Decimal: str,
+        }

@@ -14,3 +14,11 @@ export interface ClientCreate {
 }
 
 export interface ClientUpdate extends Partial<ClientCreate> {}
+
+export interface ClientStats {
+  total_count: number;
+}
+
+export interface ClientStatsResponse {
+  stats: ClientStats;
+}

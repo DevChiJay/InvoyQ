@@ -6,7 +6,7 @@ Handles client CRUD operations and user-scoped queries.
 
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from app.repositories.base import BaseRepository
-from app.schemas.client import ClientOut, ClientCreate, ClientUpdate
+from app.schemas.client import ClientOut, ClientCreate, ClientUpdate, ClientStats
 from typing import List, Optional
 from datetime import datetime
 from pydantic import Field
@@ -248,3 +248,21 @@ class ClientRepository(BaseRepository[ClientInDB]):
             doc["_id"] = str(doc["_id"])
         
         return [ClientInDB(**doc) for doc in docs]
+    
+    async def get_stats(self, user_id: str) -> ClientStats:
+        """
+        Get client statistics for a user.
+        
+        Args:
+            user_id: User ID
+            
+        Returns:
+            Client statistics including total count
+            
+        Example:
+            stats = await client_repo.get_stats(user_id)
+            # Returns: ClientStats(total_count=42)
+        """
+        total_count = await self.count_by_user(user_id)
+        
+        return ClientStats(total_count=total_count)

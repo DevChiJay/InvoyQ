@@ -1,11 +1,21 @@
-import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/react-query';
-import { productsApi } from '@/services/api/products';
-import { ProductCreate, ProductUpdate, ProductQuantityAdjustment } from '@/types/product';
+import {
+  useQuery,
+  useMutation,
+  useQueryClient,
+  useInfiniteQuery,
+} from "@tanstack/react-query";
+import { productsApi } from "@/services/api/products";
+import {
+  ProductCreate,
+  ProductUpdate,
+  ProductQuantityAdjustment,
+} from "@/types/product";
 
 export const PRODUCT_KEYS = {
-  all: ['products'] as const,
-  list: (params: any) => ['products', 'list', params] as const,
-  detail: (id: string) => ['products', 'detail', id] as const,
+  all: ["products"] as const,
+  list: (params: any) => ["products", "list", params] as const,
+  detail: (id: string) => ["products", "detail", id] as const,
+  stats: ["products", "stats"] as const,
 };
 
 export function useProducts(params?: {
@@ -16,7 +26,11 @@ export function useProducts(params?: {
   return useInfiniteQuery({
     queryKey: PRODUCT_KEYS.list(params),
     queryFn: ({ pageParam = 0 }) =>
-      productsApi.list({ ...params, skip: pageParam, limit: params?.limit || 50 }),
+      productsApi.list({
+        ...params,
+        skip: pageParam,
+        limit: params?.limit || 50,
+      }),
     getNextPageParam: (lastPage, pages) => {
       const nextSkip = pages.length * (params?.limit || 50);
       return lastPage.has_more ? nextSkip : undefined;
@@ -30,6 +44,14 @@ export function useProduct(id: string) {
     queryKey: PRODUCT_KEYS.detail(id),
     queryFn: () => productsApi.get(id),
     enabled: !!id,
+  });
+}
+
+export function useProductStats() {
+  return useQuery({
+    queryKey: PRODUCT_KEYS.stats,
+    queryFn: () => productsApi.getStats(),
+    staleTime: 5 * 60 * 1000, // 5 minutes - stats change less frequently
   });
 }
 
@@ -50,7 +72,9 @@ export function useUpdateProduct() {
       productsApi.update(id, data),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: PRODUCT_KEYS.all });
-      queryClient.invalidateQueries({ queryKey: PRODUCT_KEYS.detail(variables.id) });
+      queryClient.invalidateQueries({
+        queryKey: PRODUCT_KEYS.detail(variables.id),
+      });
     },
   });
 }
@@ -62,7 +86,9 @@ export function useAdjustProductQuantity() {
       productsApi.adjustQuantity(id, { adjustment }),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: PRODUCT_KEYS.all });
-      queryClient.invalidateQueries({ queryKey: PRODUCT_KEYS.detail(variables.id) });
+      queryClient.invalidateQueries({
+        queryKey: PRODUCT_KEYS.detail(variables.id),
+      });
     },
   });
 }
