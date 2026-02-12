@@ -12,7 +12,7 @@ import {
 import { useState, useRef } from "react";
 import { LinearGradient } from "expo-linear-gradient";
 import { useAuth } from "@/hooks/useAuth";
-import { useInvoices } from "@/hooks/useInvoices";
+import { useInvoices, useInvoiceStats } from "@/hooks/useInvoices";
 import { useExpenses } from "@/hooks/useExpenses";
 import { useProducts } from "@/hooks/useProducts";
 import { useClients } from "@/hooks/useClients";
@@ -35,6 +35,10 @@ export default function DashboardScreen() {
   const navigation = useNavigation();
   const scrollY = useRef(new Animated.Value(0)).current;
 
+  // Fetch accurate stats from dedicated endpoint
+  const { data: statsData, isLoading: statsLoading } = useInvoiceStats();
+
+  // Fetch limited invoices for display in "Recent Invoices" section
   const { data: invoices, isLoading: invoicesLoading } = useInvoices({
     limit: 5,
   });
@@ -49,34 +53,28 @@ export default function DashboardScreen() {
   const expenses = expensesData?.items || [];
   const products = productsData?.pages?.[0]?.items || [];
 
-  // Calculate stats
-  const totalRevenue =
-    invoices?.reduce((sum, inv) => sum + parseFloat(inv.total || "0"), 0) || 0;
-
-  const totalExpenses =
-    expenses?.reduce((sum, exp) => sum + parseFloat(exp.amount), 0) || 0;
-
-  const paidInvoices =
-    invoices?.filter((inv) => inv.status === "paid").length || 0;
-  const totalInvoices = invoices?.length || 0;
+  // Use accurate stats from API instead of calculating from limited list
+  const stats = statsData?.stats;
+  const totalRevenue = stats ? parseFloat(stats.total_revenue) : 0;
+  const collectedAmount = stats ? parseFloat(stats.paid_amount) : 0;
+  const pendingAmount = stats ? parseFloat(stats.pending_amount) : 0;
+  const paidInvoices = stats?.paid_count || 0;
+  const totalInvoices = stats?.total_count || 0;
   const collectionRate =
     totalInvoices > 0 ? (paidInvoices / totalInvoices) * 100 : 0;
 
-  // Calculate actual collected and pending amounts
-  const collectedAmount =
-    invoices
-      ?.filter((inv) => inv.status === "paid")
-      .reduce((sum, inv) => sum + parseFloat(inv.total || "0"), 0) || 0;
-  const pendingAmount =
-    invoices
-      ?.filter((inv) => inv.status !== "paid")
-      .reduce((sum, inv) => sum + parseFloat(inv.total || "0"), 0) || 0;
+  const totalExpenses =
+    expenses?.reduce((sum, exp) => sum + parseFloat(exp.amount), 0) || 0;
 
   const lowStockProducts =
     products?.filter((p) => p.quantity_available < 10).length || 0;
 
   const isLoading =
-    invoicesLoading || expensesLoading || productsLoading || clientsLoading;
+    statsLoading ||
+    invoicesLoading ||
+    expensesLoading ||
+    productsLoading ||
+    clientsLoading;
 
   // Hide/show header title on scroll
   useEffect(() => {

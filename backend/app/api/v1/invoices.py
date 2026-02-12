@@ -12,7 +12,8 @@ from app.repositories.client_repository import ClientRepository
 from app.repositories.invoice_repository import InvoiceRepository
 from app.repositories.product_repository import ProductRepository
 from app.schemas.invoice_mongo import (
-    InvoiceCreate, InvoiceOut, InvoiceUpdate, UserBusinessInfo
+    InvoiceCreate, InvoiceOut, InvoiceUpdate, UserBusinessInfo,
+    InvoiceStatsResponse
 )
 from app.services.email import email_service
 from pydantic import BaseModel
@@ -97,6 +98,47 @@ async def list_invoices(
         result.append(invoice_out)
     
     return result
+
+
+@router.get("/invoices/stats", response_model=InvoiceStatsResponse)
+async def get_invoice_stats(
+    date_from: Optional[date] = Query(None, description="Filter from this date"),
+    date_to: Optional[date] = Query(None, description="Filter to this date"),
+    currency: Optional[str] = Query(None, description="Filter by currency (default: aggregate all)"),
+    db: AsyncIOMotorDatabase = Depends(get_database),
+    current_user: UserInDB = Depends(get_current_user),
+):
+    """
+    Get invoice statistics for the authenticated user.
+    
+    Returns aggregated statistics including:
+    - Total revenue across all invoices
+    - Amount and count by status (paid, pending, draft, overdue, cancelled)
+    - Optional filtering by date range and currency
+    
+    This endpoint is optimized for dashboard metrics and doesn't require
+    fetching all invoices. Perfect for showing accurate business stats.
+    
+    Query parameters (optional, reserved for premium features):
+    - date_from: Start date for filtering invoices by issued_date
+    - date_to: End date for filtering invoices by issued_date
+    - currency: Filter by specific currency code
+    """
+    repo = InvoiceRepository(db)
+    
+    # Get aggregated stats
+    stats = await repo.get_stats(
+        user_id=str(current_user.id),
+        date_from=date_from,
+        date_to=date_to,
+        currency=currency
+    )
+    
+    return InvoiceStatsResponse(
+        stats=stats,
+        date_from=date_from,
+        date_to=date_to
+    )
 
 
 @router.post("/invoices", response_model=InvoiceOut, status_code=status.HTTP_201_CREATED)

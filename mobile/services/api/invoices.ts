@@ -1,9 +1,16 @@
-import { apiClient } from './client';
-import { InvoiceOut, InvoiceCreate, InvoiceUpdate, InvoiceListParams } from '@/types/invoice';
+import { apiClient } from "./client";
+import {
+  InvoiceOut,
+  InvoiceCreate,
+  InvoiceUpdate,
+  InvoiceListParams,
+  InvoiceStatsResponse,
+  InvoiceStatsParams,
+} from "@/types/invoice";
 
 export const invoicesApi = {
   list: async (params: InvoiceListParams = {}): Promise<InvoiceOut[]> => {
-    const response = await apiClient.get('/invoices', { params });
+    const response = await apiClient.get("/invoices", { params });
     return response.data;
   },
 
@@ -13,7 +20,7 @@ export const invoicesApi = {
   },
 
   create: async (data: InvoiceCreate): Promise<InvoiceOut> => {
-    const response = await apiClient.post('/invoices', data);
+    const response = await apiClient.post("/invoices", data);
     return response.data;
   },
 
@@ -28,13 +35,23 @@ export const invoicesApi = {
 
   downloadPDF: async (id: string): Promise<Blob> => {
     const response = await apiClient.get(`/invoices/${id}/pdf`, {
-      responseType: 'blob',
+      responseType: "blob",
     });
     return response.data;
   },
 
-  sendEmail: async (id: string, email: string): Promise<{ message: string }> => {
+  sendEmail: async (
+    id: string,
+    email: string,
+  ): Promise<{ message: string }> => {
     const response = await apiClient.post(`/invoices/${id}/send`, { email });
+    return response.data;
+  },
+
+  getStats: async (
+    params: InvoiceStatsParams = {},
+  ): Promise<InvoiceStatsResponse> => {
+    const response = await apiClient.get("/invoices/stats", { params });
     return response.data;
   },
 };

@@ -1,5 +1,5 @@
-import { ClientOut } from './client';
-import { UserBusinessInfo } from './auth';
+import { ClientOut } from "./client";
+import { UserBusinessInfo } from "./auth";
 
 export interface InvoiceItemOut {
   product_id: string | null;
@@ -15,7 +15,7 @@ export interface InvoiceOut {
   user_id: string;
   client_id: string;
   number: string | null;
-  status: 'draft' | 'sent' | 'paid' | 'overdue' | 'cancelled';
+  status: "draft" | "sent" | "paid" | "overdue" | "cancelled";
   issued_date: string | null;
   due_date: string | null;
   currency: string;
@@ -68,4 +68,33 @@ export interface InvoiceListParams {
   search?: string;
   sort_by?: string;
   sort_order?: 1 | -1;
+}
+
+export interface InvoiceStats {
+  total_revenue: string;
+  paid_amount: string;
+  pending_amount: string;
+  draft_amount: string;
+  overdue_amount: string;
+  cancelled_amount: string;
+  total_count: number;
+  paid_count: number;
+  pending_count: number;
+  draft_count: number;
+  overdue_count: number;
+  cancelled_count: number;
+  currency: string;
+}
+
+export interface InvoiceStatsResponse {
+  stats: InvoiceStats;
+  by_currency?: InvoiceStats[];
+  date_from?: string;
+  date_to?: string;
+}
+
+export interface InvoiceStatsParams {
+  date_from?: string;
+  date_to?: string;
+  currency?: string;
 }

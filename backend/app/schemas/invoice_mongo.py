@@ -221,3 +221,41 @@ EVENT_PAID = "paid"
 EVENT_STATUS_CHANGED = "status_changed"
 EVENT_UPDATED = "updated"
 EVENT_DELETED = "deleted"
+
+
+class InvoiceStats(BaseModel):
+    """Invoice statistics by status and currency"""
+    total_revenue: Decimal = Field(default=Decimal("0.00"), description="Total of all invoices")
+    paid_amount: Decimal = Field(default=Decimal("0.00"), description="Total of paid invoices")
+    pending_amount: Decimal = Field(default=Decimal("0.00"), description="Total of sent invoices awaiting payment")
+    draft_amount: Decimal = Field(default=Decimal("0.00"), description="Total of draft invoices")
+    overdue_amount: Decimal = Field(default=Decimal("0.00"), description="Total of overdue invoices")
+    cancelled_amount: Decimal = Field(default=Decimal("0.00"), description="Total of cancelled invoices")
+    
+    total_count: int = Field(default=0, description="Total number of invoices")
+    paid_count: int = Field(default=0, description="Number of paid invoices")
+    pending_count: int = Field(default=0, description="Number of sent invoices awaiting payment")
+    draft_count: int = Field(default=0, description="Number of draft invoices")
+    overdue_count: int = Field(default=0, description="Number of overdue invoices")
+    cancelled_count: int = Field(default=0, description="Number of cancelled invoices")
+    
+    currency: str = Field(default="NGN", description="Currency for this stats group")
+
+    class Config:
+        json_encoders = {
+            Decimal: str,
+        }
+
+
+class InvoiceStatsResponse(BaseModel):
+    """Response for invoice statistics endpoint"""
+    stats: InvoiceStats
+    by_currency: Optional[List[InvoiceStats]] = Field(None, description="Stats broken down by currency if multiple currencies exist")
+    date_from: Optional[date] = Field(None, description="Start date of period (if filtered)")
+    date_to: Optional[date] = Field(None, description="End date of period (if filtered)")
+
+    class Config:
+        json_encoders = {
+            Decimal: str,
+            date: lambda v: v.isoformat(),
+        }

@@ -9,7 +9,7 @@ from motor.motor_asyncio import AsyncIOMotorDatabase, AsyncIOMotorClientSession
 from app.repositories.base import BaseRepository
 from app.schemas.invoice_mongo import (
     InvoiceOut, InvoiceCreate, InvoiceUpdate, InvoiceInDB,
-    InvoiceEvent
+    InvoiceEvent, InvoiceStats
 )
 from typing import List, Optional, Dict, Any
 from datetime import datetime, date
@@ -455,3 +455,110 @@ class InvoiceRepository(BaseRepository[InvoiceInDB]):
             filter_query["_id"] = {"$ne": self._to_object_id(exclude_id)}
         
         return await self.exists(filter_query)
+    
+    async def get_stats(
+        self,
+        user_id: str,
+        date_from: Optional[date] = None,
+        date_to: Optional[date] = None,
+        currency: Optional[str] = None
+    ) -> InvoiceStats:
+        """
+        Get invoice statistics aggregated by status.
+        
+        Args:
+            user_id: User ID
+            date_from: Filter invoices from this issued date
+            date_to: Filter invoices to this issued date
+            currency: Filter by specific currency (None = primary currency stats)
+            
+        Returns:
+            Invoice statistics including totals and counts by status
+            
+        Example:
+            stats = await invoice_repo.get_stats(user_id)
+            # Returns: InvoiceStats(
+            #   total_revenue=15000.00,
+            #   paid_amount=10000.00,
+            #   pending_amount=3000.00,
+            #   total_count=15,
+            #   paid_count=10,
+            #   ...
+            # )
+        """
+        from datetime import datetime as dt_module
+        
+        # Build filter query
+        filter_query = {"user_id": user_id}
+        
+        # Add date range filter on issued_date
+        if date_from or date_to:
+            date_filter = {}
+            if date_from:
+                date_filter["$gte"] = dt_module.combine(date_from, dt_module.min.time())
+            if date_to:
+                date_filter["$lte"] = dt_module.combine(date_to, dt_module.max.time())
+            if date_filter:
+                filter_query["issued_date"] = date_filter
+        
+        # Add currency filter
+        if currency:
+            filter_query["currency"] = currency
+        
+        # Aggregation pipeline for status-based stats
+        pipeline = [
+            {"$match": filter_query},
+            {
+                "$group": {
+                    "_id": "$status",
+                    "total_amount": {"$sum": {"$toDouble": "$total"}},
+                    "count": {"$sum": 1}
+                }
+            }
+        ]
+        
+        results = await self.collection.aggregate(pipeline).to_list(length=None)
+        
+        # Initialize stats
+        stats_data = {
+            "total_revenue": 0.0,
+            "paid_amount": 0.0,
+            "pending_amount": 0.0,
+            "draft_amount": 0.0,
+            "overdue_amount": 0.0,
+            "cancelled_amount": 0.0,
+            "total_count": 0,
+            "paid_count": 0,
+            "pending_count": 0,
+            "draft_count": 0,
+            "overdue_count": 0,
+            "cancelled_count": 0,
+            "currency": currency or "NGN"
+        }
+        
+        # Process results and populate stats
+        for result in results:
+            status = result["_id"]
+            amount = result["total_amount"]
+            count = result["count"]
+            
+            stats_data["total_revenue"] += amount
+            stats_data["total_count"] += count
+            
+            if status == "paid":
+                stats_data["paid_amount"] = amount
+                stats_data["paid_count"] = count
+            elif status == "sent":
+                stats_data["pending_amount"] = amount
+                stats_data["pending_count"] = count
+            elif status == "draft":
+                stats_data["draft_amount"] = amount
+                stats_data["draft_count"] = count
+            elif status == "overdue":
+                stats_data["overdue_amount"] = amount
+                stats_data["overdue_count"] = count
+            elif status == "cancelled":
+                stats_data["cancelled_amount"] = amount
+                stats_data["cancelled_count"] = count
+        
+        return InvoiceStats(**stats_data)

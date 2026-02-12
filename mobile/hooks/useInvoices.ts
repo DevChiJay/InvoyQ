@@ -1,12 +1,18 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { invoicesApi } from '@/services/api/invoices';
-import { InvoiceCreate, InvoiceUpdate, InvoiceListParams } from '@/types/invoice';
-import { PRODUCT_KEYS } from './useProducts';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { invoicesApi } from "@/services/api/invoices";
+import {
+  InvoiceCreate,
+  InvoiceUpdate,
+  InvoiceListParams,
+  InvoiceStatsParams,
+} from "@/types/invoice";
+import { PRODUCT_KEYS } from "./useProducts";
 
 export const INVOICE_KEYS = {
-  all: ['invoices'] as const,
-  list: (params: InvoiceListParams) => ['invoices', 'list', params] as const,
-  detail: (id: string) => ['invoices', 'detail', id] as const,
+  all: ["invoices"] as const,
+  list: (params: InvoiceListParams) => ["invoices", "list", params] as const,
+  detail: (id: string) => ["invoices", "detail", id] as const,
+  stats: (params: InvoiceStatsParams) => ["invoices", "stats", params] as const,
 };
 
 export function useInvoices(params?: InvoiceListParams) {
@@ -22,6 +28,14 @@ export function useInvoice(id: string) {
     queryKey: INVOICE_KEYS.detail(id),
     queryFn: () => invoicesApi.get(id),
     enabled: !!id,
+  });
+}
+
+export function useInvoiceStats(params?: InvoiceStatsParams) {
+  return useQuery({
+    queryKey: INVOICE_KEYS.stats(params || {}),
+    queryFn: () => invoicesApi.getStats(params),
+    staleTime: 5 * 60 * 1000, // 5 minutes - stats change less frequently
   });
 }
 
@@ -44,7 +58,9 @@ export function useUpdateInvoice() {
       invoicesApi.update(id, data),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: INVOICE_KEYS.all });
-      queryClient.invalidateQueries({ queryKey: INVOICE_KEYS.detail(variables.id) });
+      queryClient.invalidateQueries({
+        queryKey: INVOICE_KEYS.detail(variables.id),
+      });
     },
   });
 }
@@ -63,10 +79,12 @@ export function useSendInvoiceEmail() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ id, email }: { id: string; email?: string }) =>
-      invoicesApi.sendEmail(id, email || ''),
+      invoicesApi.sendEmail(id, email || ""),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: INVOICE_KEYS.all });
-      queryClient.invalidateQueries({ queryKey: INVOICE_KEYS.detail(variables.id) });
+      queryClient.invalidateQueries({
+        queryKey: INVOICE_KEYS.detail(variables.id),
+      });
     },
   });
 }
