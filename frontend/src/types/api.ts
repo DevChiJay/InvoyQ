@@ -1,15 +1,15 @@
 // User Types
 export interface User {
-  id: string;  // MongoDB ObjectId
+  id: string; // MongoDB ObjectId
   email: string;
   full_name: string | null;
   is_active: boolean;
-  is_verified: boolean;  // NEW - email verification status
+  is_verified: boolean; // NEW - email verification status
   is_pro: boolean;
   subscription_status: string | null;
-  subscription_provider: string | null;  // NEW
-  subscription_start_date: string | null;  // NEW
-  subscription_end_date: string | null;  // NEW
+  subscription_provider: string | null; // NEW
+  subscription_start_date: string | null; // NEW
+  subscription_end_date: string | null; // NEW
   // Business/Profile details
   avatar_url: string | null;
   phone: string | null;
@@ -38,7 +38,7 @@ export interface AuthResponse {
 }
 
 export interface LoginRequest {
-  username: string;  // OAuth2 uses 'username' field (but we send email)
+  username: string; // OAuth2 uses 'username' field (but we send email)
   password: string;
 }
 
@@ -50,7 +50,7 @@ export interface RegisterRequest {
 
 // Client Types
 export interface Client {
-  id: string;  // MongoDB ObjectId
+  id: string; // MongoDB ObjectId
   name: string;
   email: string | null;
   phone: string | null;
@@ -71,6 +71,15 @@ export interface ClientUpdate {
   address?: string;
 }
 
+// Client Stats Types
+export interface ClientStats {
+  total_count: number;
+}
+
+export interface ClientStatsResponse {
+  stats: ClientStats;
+}
+
 // Invoice Types
 export interface UserBusinessInfo {
   full_name?: string;
@@ -84,92 +93,128 @@ export interface UserBusinessInfo {
 }
 
 export interface InvoiceItem {
-  product_id: string | null;  // NEW - reference to product
+  product_id: string | null; // NEW - reference to product
   description: string;
-  quantity: string;  // Decimal as string
-  unit_price: string;  // Decimal as string
-  tax_rate: string;  // Decimal as string (percentage)
-  amount: string;  // Decimal as string
+  quantity: string; // Decimal as string
+  unit_price: string; // Decimal as string
+  tax_rate: string; // Decimal as string (percentage)
+  amount: string; // Decimal as string
 }
 
 export interface InvoiceEvent {
-  action: string;  // 'created' | 'sent' | 'paid' | 'status_changed' | 'updated' | 'deleted'
-  timestamp: string;  // ISO datetime
+  action: string; // 'created' | 'sent' | 'paid' | 'status_changed' | 'updated' | 'deleted'
+  timestamp: string; // ISO datetime
   details: Record<string, unknown>;
 }
 
 export interface Invoice {
-  id: string;  // MongoDB ObjectId
-  user_id: string;  // MongoDB ObjectId
-  client_id: string;  // MongoDB ObjectId
+  id: string; // MongoDB ObjectId
+  user_id: string; // MongoDB ObjectId
+  client_id: string; // MongoDB ObjectId
   number: string | null;
-  status: 'draft' | 'sent' | 'paid' | 'overdue' | 'cancelled';
-  issued_date: string | null;  // YYYY-MM-DD
-  due_date: string | null;  // YYYY-MM-DD
-  currency: string;  // ISO 4217 (NGN, USD, etc.)
-  discount: string;  // Decimal as string (percentage 0-100)
-  subtotal: string | null;  // Decimal as string
-  tax: string | null;  // Decimal as string
-  total: string | null;  // Decimal as string
+  status: "draft" | "sent" | "paid" | "overdue" | "cancelled";
+  issued_date: string | null; // YYYY-MM-DD
+  due_date: string | null; // YYYY-MM-DD
+  currency: string; // ISO 4217 (NGN, USD, etc.)
+  discount: string; // Decimal as string (percentage 0-100)
+  subtotal: string | null; // Decimal as string
+  tax: string | null; // Decimal as string
+  total: string | null; // Decimal as string
   notes: string | null;
   pdf_url: string | null;
   payment_link: string | null;
   items: InvoiceItem[];
-  events: InvoiceEvent[];  // NEW - audit trail
-  user_business_info: UserBusinessInfo | null;  // NEW
-  created_at: string;  // ISO datetime
-  updated_at: string;  // ISO datetime
+  events: InvoiceEvent[]; // NEW - audit trail
+  user_business_info: UserBusinessInfo | null; // NEW
+  created_at: string; // ISO datetime
+  updated_at: string; // ISO datetime
 }
 
 export interface ProductItemReference {
   product_id: string;
-  quantity: string;  // Decimal as string
+  quantity: string; // Decimal as string
 }
 
 export interface InvoiceCreate {
-  client_id: string;  // MongoDB ObjectId
+  client_id: string; // MongoDB ObjectId
   number?: string;
   status?: string;
   issued_date?: string;
   due_date?: string;
   currency?: string;
-  discount?: string;  // Decimal as string (percentage 0-100)
-  subtotal?: string;  // Decimal as string
-  tax?: string;  // Decimal as string
-  total?: string;  // Decimal as string
+  discount?: string; // Decimal as string (percentage 0-100)
+  subtotal?: string; // Decimal as string
+  tax?: string; // Decimal as string
+  total?: string; // Decimal as string
   notes?: string;
   payment_link?: string;
-  items?: InvoiceItem[];  // manual items
-  product_items?: ProductItemReference[];  // NEW - products from catalog
+  items?: InvoiceItem[]; // manual items
+  product_items?: ProductItemReference[]; // NEW - products from catalog
 }
 
 export interface InvoiceUpdate {
-  client_id?: string;  // MongoDB ObjectId
+  client_id?: string; // MongoDB ObjectId
   number?: string;
   status?: string;
   issued_date?: string;
   due_date?: string;
   currency?: string;
-  discount?: string;  // Decimal as string (percentage 0-100)
-  subtotal?: string;  // Decimal as string
-  tax?: string;  // Decimal as string
-  total?: string;  // Decimal as string
+  discount?: string; // Decimal as string (percentage 0-100)
+  subtotal?: string; // Decimal as string
+  tax?: string; // Decimal as string
+  total?: string; // Decimal as string
   notes?: string;
   pdf_url?: string;
   payment_link?: string;
-  items?: InvoiceItem[];  // Replace all items if provided
+  items?: InvoiceItem[]; // Replace all items if provided
 }
 
 export interface InvoiceListParams {
-  status?: 'draft' | 'sent' | 'paid' | 'overdue' | 'cancelled';
-  client_id?: string;  // MongoDB ObjectId
+  status?: "draft" | "sent" | "paid" | "overdue" | "cancelled";
+  client_id?: string; // MongoDB ObjectId
   limit?: number;
   offset?: number;
   due_from?: string;
   due_to?: string;
-  search?: string;  // Search by invoice number or client name
-  sort_by?: 'number' | 'issued_date' | 'due_date' | 'total' | 'status' | 'created_at';
-  sort_order?: 1 | -1;  // 1=ascending, -1=descending
+  search?: string; // Search by invoice number or client name
+  sort_by?:
+    | "number"
+    | "issued_date"
+    | "due_date"
+    | "total"
+    | "status"
+    | "created_at";
+  sort_order?: 1 | -1; // 1=ascending, -1=descending
+}
+
+// Invoice Stats Types
+export interface InvoiceStats {
+  total_revenue: string; // Decimal as string
+  paid_amount: string; // Decimal as string
+  pending_amount: string; // Decimal as string
+  draft_amount: string; // Decimal as string
+  overdue_amount: string; // Decimal as string
+  cancelled_amount: string; // Decimal as string
+  total_count: number;
+  paid_count: number;
+  pending_count: number;
+  draft_count: number;
+  overdue_count: number;
+  cancelled_count: number;
+  currency: string;
+}
+
+export interface InvoiceStatsResponse {
+  stats: InvoiceStats;
+  by_currency?: InvoiceStats[];
+  date_from?: string;
+  date_to?: string;
+}
+
+export interface InvoiceStatsParams {
+  date_from?: string;
+  date_to?: string;
+  currency?: string;
 }
 
 // Extraction Types - Backend Response Format
@@ -186,7 +231,7 @@ export interface BackendExtractionData {
 }
 
 export interface BackendExtractionResponse {
-  extraction_id: string;  // MongoDB ObjectId
+  extraction_id: string; // MongoDB ObjectId
   parsed: BackendExtractionData;
 }
 
@@ -219,19 +264,19 @@ export interface ExtractedData {
 }
 
 export interface ExtractionResponse {
-  extraction_id: string;  // MongoDB ObjectId
+  extraction_id: string; // MongoDB ObjectId
   parsed: ExtractedData;
 }
 
 // Payment Types
 export interface Payment {
-  id: string;  // MongoDB ObjectId
+  id: string; // MongoDB ObjectId
   payment_type: string;
   amount: number;
   currency: string;
   provider: string;
   provider_ref: string | null;
-  status: 'pending' | 'paid' | 'failed' | 'cancelled';
+  status: "pending" | "paid" | "failed" | "cancelled";
   description: string | null;
   created_at: string;
   updated_at: string | null;
@@ -271,19 +316,19 @@ export interface PaginatedResponse<T> {
 
 // Product Types (NEW)
 export interface Product {
-  id: string;  // MongoDB ObjectId
-  user_id: string;  // MongoDB ObjectId
-  sku: string;  // unique per user, max 100 chars
-  name: string;  // max 255 chars
-  description: string | null;  // max 1000 chars
-  category: string | null;  // max 100 chars, optional
-  unit_price: string;  // Decimal as string
-  tax_rate: string;  // Decimal as string (percentage, 0-100)
-  currency: string;  // ISO 4217, uppercase
-  quantity_available: number;  // integer
+  id: string; // MongoDB ObjectId
+  user_id: string; // MongoDB ObjectId
+  sku: string; // unique per user, max 100 chars
+  name: string; // max 255 chars
+  description: string | null; // max 1000 chars
+  category: string | null; // max 100 chars, optional
+  unit_price: string; // Decimal as string
+  tax_rate: string; // Decimal as string (percentage, 0-100)
+  currency: string; // ISO 4217, uppercase
+  quantity_available: number; // integer
   is_active: boolean;
-  created_at: string;  // ISO datetime
-  updated_at: string;  // ISO datetime
+  created_at: string; // ISO datetime
+  updated_at: string; // ISO datetime
 }
 
 export interface ProductCreate {
@@ -291,11 +336,11 @@ export interface ProductCreate {
   name: string;
   description?: string;
   category?: string;
-  unit_price: string;  // Decimal as string
-  tax_rate?: string;  // Default "0.00"
-  currency?: string;  // Default "NGN"
-  quantity_available?: number;  // Default 0
-  is_active?: boolean;  // Default true
+  unit_price: string; // Decimal as string
+  tax_rate?: string; // Default "0.00"
+  currency?: string; // Default "NGN"
+  quantity_available?: number; // Default 0
+  is_active?: boolean; // Default true
 }
 
 export interface ProductUpdate {
@@ -303,7 +348,7 @@ export interface ProductUpdate {
   name?: string;
   description?: string;
   category?: string;
-  unit_price?: string;  // Decimal as string
+  unit_price?: string; // Decimal as string
   tax_rate?: string;
   currency?: string;
   quantity_available?: number;
@@ -311,81 +356,96 @@ export interface ProductUpdate {
 }
 
 export interface ProductQuantityAdjustment {
-  adjustment: number;  // positive or negative, non-zero
+  adjustment: number; // positive or negative, non-zero
 }
 
 export type ProductListResponse = PaginatedResponse<Product>;
 
+// Product Stats Types
+export interface ProductStats {
+  total_count: number;
+  active_count: number;
+  inactive_count: number;
+  low_stock_count: number;
+  out_of_stock_count: number;
+  total_inventory_value: string; // Decimal as string
+  currency: string;
+}
+
+export interface ProductStatsResponse {
+  stats: ProductStats;
+}
+
 // Expense Types (NEW)
 export interface Expense {
-  id: string;  // MongoDB ObjectId
-  user_id: string;  // MongoDB ObjectId
-  category: string;  // lowercase, max 100 chars
-  description: string;  // max 500 chars
-  amount: string;  // Decimal as string
-  currency: string;  // ISO 4217, uppercase
-  vendor: string | null;  // max 255 chars
-  expense_date: string;  // YYYY-MM-DD
-  receipt_url: string | null;  // max 500 chars
-  tags: string[];  // lowercase, trimmed, deduplicated
-  created_at: string;  // ISO datetime
-  updated_at: string;  // ISO datetime
+  id: string; // MongoDB ObjectId
+  user_id: string; // MongoDB ObjectId
+  category: string; // lowercase, max 100 chars
+  description: string; // max 500 chars
+  amount: string; // Decimal as string
+  currency: string; // ISO 4217, uppercase
+  vendor: string | null; // max 255 chars
+  expense_date: string; // YYYY-MM-DD
+  receipt_url: string | null; // max 500 chars
+  tags: string[]; // lowercase, trimmed, deduplicated
+  created_at: string; // ISO datetime
+  updated_at: string; // ISO datetime
 }
 
 export interface ExpenseCreate {
-  category: string;  // auto-lowercased
+  category: string; // auto-lowercased
   description: string;
-  amount: string;  // Decimal as string, must be > 0
-  currency?: string;  // Default "NGN"
+  amount: string; // Decimal as string, must be > 0
+  currency?: string; // Default "NGN"
   vendor?: string;
-  expense_date: string;  // YYYY-MM-DD
+  expense_date: string; // YYYY-MM-DD
   receipt_url?: string;
-  tags?: string[];  // auto-lowercased, trimmed, deduplicated
+  tags?: string[]; // auto-lowercased, trimmed, deduplicated
 }
 
 export interface ExpenseUpdate {
   category?: string;
   description?: string;
-  amount?: string;  // Decimal as string
+  amount?: string; // Decimal as string
   currency?: string;
   vendor?: string;
-  expense_date?: string;  // YYYY-MM-DD
+  expense_date?: string; // YYYY-MM-DD
   receipt_url?: string;
   tags?: string[];
 }
 
 export interface ExpenseSummary {
   category: string;
-  total_amount: string;  // Decimal as string
+  total_amount: string; // Decimal as string
   count: number;
   currency: string;
 }
 
 export interface ExpenseSummaryResponse {
   summaries: ExpenseSummary[];
-  grand_total: string;  // Decimal as string
-  period_start: string | null;  // YYYY-MM-DD
-  period_end: string | null;  // YYYY-MM-DD
+  grand_total: string; // Decimal as string
+  period_start: string | null; // YYYY-MM-DD
+  period_end: string | null; // YYYY-MM-DD
 }
 
 export type ExpenseListResponse = PaginatedResponse<Expense>;
 
 // Common expense categories for autocomplete
 export const EXPENSE_CATEGORIES = [
-  'office',
-  'travel',
-  'utilities',
-  'software',
-  'hardware',
-  'supplies',
-  'rent',
-  'salaries',
-  'marketing',
-  'meals',
-  'transportation',
-  'professional_services',
-  'insurance',
-  'taxes',
-  'maintenance',
-  'other',
+  "office",
+  "travel",
+  "utilities",
+  "software",
+  "hardware",
+  "supplies",
+  "rent",
+  "salaries",
+  "marketing",
+  "meals",
+  "transportation",
+  "professional_services",
+  "insurance",
+  "taxes",
+  "maintenance",
+  "other",
 ] as const;
