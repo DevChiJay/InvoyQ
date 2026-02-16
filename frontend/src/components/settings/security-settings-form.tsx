@@ -6,10 +6,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { usersAPI } from "@/lib/api";
+import { useAuthStore } from "@/stores/auth-store";
 import { Loader2 } from "lucide-react";
 
 export function SecuritySettingsForm() {
+  const { user } = useAuthStore();
   const [isLoading, setIsLoading] = useState(false);
+
+  // Check if user is OAuth user without password
+  const isOAuthUser = user?.oauth_provider !== null && !user?.has_password;
   const [formData, setFormData] = useState({
     currentPassword: "",
     newPassword: "",
@@ -28,7 +33,8 @@ export function SecuritySettingsForm() {
       confirmPassword: "",
     };
 
-    if (!formData.currentPassword) {
+    // Only validate current password for users with existing passwords
+    if (!isOAuthUser && !formData.currentPassword) {
       newErrors.currentPassword = "Current password is required";
     }
 
@@ -59,12 +65,22 @@ export function SecuritySettingsForm() {
 
     setIsLoading(true);
     try {
-      await usersAPI.changePassword(
-        formData.currentPassword,
-        formData.newPassword
-      );
-
-      toast.success("Your password has been updated successfully");
+      if (isOAuthUser) {
+        // OAuth user setting password for first time
+        await usersAPI.setPassword(formData.newPassword);
+        toast.success(
+          "Your password has been set successfully. You can now login with email and password.",
+        );
+        // Mark password prompt as seen
+        localStorage.setItem("password_prompt_seen", "true");
+      } else {
+        // Regular user changing password
+        await usersAPI.changePassword(
+          formData.currentPassword,
+          formData.newPassword,
+        );
+        toast.success("Your password has been updated successfully");
+      }
 
       // Reset form
       setFormData({
@@ -79,7 +95,8 @@ export function SecuritySettingsForm() {
       });
     } catch (error: any) {
       toast.error(
-        error.response?.data?.detail || "Please check your current password and try again"
+        error.response?.data?.detail ||
+          `Failed to ${isOAuthUser ? "set" : "change"} password`,
       );
     } finally {
       setIsLoading(false);
@@ -88,23 +105,34 @@ export function SecuritySettingsForm() {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="space-y-2">
-        <Label htmlFor="currentPassword">Current Password</Label>
-        <Input
-          id="currentPassword"
-          type="password"
-          value={formData.currentPassword}
-          onChange={(e) => {
-            setFormData({ ...formData, currentPassword: e.target.value });
-            setErrors({ ...errors, currentPassword: "" });
-          }}
-          placeholder="Enter your current password"
-          disabled={isLoading}
-        />
-        {errors.currentPassword && (
-          <p className="text-sm text-destructive">{errors.currentPassword}</p>
-        )}
-      </div>
+      {!isOAuthUser && (
+        <div className="space-y-2">
+          <Label htmlFor="currentPassword">Current Password</Label>
+          <Input
+            id="currentPassword"
+            type="password"
+            value={formData.currentPassword}
+            onChange={(e) => {
+              setFormData({ ...formData, currentPassword: e.target.value });
+              setErrors({ ...errors, currentPassword: "" });
+            }}
+            placeholder="Enter your current password"
+            disabled={isLoading}
+          />
+          {errors.currentPassword && (
+            <p className="text-sm text-destructive">{errors.currentPassword}</p>
+          )}
+        </div>
+      )}
+
+      {isOAuthUser && (
+        <div className="space-y-2 p-3 bg-blue-50 dark:bg-blue-950 rounded-md border border-blue-200 dark:border-blue-800">
+          <p className="text-sm text-blue-700 dark:text-blue-300">
+            You signed up with Google. Set a password to enable login with email
+            and password on mobile.
+          </p>
+        </div>
+      )}
 
       <div className="space-y-2">
         <Label htmlFor="newPassword">New Password</Label>
@@ -147,7 +175,7 @@ export function SecuritySettingsForm() {
 
       <Button type="submit" disabled={isLoading}>
         {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-        Change Password
+        {isOAuthUser ? "Set Password" : "Change Password"}
       </Button>
     </form>
   );

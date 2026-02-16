@@ -1,15 +1,51 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { ProfileSettingsForm } from "@/components/settings/profile-settings-form";
 import { BusinessSettingsForm } from "@/components/settings/business-settings-form";
 import { SecuritySettingsForm } from "@/components/settings/security-settings-form";
 import { User, Building2, Shield } from "lucide-react";
+import { toast } from "sonner";
 
 export default function SettingsPage() {
-  const [activeTab, setActiveTab] = useState("profile");
+  const searchParams = useSearchParams();
+  const initialTab = searchParams.get("tab") || "profile";
+  const prompt = searchParams.get("prompt");
+
+  const [activeTab, setActiveTab] = useState(initialTab);
+
+  useEffect(() => {
+    // Show password setup prompt for new OAuth users
+    if (
+      prompt === "set-password" &&
+      !localStorage.getItem("password_prompt_seen")
+    ) {
+      setTimeout(() => {
+        toast.info(
+          "Set a password to login with email and password on mobile",
+          {
+            description: "You can skip this for now and set it later.",
+            duration: 10000,
+            action: {
+              label: "Skip",
+              onClick: () => {
+                localStorage.setItem("password_prompt_seen", "true");
+              },
+            },
+          },
+        );
+      }, 500);
+    }
+  }, [prompt]);
 
   return (
     <div className="container max-w-4xl py-8">
@@ -20,7 +56,11 @@ export default function SettingsPage() {
         </p>
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+      <Tabs
+        value={activeTab}
+        onValueChange={setActiveTab}
+        className="space-y-6"
+      >
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="profile" className="flex items-center gap-2">
             <User className="h-4 w-4" />

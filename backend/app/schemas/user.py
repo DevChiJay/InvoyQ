@@ -56,6 +56,10 @@ class UserRead(UserBase):
     company_address: str | None = None
     tax_id: str | None = None
     website: str | None = None
+    
+    # OAuth and password fields for password management
+    oauth_provider: str | None = None  # 'google' if OAuth user
+    has_password: bool = False  # true if user has set a password
 
     class Config:
         from_attributes = True

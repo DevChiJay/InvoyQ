@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from app.dependencies.auth import get_current_user
 from app.schemas.user import UserOut, UserRead, UserUpdate
-from app.schemas.auth import ChangePassword
+from app.schemas.auth import ChangePassword, SetPassword
 from app.repositories.user_repository import UserRepository, UserInDB
 from app.db.mongo import get_database
 from app.services.storage import save_bytes
@@ -15,7 +15,10 @@ router = APIRouter()
 @router.get("/me", response_model=UserRead)
 async def read_me(current_user: UserInDB = Depends(get_current_user)):
     """Get current authenticated user details"""
-    return current_user
+    # Convert UserInDB to UserRead with has_password field
+    user_dict = current_user.model_dump()
+    user_dict['has_password'] = current_user.hashed_password is not None
+    return UserRead(**user_dict)
 
 @router.patch("/me", response_model=UserRead)
 async def update_me(
@@ -33,7 +36,10 @@ async def update_me(
     if not updated_user:
         raise HTTPException(status_code=404, detail="User not found")
     
-    return updated_user
+    # Convert to UserRead with has_password field
+    user_dict = updated_user.model_dump()
+    user_dict['has_password'] = updated_user.hashed_password is not None
+    return UserRead(**user_dict)
 
 @router.post("/upload-avatar", response_model=dict)
 async def upload_avatar(
@@ -132,3 +138,36 @@ async def change_password(
     )
     
     return {"message": "Password changed successfully"}
+
+@router.post("/set-password", response_model=dict)
+async def set_password(
+    password_data: SetPassword,
+    current_user: UserInDB = Depends(get_current_user),
+    db: AsyncIOMotorDatabase = Depends(get_database)
+):
+    """Set password for OAuth users who don't have a password yet"""
+    user_repo = UserRepository(db)
+    
+    # Check if user is an OAuth user without a password
+    if current_user.hashed_password is not None:
+        raise HTTPException(
+            status_code=400,
+            detail="User already has a password. Use change-password endpoint instead."
+        )
+    
+    if current_user.oauth_provider is None:
+        raise HTTPException(
+            status_code=400,
+            detail="This endpoint is only for OAuth users."
+        )
+    
+    # Hash new password
+    new_hashed_password = get_password_hash(password_data.new_password)
+    
+    # Update password (keep oauth_provider for audit trail)
+    await user_repo.collection.update_one(
+        {"_id": user_repo._to_object_id(current_user.id)},
+        {"$set": {"hashed_password": new_hashed_password}}
+    )
+    
+    return {"message": "Password set successfully. You can now login with email and password."}

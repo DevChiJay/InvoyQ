@@ -235,6 +235,11 @@ export const usersAPI = {
       current_password,
       new_password,
     }),
+
+  setPassword: (new_password: string) =>
+    api.post<{ message: string }>("/v1/set-password", {
+      new_password,
+    }),
 };
 
 export const clientsAPI = {

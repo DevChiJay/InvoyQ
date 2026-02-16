@@ -34,3 +34,17 @@ class ChangePassword(BaseModel):
         if not re.search(r'\d', v):
             raise ValueError('Password must contain at least 1 number')
         return v
+
+
+class SetPassword(BaseModel):
+    """Schema for OAuth users to set their first password"""
+    new_password: str
+    
+    @field_validator('new_password')
+    @classmethod
+    def validate_new_password(cls, v: str) -> str:
+        if len(v) < 6:
+            raise ValueError('Password must be at least 6 characters long')
+        if not re.search(r'\d', v):
+            raise ValueError('Password must contain at least 1 number')
+        return v

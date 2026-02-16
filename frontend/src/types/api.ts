@@ -18,6 +18,9 @@ export interface User {
   company_address: string | null;
   tax_id: string | null;
   website: string | null;
+  // OAuth and password fields
+  oauth_provider: string | null; // 'google' if OAuth user
+  has_password: boolean; // true if user has set a password
 }
 
 export interface UserUpdate {
