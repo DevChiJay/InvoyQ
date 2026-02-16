@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState } from "react";
 import {
   View,
   Text,
@@ -11,22 +11,22 @@ import {
   Alert,
   Image,
   Linking,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { useAuth } from '@/hooks/useAuth';
-import { router } from 'expo-router';
-import { useTheme } from '@/hooks/useTheme';
-import { Button } from '@/components/ui/Button';
-import { Card } from '@/components/ui/Card';
-import { GoogleSignInButton } from '@/components/auth/GoogleSignInButton';
-import { Spacing, BorderRadius } from '@/constants/colors';
-import { Typography } from '@/constants/typography';
+} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { useAuth } from "@/hooks/useAuth";
+import { router } from "expo-router";
+import { useTheme } from "@/hooks/useTheme";
+import { Button } from "@/components/ui/Button";
+import { Card } from "@/components/ui/Card";
+import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton";
+import { Spacing, BorderRadius } from "@/constants/colors";
+import { Typography } from "@/constants/typography";
 
 export default function RegisterScreen() {
-  const [email, setEmail] = useState('');
-  const [fullName, setFullName] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [fullName, setFullName] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const { register, isRegistering, registerError } = useAuth();
@@ -34,31 +34,41 @@ export default function RegisterScreen() {
 
   const handleRegister = () => {
     if (!email || !fullName || !password || !confirmPassword) {
-      Alert.alert('Error', 'Please fill in all fields');
+      Alert.alert("Error", "Please fill in all fields");
       return;
     }
 
     if (password !== confirmPassword) {
-      Alert.alert('Error', 'Passwords do not match');
+      Alert.alert("Error", "Passwords do not match");
       return;
     }
 
     if (password.length < 8) {
-      Alert.alert('Error', 'Password must be at least 8 characters');
+      Alert.alert("Error", "Password must be at least 8 characters");
       return;
     }
 
-    register({ email, full_name: fullName, password, registration_source: 'mobile' }, {
-      onSuccess: () => {
-        router.replace(`/(auth)/email-sent?email=${encodeURIComponent(email)}`);
+    register(
+      {
+        email: email.trim(),
+        full_name: fullName.trim(),
+        password: password.trim(),
+        registration_source: "mobile",
       },
-    });
+      {
+        onSuccess: () => {
+          router.replace(
+            `/(auth)/email-sent?email=${encodeURIComponent(email.trim())}`,
+          );
+        },
+      },
+    );
   };
 
   return (
     <KeyboardAvoidingView
       style={[styles.container]}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
       <ScrollView
         contentContainerStyle={styles.scrollContent}
@@ -66,7 +76,7 @@ export default function RegisterScreen() {
       >
         <View style={styles.logoContainer}>
           <Image
-            source={require('@/assets/logo.png')}
+            source={require("@/assets/logo.png")}
             style={styles.logo}
             resizeMode="contain"
           />
@@ -83,15 +93,20 @@ export default function RegisterScreen() {
           <View style={styles.inputGroup}>
             <Text style={[styles.label]}>Full Name</Text>
             <View style={styles.inputWrapper}>
-              <Ionicons name="person-outline" size={20} color="rgba(107, 114, 128, 0.7)" style={styles.inputIcon} />
+              <Ionicons
+                name="person-outline"
+                size={20}
+                color="rgba(107, 114, 128, 0.7)"
+                style={styles.inputIcon}
+              />
               <TextInput
                 style={[
                   styles.input,
                   styles.inputWithIcon,
                   {
-                    backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                    borderColor: 'rgba(255, 255, 255, 0.3)',
-                    color: '#1F2937',
+                    backgroundColor: "rgba(255, 255, 255, 0.95)",
+                    borderColor: "rgba(255, 255, 255, 0.3)",
+                    color: "#1F2937",
                   },
                 ]}
                 placeholder="John Doe"
@@ -106,15 +121,20 @@ export default function RegisterScreen() {
           <View style={styles.inputGroup}>
             <Text style={[styles.label]}>Email</Text>
             <View style={styles.inputWrapper}>
-              <Ionicons name="mail-outline" size={20} color="rgba(107, 114, 128, 0.7)" style={styles.inputIcon} />
+              <Ionicons
+                name="mail-outline"
+                size={20}
+                color="rgba(107, 114, 128, 0.7)"
+                style={styles.inputIcon}
+              />
               <TextInput
                 style={[
                   styles.input,
                   styles.inputWithIcon,
                   {
-                    backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                    borderColor: 'rgba(255, 255, 255, 0.3)',
-                    color: '#1F2937',
+                    backgroundColor: "rgba(255, 255, 255, 0.95)",
+                    borderColor: "rgba(255, 255, 255, 0.3)",
+                    color: "#1F2937",
                   },
                 ]}
                 placeholder="you@example.com"
@@ -131,16 +151,21 @@ export default function RegisterScreen() {
           <View style={styles.inputGroup}>
             <Text style={[styles.label]}>Password</Text>
             <View style={styles.inputWrapper}>
-              <Ionicons name="lock-closed-outline" size={20} color="rgba(107, 114, 128, 0.7)" style={styles.inputIcon} />
+              <Ionicons
+                name="lock-closed-outline"
+                size={20}
+                color="rgba(107, 114, 128, 0.7)"
+                style={styles.inputIcon}
+              />
               <TextInput
                 style={[
                   styles.input,
                   styles.inputWithIcon,
                   styles.inputWithRightIcon,
                   {
-                    backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                    borderColor: 'rgba(255, 255, 255, 0.3)',
-                    color: '#1F2937',
+                    backgroundColor: "rgba(255, 255, 255, 0.95)",
+                    borderColor: "rgba(255, 255, 255, 0.3)",
+                    color: "#1F2937",
                   },
                 ]}
                 placeholder="••••••••"
@@ -150,14 +175,14 @@ export default function RegisterScreen() {
                 secureTextEntry={!showPassword}
                 autoCapitalize="none"
               />
-              <TouchableOpacity 
+              <TouchableOpacity
                 onPress={() => setShowPassword(!showPassword)}
                 style={styles.eyeIcon}
               >
-                <Ionicons 
-                  name={showPassword ? "eye-off-outline" : "eye-outline"} 
-                  size={20} 
-                  color="rgba(107, 114, 128, 0.7)" 
+                <Ionicons
+                  name={showPassword ? "eye-off-outline" : "eye-outline"}
+                  size={20}
+                  color="rgba(107, 114, 128, 0.7)"
                 />
               </TouchableOpacity>
             </View>
@@ -166,16 +191,21 @@ export default function RegisterScreen() {
           <View style={styles.inputGroup}>
             <Text style={[styles.label]}>Confirm Password</Text>
             <View style={styles.inputWrapper}>
-              <Ionicons name="lock-closed-outline" size={20} color="rgba(107, 114, 128, 0.7)" style={styles.inputIcon} />
+              <Ionicons
+                name="lock-closed-outline"
+                size={20}
+                color="rgba(107, 114, 128, 0.7)"
+                style={styles.inputIcon}
+              />
               <TextInput
                 style={[
                   styles.input,
                   styles.inputWithIcon,
                   styles.inputWithRightIcon,
                   {
-                    backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                    borderColor: 'rgba(255, 255, 255, 0.3)',
-                    color: '#1F2937',
+                    backgroundColor: "rgba(255, 255, 255, 0.95)",
+                    borderColor: "rgba(255, 255, 255, 0.3)",
+                    color: "#1F2937",
                   },
                 ]}
                 placeholder="••••••••"
@@ -185,21 +215,26 @@ export default function RegisterScreen() {
                 secureTextEntry={!showConfirmPassword}
                 autoCapitalize="none"
               />
-              <TouchableOpacity 
+              <TouchableOpacity
                 onPress={() => setShowConfirmPassword(!showConfirmPassword)}
                 style={styles.eyeIcon}
               >
-                <Ionicons 
-                  name={showConfirmPassword ? "eye-off-outline" : "eye-outline"} 
-                  size={20} 
-                  color="rgba(107, 114, 128, 0.7)" 
+                <Ionicons
+                  name={showConfirmPassword ? "eye-off-outline" : "eye-outline"}
+                  size={20}
+                  color="rgba(107, 114, 128, 0.7)"
                 />
               </TouchableOpacity>
             </View>
           </View>
 
           {registerError && (
-            <View style={[styles.errorContainer, { backgroundColor: colors.errorLight }]}>
+            <View
+              style={[
+                styles.errorContainer,
+                { backgroundColor: colors.errorLight },
+              ]}
+            >
               <Text style={[styles.errorText, { color: colors.error }]}>
                 Registration failed. Please try again.
               </Text>
@@ -222,17 +257,21 @@ export default function RegisterScreen() {
             <View style={styles.divider} />
           </View>
 
-          <GoogleSignInButton 
+          <GoogleSignInButton
             mode="register"
-            onSuccess={() => router.replace('/(tabs)')}
+            onSuccess={() => router.replace("/(tabs)")}
           />
 
           <View style={styles.privacyContainer}>
             <Text style={[styles.privacyText]}>
-              By continuing, you agree to our{' '}
-              <Text 
+              By continuing, you agree to our{" "}
+              <Text
                 style={[styles.privacyLink]}
-                onPress={() => Linking.openURL(`${process.env.EXPO_PUBLIC_FRONTEND_URL}/privacy`)}
+                onPress={() =>
+                  Linking.openURL(
+                    `${process.env.EXPO_PUBLIC_FRONTEND_URL}/privacy`,
+                  )
+                }
               >
                 Privacy Policy
               </Text>
@@ -245,8 +284,8 @@ export default function RegisterScreen() {
             style={styles.linkContainer}
           >
             <Text style={[styles.linkText]}>
-              Already have an account?{' '}
-              <Text style={{ fontWeight: '600' }}>Sign In</Text>
+              Already have an account?{" "}
+              <Text style={{ fontWeight: "600" }}>Sign In</Text>
             </Text>
           </TouchableOpacity>
         </View>
@@ -258,15 +297,15 @@ export default function RegisterScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#6366F120', // Warm orange background
+    backgroundColor: "#6366F120", // Warm orange background
   },
   scrollContent: {
     flexGrow: 1,
-    justifyContent: 'center',
+    justifyContent: "center",
     padding: Spacing.xl,
   },
   logoContainer: {
-    alignItems: 'center',
+    alignItems: "center",
     marginBottom: Spacing.lg,
   },
   logo: {
@@ -275,10 +314,10 @@ const styles = StyleSheet.create({
   },
   header: {
     marginBottom: Spacing.xl,
-    alignItems: 'center',
+    alignItems: "center",
   },
   title: {
-    fontSize: Typography.sizes['2xl'],
+    fontSize: Typography.sizes["2xl"],
     fontWeight: Typography.weights.bold,
     marginBottom: Spacing.xs,
   },
@@ -286,18 +325,18 @@ const styles = StyleSheet.create({
     fontSize: Typography.sizes.md,
   },
   formContainer: {
-    width: '100%',
+    width: "100%",
   },
   inputGroup: {
     marginBottom: Spacing.lg,
   },
   inputWrapper: {
-    position: 'relative',
-    flexDirection: 'row',
-    alignItems: 'center',
+    position: "relative",
+    flexDirection: "row",
+    alignItems: "center",
   },
   inputIcon: {
-    position: 'absolute',
+    position: "absolute",
     left: Spacing.md,
     zIndex: 1,
   },
@@ -308,7 +347,7 @@ const styles = StyleSheet.create({
     paddingRight: 44,
   },
   eyeIcon: {
-    position: 'absolute',
+    position: "absolute",
     right: Spacing.md,
     padding: Spacing.xs,
   },
@@ -323,7 +362,7 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.lg,
     padding: Spacing.lg,
     fontSize: Typography.sizes.md,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -336,42 +375,42 @@ const styles = StyleSheet.create({
   },
   errorText: {
     fontSize: Typography.sizes.sm,
-    textAlign: 'center',
+    textAlign: "center",
   },
   registerButton: {
     marginTop: Spacing.md,
   },
   dividerContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginVertical: Spacing.lg,
   },
   divider: {
     flex: 1,
     height: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
   },
   dividerText: {
     marginHorizontal: Spacing.md,
     fontSize: Typography.sizes.sm,
     fontWeight: Typography.weights.medium,
-    color: 'rgba(255, 255, 255, 0.7)',
+    color: "rgba(255, 255, 255, 0.7)",
   },
   privacyContainer: {
     marginTop: Spacing.md,
-    alignItems: 'center',
+    alignItems: "center",
   },
   privacyText: {
     fontSize: Typography.sizes.xs,
-    textAlign: 'center',
+    textAlign: "center",
   },
   privacyLink: {
     fontWeight: Typography.weights.semibold,
-    textDecorationLine: 'underline',
+    textDecorationLine: "underline",
   },
   linkContainer: {
     marginTop: Spacing.lg,
-    alignItems: 'center',
+    alignItems: "center",
   },
   linkText: {
     fontSize: Typography.sizes.sm,
