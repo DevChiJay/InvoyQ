@@ -1,15 +1,24 @@
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Image, Linking } from 'react-native';
-import { Stack, router } from 'expo-router';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import * as Updates from 'expo-updates';
-import { useEffect, useState } from 'react';
-import { useAuth } from '@/hooks/useAuth';
-import { useTheme } from '@/hooks/useTheme';
-import { Card } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
-import { Spacing, BorderRadius } from '@/constants/colors';
-import { Typography } from '@/constants/typography';
-import { Ionicons } from '@expo/vector-icons';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+  Alert,
+  Image,
+  Linking,
+} from "react-native";
+import { Stack, router } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import * as Updates from "expo-updates";
+import { useEffect, useState } from "react";
+import { useAuth } from "@/hooks/useAuth";
+import { useTheme } from "@/hooks/useTheme";
+import { Card } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
+import { Spacing, BorderRadius } from "@/constants/colors";
+import { Typography } from "@/constants/typography";
+import { Ionicons } from "@expo/vector-icons";
 
 export default function SettingsScreen() {
   const { user, logout } = useAuth();
@@ -18,43 +27,34 @@ export default function SettingsScreen() {
   const [isChecking, setIsChecking] = useState(false);
   const [updateMessage, setUpdateMessage] = useState<string | null>(null);
 
-  const {
-    currentlyRunning,
-    isUpdateAvailable,
-    isUpdatePending
-  } = Updates.useUpdates();
+  const { currentlyRunning, isUpdateAvailable, isUpdatePending } =
+    Updates.useUpdates();
 
   useEffect(() => {
     if (isUpdatePending) {
       // Update has successfully downloaded; apply it now
       Alert.alert(
-        'Update Ready',
-        'A new update has been downloaded. The app will restart to apply the update.',
-        [
-          { text: 'OK', onPress: () => Updates.reloadAsync() }
-        ]
+        "Update Ready",
+        "A new update has been downloaded. The app will restart to apply the update.",
+        [{ text: "OK", onPress: () => Updates.reloadAsync() }],
       );
     }
   }, [isUpdatePending]);
 
   const handleLogout = async () => {
-    Alert.alert(
-      'Logout',
-      'Are you sure you want to logout?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Logout', style: 'destructive', onPress: () => logout() },
-      ]
-    );
+    Alert.alert("Logout", "Are you sure you want to logout?", [
+      { text: "Cancel", style: "cancel" },
+      { text: "Logout", style: "destructive", onPress: () => logout() },
+    ]);
   };
 
   const handleCheckForUpdates = async () => {
     // Updates are only available in production builds, not in Expo Go or development
     if (!Updates.isEnabled) {
       Alert.alert(
-        'Updates Not Available',
-        'App updates are only available in production builds. This feature is disabled in development mode.',
-        [{ text: 'OK' }]
+        "Updates Not Available",
+        "App updates are only available in production builds. This feature is disabled in development mode.",
+        [{ text: "OK" }],
       );
       return;
     }
@@ -62,24 +62,25 @@ export default function SettingsScreen() {
     try {
       setIsChecking(true);
       setUpdateMessage(null);
-      
+
       const update = await Updates.checkForUpdateAsync();
-      
+
       if (update.isAvailable) {
-        setUpdateMessage('Downloading update...');
+        setUpdateMessage("Downloading update...");
         await Updates.fetchUpdateAsync();
-        setUpdateMessage('Update downloaded! Restarting...');
+        setUpdateMessage("Update downloaded! Restarting...");
       } else {
-        setUpdateMessage('You are already on the latest version!');
+        setUpdateMessage("You are already on the latest version!");
         setTimeout(() => setUpdateMessage(null), 3000);
       }
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      console.error('Update check error:', error);
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
+      console.error("Update check error:", error);
       Alert.alert(
-        'Update Error',
+        "Update Error",
         `Failed to check for updates: ${errorMessage}`,
-        [{ text: 'OK' }]
+        [{ text: "OK" }],
       );
       setUpdateMessage(null);
     } finally {
@@ -88,7 +89,7 @@ export default function SettingsScreen() {
   };
 
   const handleProfilePress = () => {
-    router.push('/settings/profile');
+    router.push("/settings/profile");
   };
 
   return (
@@ -96,12 +97,12 @@ export default function SettingsScreen() {
       style={[styles.container, { backgroundColor: colors.background }]}
       contentContainerStyle={[
         styles.content,
-        { paddingBottom: Math.max(insets.bottom + 80, 100) }
+        { paddingBottom: Math.max(insets.bottom + 80, 100) },
       ]}
     >
       <Stack.Screen
         options={{
-          title: 'Settings',
+          title: "Settings",
           headerStyle: { backgroundColor: colors.surface },
           headerTintColor: colors.text,
         }}
@@ -116,21 +117,28 @@ export default function SettingsScreen() {
                 style={styles.avatarImage}
               />
             ) : (
-              <View style={[styles.avatar, { backgroundColor: colors.primary }]}>
+              <View
+                style={[styles.avatar, { backgroundColor: colors.primary }]}
+              >
                 <Text style={styles.avatarText}>
-                  {user?.full_name?.charAt(0).toUpperCase() || user?.email.charAt(0).toUpperCase()}
+                  {user?.full_name?.charAt(0).toUpperCase() ||
+                    user?.email.charAt(0).toUpperCase()}
                 </Text>
               </View>
             )}
             <View style={styles.profileInfo}>
               <Text style={[styles.userName, { color: colors.text }]}>
-                {user?.full_name || 'User'}
+                {user?.full_name || "User"}
               </Text>
               <Text style={[styles.userEmail, { color: colors.textSecondary }]}>
                 {user?.email}
               </Text>
             </View>
-            <Ionicons name="chevron-forward" size={20} color={colors.textTertiary} />
+            <Ionicons
+              name="chevron-forward"
+              size={20}
+              color={colors.textTertiary}
+            />
           </View>
         </Card>
       </TouchableOpacity>
@@ -145,7 +153,7 @@ export default function SettingsScreen() {
           icon="person-outline"
           title="Profile"
           subtitle="Update your personal information"
-          onPress={() => router.push('/settings/profile')}
+          onPress={() => router.push("/settings/profile")}
           colors={colors}
         />
         <View style={[styles.divider, { backgroundColor: colors.border }]} />
@@ -153,7 +161,7 @@ export default function SettingsScreen() {
           icon="business-outline"
           title="Business Info"
           subtitle="Company details and branding"
-          onPress={() => router.push('/settings/business')}
+          onPress={() => router.push("/settings/business")}
           colors={colors}
         />
       </Card>
@@ -190,7 +198,9 @@ export default function SettingsScreen() {
           icon="document-text-outline"
           title="Privacy Policy"
           subtitle="Read our privacy policy"
-          onPress={() => Linking.openURL(`${process.env.EXPO_PUBLIC_FRONTEND_URL}/privacy`)}
+          onPress={() =>
+            Linking.openURL(`${process.env.EXPO_PUBLIC_FRONTEND_URL}/privacy`)
+          }
           colors={colors}
         />
       </Card>
@@ -212,22 +222,29 @@ export default function SettingsScreen() {
               <Text style={[styles.updateTitle, { color: colors.text }]}>
                 App Updates
               </Text>
-              <Text style={[styles.updateSubtitle, { color: colors.textSecondary }]}>
+              <Text
+                style={[styles.updateSubtitle, { color: colors.textSecondary }]}
+              >
                 {currentlyRunning.isEmbeddedLaunch
-                  ? 'Running built-in version'
-                  : 'Running updated version'}
+                  ? "Running built-in version"
+                  : "Running updated version"}
               </Text>
             </View>
           </View>
-          
+
           {updateMessage && (
-            <View style={[styles.updateMessageContainer, { backgroundColor: colors.primaryLight + '20' }]}>
+            <View
+              style={[
+                styles.updateMessageContainer,
+                { backgroundColor: colors.primaryLight + "20" },
+              ]}
+            >
               <Text style={[styles.updateMessage, { color: colors.primary }]}>
                 {updateMessage}
               </Text>
             </View>
           )}
-          
+
           <Button
             title={isChecking ? "Checking..." : "Check for Updates"}
             onPress={handleCheckForUpdates}
@@ -239,7 +256,7 @@ export default function SettingsScreen() {
       </Card>
 
       <Text style={[styles.version, { color: colors.textTertiary }]}>
-        Version 1.0.0
+        Version 1.1.0
       </Text>
     </ScrollView>
   );
@@ -253,10 +270,21 @@ interface SettingItemProps {
   colors: any;
 }
 
-function SettingItem({ icon, title, subtitle, onPress, colors }: SettingItemProps) {
+function SettingItem({
+  icon,
+  title,
+  subtitle,
+  onPress,
+  colors,
+}: SettingItemProps) {
   return (
     <TouchableOpacity style={styles.settingItem} onPress={onPress}>
-      <View style={[styles.iconContainer, { backgroundColor: colors.primaryLight + '20' }]}>
+      <View
+        style={[
+          styles.iconContainer,
+          { backgroundColor: colors.primaryLight + "20" },
+        ]}
+      >
         <Ionicons name={icon} size={20} color={colors.primary} />
       </View>
       <View style={styles.settingInfo}>
@@ -283,8 +311,8 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.lg,
   },
   profileHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
   },
   avatarImage: {
     width: 64,
@@ -296,14 +324,14 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: BorderRadius.full,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     marginRight: Spacing.md,
   },
   avatarText: {
-    fontSize: Typography.sizes['2xl'],
+    fontSize: Typography.sizes["2xl"],
     fontWeight: Typography.weights.bold,
-    color: '#FFFFFF',
+    color: "#FFFFFF",
   },
   profileInfo: {
     flex: 1,
@@ -328,16 +356,16 @@ const styles = StyleSheet.create({
     padding: 0,
   },
   settingItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     padding: Spacing.md,
   },
   iconContainer: {
     width: 40,
     height: 40,
     borderRadius: BorderRadius.md,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     marginRight: Spacing.sm,
   },
   settingInfo: {
@@ -366,8 +394,8 @@ const styles = StyleSheet.create({
     padding: Spacing.md,
   },
   updateHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: Spacing.md,
   },
   updateInfo: {
@@ -389,14 +417,14 @@ const styles = StyleSheet.create({
   },
   updateMessage: {
     fontSize: Typography.sizes.sm,
-    textAlign: 'center',
+    textAlign: "center",
   },
   updateButton: {
-    width: '100%',
+    width: "100%",
   },
   version: {
     fontSize: Typography.sizes.sm,
-    textAlign: 'center',
+    textAlign: "center",
     marginBottom: Spacing.xl,
   },
 });

@@ -23,10 +23,10 @@ export function useGoogleAuth() {
 
   // Configure Google Auth with platform-specific client IDs
   const [request, response, promptAsync] = Google.useIdTokenAuthRequest({
-    // For Android - use both Android and Web client IDs
+    clientId: GOOGLE_WEB_CLIENT_ID, // Web client ID for redirect URI
+    // For Android - specify the Android client ID
     ...(Platform.OS === "android" && {
       androidClientId: GOOGLE_ANDROID_CLIENT_ID,
-      webClientId: GOOGLE_WEB_CLIENT_ID,
     }),
     // For iOS - use iOS client ID
     ...(Platform.OS === "ios" && {
