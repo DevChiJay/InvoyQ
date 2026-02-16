@@ -18,7 +18,6 @@ import { router } from "expo-router";
 import { useTheme } from "@/hooks/useTheme";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
-import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton";
 import { Spacing, BorderRadius } from "@/constants/colors";
 import { Typography } from "@/constants/typography";
 
@@ -249,17 +248,6 @@ export default function RegisterScreen() {
             variant="primary"
             size="lg"
             style={styles.registerButton}
-          />
-
-          <View style={styles.dividerContainer}>
-            <View style={styles.divider} />
-            <Text style={styles.dividerText}>OR</Text>
-            <View style={styles.divider} />
-          </View>
-
-          <GoogleSignInButton
-            mode="register"
-            onSuccess={() => router.replace("/(tabs)")}
           />
 
           <View style={styles.privacyContainer}>

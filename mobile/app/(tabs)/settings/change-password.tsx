@@ -1,58 +1,64 @@
-import { View, Text, StyleSheet, ScrollView, Alert } from 'react-native';
-import { useState } from 'react';
-import { Stack, router } from 'expo-router';
-import { useTheme } from '@/hooks/useTheme';
-import { Card } from '@/components/ui/Card';
-import { FormField } from '@/components/ui/FormField';
-import { Input } from '@/components/ui/Input';
-import { Button } from '@/components/ui/Button';
-import { Spacing } from '@/constants/colors';
-import { Typography } from '@/constants/typography';
-import { userApi } from '@/services/api/user';
+import { View, Text, StyleSheet, ScrollView, Alert } from "react-native";
+import { useState } from "react";
+import { Stack, router } from "expo-router";
+import { useTheme } from "@/hooks/useTheme";
+import { useAuth } from "@/hooks/useAuth";
+import { Card } from "@/components/ui/Card";
+import { FormField } from "@/components/ui/FormField";
+import { Input } from "@/components/ui/Input";
+import { Button } from "@/components/ui/Button";
+import { Spacing } from "@/constants/colors";
+import { Typography } from "@/constants/typography";
+import { userApi } from "@/services/api/user";
 
 export default function ChangePasswordScreen() {
   const { colors } = useTheme();
+  const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
-  
+
+  // Check if user is OAuth user without password
+  const isOAuthUser = user?.oauth_provider !== null && !user?.has_password;
+
   const [formData, setFormData] = useState({
-    currentPassword: '',
-    newPassword: '',
-    confirmPassword: '',
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
   });
 
   const [errors, setErrors] = useState({
-    currentPassword: '',
-    newPassword: '',
-    confirmPassword: '',
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
   });
 
   const validateForm = (): boolean => {
     const newErrors = {
-      currentPassword: '',
-      newPassword: '',
-      confirmPassword: '',
+      currentPassword: "",
+      newPassword: "",
+      confirmPassword: "",
     };
 
-    if (!formData.currentPassword) {
-      newErrors.currentPassword = 'Current password is required';
+    // Only validate current password for users with existing passwords
+    if (!isOAuthUser && !formData.currentPassword) {
+      newErrors.currentPassword = "Current password is required";
     }
 
     if (!formData.newPassword) {
-      newErrors.newPassword = 'New password is required';
+      newErrors.newPassword = "New password is required";
     } else if (formData.newPassword.length < 6) {
-      newErrors.newPassword = 'Password must be at least 6 characters';
+      newErrors.newPassword = "Password must be at least 6 characters";
     } else if (!/\d/.test(formData.newPassword)) {
-      newErrors.newPassword = 'Password must contain at least 1 number';
+      newErrors.newPassword = "Password must contain at least 1 number";
     }
 
     if (!formData.confirmPassword) {
-      newErrors.confirmPassword = 'Please confirm your password';
+      newErrors.confirmPassword = "Please confirm your password";
     } else if (formData.newPassword !== formData.confirmPassword) {
-      newErrors.confirmPassword = 'Passwords do not match';
+      newErrors.confirmPassword = "Passwords do not match";
     }
 
     setErrors(newErrors);
-    return !Object.values(newErrors).some(error => error !== '');
+    return !Object.values(newErrors).some((error) => error !== "");
   };
 
   const handleChangePassword = async () => {
@@ -62,16 +68,29 @@ export default function ChangePasswordScreen() {
 
     setIsLoading(true);
     try {
-      await userApi.changePassword(formData.currentPassword, formData.newPassword);
-      
-      Alert.alert(
-        'Success',
-        'Your password has been changed successfully',
-        [{ text: 'OK', onPress: () => router.back() }]
-      );
+      if (isOAuthUser) {
+        // OAuth user setting password for first time
+        await userApi.setPassword(formData.newPassword);
+        Alert.alert(
+          "Success",
+          "Your password has been set successfully. You can now login with email and password.",
+          [{ text: "OK", onPress: () => router.back() }],
+        );
+      } else {
+        // Regular user changing password
+        await userApi.changePassword(
+          formData.currentPassword,
+          formData.newPassword,
+        );
+        Alert.alert("Success", "Your password has been changed successfully", [
+          { text: "OK", onPress: () => router.back() },
+        ]);
+      }
     } catch (error: any) {
-      const errorMessage = error.response?.data?.detail || 'Failed to change password';
-      Alert.alert('Error', errorMessage);
+      const errorMessage =
+        error.response?.data?.detail ||
+        `Failed to ${isOAuthUser ? "set" : "change"} password`;
+      Alert.alert("Error", errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -81,7 +100,7 @@ export default function ChangePasswordScreen() {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <Stack.Screen
         options={{
-          title: 'Change Password',
+          title: isOAuthUser ? "Set Password" : "Change Password",
           headerStyle: { backgroundColor: colors.surface },
           headerTintColor: colors.text,
         }}
@@ -89,29 +108,33 @@ export default function ChangePasswordScreen() {
 
       <ScrollView style={styles.content}>
         <Text style={[styles.description, { color: colors.textSecondary }]}>
-          Enter your current password and choose a new password. Make sure your new password is at least 6 characters long and contains at least 1 number.
+          {isOAuthUser
+            ? "Set a password to login with email and password on mobile. Your password must be at least 6 characters long and contain at least 1 number."
+            : "Enter your current password and choose a new password. Make sure your new password is at least 6 characters long and contains at least 1 number."}
         </Text>
 
         <Card style={styles.formCard}>
-          <FormField label="Current Password" error={errors.currentPassword}>
-            <Input
-              value={formData.currentPassword}
-              onChangeText={(text) => {
-                setFormData({ ...formData, currentPassword: text });
-                setErrors({ ...errors, currentPassword: '' });
-              }}
-              placeholder="Enter your current password"
-              secureTextEntry
-              error={!!errors.currentPassword}
-            />
-          </FormField>
+          {!isOAuthUser && (
+            <FormField label="Current Password" error={errors.currentPassword}>
+              <Input
+                value={formData.currentPassword}
+                onChangeText={(text) => {
+                  setFormData({ ...formData, currentPassword: text });
+                  setErrors({ ...errors, currentPassword: "" });
+                }}
+                placeholder="Enter your current password"
+                secureTextEntry
+                error={!!errors.currentPassword}
+              />
+            </FormField>
+          )}
 
           <FormField label="New Password" error={errors.newPassword}>
             <Input
               value={formData.newPassword}
               onChangeText={(text) => {
                 setFormData({ ...formData, newPassword: text });
-                setErrors({ ...errors, newPassword: '' });
+                setErrors({ ...errors, newPassword: "" });
               }}
               placeholder="Enter your new password"
               secureTextEntry
@@ -119,12 +142,15 @@ export default function ChangePasswordScreen() {
             />
           </FormField>
 
-          <FormField label="Confirm New Password" error={errors.confirmPassword}>
+          <FormField
+            label="Confirm New Password"
+            error={errors.confirmPassword}
+          >
             <Input
               value={formData.confirmPassword}
               onChangeText={(text) => {
                 setFormData({ ...formData, confirmPassword: text });
-                setErrors({ ...errors, confirmPassword: '' });
+                setErrors({ ...errors, confirmPassword: "" });
               }}
               placeholder="Confirm your new password"
               secureTextEntry
@@ -134,7 +160,7 @@ export default function ChangePasswordScreen() {
         </Card>
 
         <Button
-          title="Change Password"
+          title={isOAuthUser ? "Set Password" : "Change Password"}
           onPress={handleChangePassword}
           loading={isLoading}
           style={styles.changeButton}

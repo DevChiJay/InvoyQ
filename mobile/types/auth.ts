@@ -19,6 +19,8 @@ export interface UserRead {
   company_address: string | null;
   tax_id: string | null;
   website: string | null;
+  oauth_provider: string | null; // 'google' if OAuth user
+  has_password: boolean; // true if user has set a password
 }
 
 export interface LoginRequest {
