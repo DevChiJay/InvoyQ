@@ -96,7 +96,7 @@ class InvoiceBase(BaseModel):
     client_id: str = Field(..., description="Client ID (MongoDB ObjectId as string)")
     number: Optional[str] = Field(None, max_length=100, description="Invoice number (auto-generated if not provided)")
     status: str = Field(default="draft", description="Invoice status: draft, sent, paid, overdue, cancelled")
-    issued_date: Optional[date] = None
+    issued_date: Optional[date] = Field(None, description="Invoice issue date (defaults to today if not provided)")
     due_date: Optional[date] = None
     currency: str = Field(default="NGN", min_length=3, max_length=3, description="ISO 4217 currency code")
     discount: Decimal = Field(default=Decimal("0.00"), ge=0, le=100, description="Discount percentage (0-100)")

@@ -4,9 +4,10 @@ from datetime import date
 import datetime as dt
 from fastapi import APIRouter, Depends, HTTPException, status, Response, Query
 from motor.motor_asyncio import AsyncIOMotorDatabase
+from pymongo.errors import DuplicateKeyError
 
 from app.dependencies.auth import get_current_user
-from app.db.mongo import get_database
+from app.db.mongo import get_database, mongodb
 from app.repositories.user_repository import UserInDB
 from app.repositories.client_repository import ClientRepository
 from app.repositories.invoice_repository import InvoiceRepository
@@ -16,6 +17,7 @@ from app.schemas.invoice_mongo import (
     InvoiceStatsResponse
 )
 from app.services.email import email_service
+from app.utils.transactions import transaction_session
 from pydantic import BaseModel
 
 
@@ -153,6 +155,7 @@ async def create_invoice(
     - Validates client ownership
     - Auto-generates invoice number if not provided
     - Supports both manual items and product-based items
+    - Uses MongoDB transactions when available (requires replica set)
     """
     client_repo = ClientRepository(db)
     invoice_repo = InvoiceRepository(db)
@@ -165,35 +168,101 @@ async def create_invoice(
     if not client:
         raise HTTPException(status_code=404, detail="Client not found")
     
-    # Generate invoice number if not provided
-    number = payload.number
-    if not number:
-        today = dt.date.today()
-        # Count existing invoices issued today for sequence
-        count_today = await invoice_repo.count_by_user_and_date(
-            user_id=str(current_user.id),
-            issued_date=today
-        )
-        number = f"INV-{today:%Y%m%d}-{count_today + 1:03d}"
+    # Set default issued_date to today if not provided
+    # This ensures consistency between numbering and storage
+    if not payload.issued_date:
+        payload.issued_date = dt.date.today()
     
-    # Check for existing invoice with same number
-    existing_invoice = await invoice_repo.get_by_number(
-        user_id=str(current_user.id),
-        number=number
-    )
-    if existing_invoice:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Invoice number '{number}' already exists. Please use a different number."
-        )
+    # Retry logic for handling race conditions (max 3 attempts)
+    max_retries = 3
+    use_transactions = True  # Try transactions first
     
-    # Create invoice with auto-generated number
-    payload.number = number
-    invoice = await invoice_repo.create_invoice(
-        user_id=str(current_user.id),
-        client_id=payload.client_id,
-        invoice_data=payload
-    )
+    for attempt in range(max_retries):
+        try:
+            # Generate invoice number if not provided
+            number = payload.number
+            if not number:
+                # Use the payload's issued_date (not server's today) for counting
+                # This ensures the count matches the date stored in the invoice
+                count_today = await invoice_repo.count_by_user_and_date(
+                    user_id=str(current_user.id),
+                    issued_date=payload.issued_date
+                )
+                number = f"INV-{payload.issued_date:%Y%m%d}-{count_today + 1:03d}"
+            
+            # Check for existing invoice with same number
+            existing_invoice = await invoice_repo.get_by_number(
+                user_id=str(current_user.id),
+                number=number
+            )
+            if existing_invoice:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Invoice number '{number}' already exists. Please use a different number."
+                )
+            
+            # Create invoice with auto-generated number
+            payload.number = number
+            
+            # Try to use transaction if available, otherwise use regular insert
+            session = None
+            if use_transactions:
+                try:
+                    async with transaction_session(mongodb.client) as session:
+                        invoice = await invoice_repo.create_invoice(
+                            user_id=str(current_user.id),
+                            client_id=payload.client_id,
+                            invoice_data=payload,
+                            session=session
+                        )
+                except Exception as tx_error:
+                    # Check if error is about transactions not being supported
+                    error_msg = str(tx_error)
+                    if "Transaction numbers" in error_msg or "replica set" in error_msg:
+                        # Transactions not supported, fall back to non-transactional mode
+                        print(f"⚠️  MongoDB transactions not available: {error_msg}")
+                        print("   Falling back to non-transactional mode")
+                        use_transactions = False
+                        # Create without transaction
+                        invoice = await invoice_repo.create_invoice(
+                            user_id=str(current_user.id),
+                            client_id=payload.client_id,
+                            invoice_data=payload
+                        )
+                    else:
+                        # Other transaction error, re-raise
+                        raise
+            else:
+                # Non-transactional mode
+                invoice = await invoice_repo.create_invoice(
+                    user_id=str(current_user.id),
+                    client_id=payload.client_id,
+                    invoice_data=payload
+                )
+            
+            # Creation succeeded, break out of retry loop
+            break
+            
+        except DuplicateKeyError as e:
+            # Race condition: another request created the same invoice number
+            # Retry with incremented count
+            if attempt < max_retries - 1:
+                # Wait briefly before retrying (exponential backoff)
+                import asyncio
+                await asyncio.sleep(0.1 * (2 ** attempt))
+                continue
+            else:
+                # Max retries exceeded
+                raise HTTPException(
+                    status_code=500,
+                    detail="Failed to create invoice due to concurrent requests. Please try again."
+                )
+        except HTTPException:
+            # Re-raise HTTP exceptions (like duplicate check above)
+            raise
+        except Exception as e:
+            # Other errors should not retry
+            raise
     
     # Reduce product quantities if product_items are provided
     if payload.product_items:
