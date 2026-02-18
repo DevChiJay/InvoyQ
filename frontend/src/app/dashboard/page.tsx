@@ -1,17 +1,21 @@
-'use client';
+"use client";
 
-import { useAuthStore } from '@/stores/auth-store';
-import { useDashboardStats, useRecentInvoices } from '@/lib/hooks/use-dashboard';
-import { StatsCards } from '@/components/dashboard/stats-cards';
-import { RecentInvoices } from '@/components/dashboard/recent-invoices';
-import { Button } from '@/components/ui/button';
-import { Plus, Upload } from 'lucide-react';
-import Link from 'next/link';
+import { useAuthStore } from "@/stores/auth-store";
+import {
+  useDashboardStats,
+  useRecentInvoices,
+} from "@/lib/hooks/use-dashboard";
+import { StatsCards } from "@/components/dashboard/stats-cards";
+import { RecentInvoices } from "@/components/dashboard/recent-invoices";
+import { Button } from "@/components/ui/button";
+import { Plus, Upload } from "lucide-react";
+import Link from "next/link";
 
 export default function DashboardPage() {
   const { user } = useAuthStore();
   const { data: stats, isLoading: statsLoading } = useDashboardStats();
-  const { data: recentInvoices, isLoading: invoicesLoading } = useRecentInvoices(5);
+  const { data: recentInvoices, isLoading: invoicesLoading } =
+    useRecentInvoices(5);
 
   return (
     <div className="space-y-6">
@@ -19,16 +23,11 @@ export default function DashboardPage() {
         <div>
           <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
           <p className="text-muted-foreground">
-            Welcome back, {user?.full_name}! Here&apos;s an overview of your invoices.
+            Welcome back, {user?.full_name}! Here&apos;s an overview of your
+            invoices.
           </p>
         </div>
         <div className="flex gap-2">
-          <Button asChild variant="outline">
-            <Link href="/dashboard/extract">
-              <Upload className="mr-2 h-4 w-4" />
-              Extract Invoice
-            </Link>
-          </Button>
           <Button asChild>
             <Link href="/dashboard/invoices/new">
               <Plus className="mr-2 h-4 w-4" />
@@ -39,24 +38,26 @@ export default function DashboardPage() {
       </div>
 
       {/* Stats Cards */}
-      <StatsCards 
-        stats={stats || { 
-          totalClients: 0, 
-          totalInvoices: 0, 
-          totalRevenue: 0, 
-          overdueInvoices: 0,
-          paidInvoices: 0,
-          unpaidInvoices: 0
-        }} 
-        isLoading={statsLoading} 
+      <StatsCards
+        stats={
+          stats || {
+            totalClients: 0,
+            totalInvoices: 0,
+            totalRevenue: 0,
+            overdueInvoices: 0,
+            paidInvoices: 0,
+            unpaidInvoices: 0,
+            currency: "USD",
+          }
+        }
+        isLoading={statsLoading}
       />
 
       {/* Recent Invoices */}
-      <RecentInvoices 
-        invoices={recentInvoices || []} 
-        isLoading={invoicesLoading} 
+      <RecentInvoices
+        invoices={recentInvoices || []}
+        isLoading={invoicesLoading}
       />
     </div>
   );
 }
-

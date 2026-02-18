@@ -1,19 +1,19 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import Image from 'next/image';
-import { Button } from '@/components/ui/button';
-import { Menu, X } from 'lucide-react';
-import { useState } from 'react';
+import Link from "next/link";
+import Image from "next/image";
+import { Button } from "@/components/ui/button";
+import { Menu, X } from "lucide-react";
+import { useState } from "react";
 
 export default function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const scrollToDemo = () => {
     setMobileMenuOpen(false);
-    const demoSection = document.getElementById('demo');
+    const demoSection = document.getElementById("demo");
     if (demoSection) {
-      demoSection.scrollIntoView({ behavior: 'smooth' });
+      demoSection.scrollIntoView({ behavior: "smooth" });
     }
   };
 
@@ -24,10 +24,10 @@ export default function Navbar() {
           {/* Logo */}
           <div className="shrink-0">
             <Link href="/" className="flex items-center">
-              <Image 
-                src="/logo.svg" 
-                alt="InvoYQ" 
-                width={160} 
+              <Image
+                src="/logo.svg"
+                alt="InvoYQ"
+                width={160}
                 height={42}
                 className="h-10 w-auto dark:brightness-0 dark:invert"
                 priority
@@ -37,19 +37,19 @@ export default function Navbar() {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-6">
-            <Link 
-              href="/dashboard" 
+            <Link
+              href="/dashboard"
               className="text-gray-700 dark:text-[#E2E8F0] hover:text-[#14B8A6] dark:hover:text-[#14B8A6] font-medium transition-colors"
             >
               Dashboard
             </Link>
-            <button
-              onClick={scrollToDemo}
+            <Link
+              href="/how-to-use"
               className="text-gray-700 dark:text-[#E2E8F0] hover:text-[#14B8A6] dark:hover:text-[#14B8A6] font-medium transition-colors"
             >
-              Try Demo
-            </button>
-            <Button 
+              How to Use
+            </Link>
+            <Button
               asChild
               className="bg-gradient-to-r from-[#6366F1] to-[#14B8A6] hover:from-[#5558E3] hover:to-[#12A594] shadow-md hover:shadow-lg transition-all text-white"
             >
@@ -85,17 +85,20 @@ export default function Navbar() {
             >
               Dashboard
             </Link>
-            <button
-              onClick={scrollToDemo}
-              className="block w-full text-left px-3 py-2 rounded-md text-gray-700 dark:text-[#E2E8F0] hover:bg-gray-100 dark:hover:bg-white/10 font-medium transition-colors"
+            <Link
+              href="/how-to-use"
+              className="block px-3 py-2 rounded-md text-gray-700 dark:text-[#E2E8F0] hover:bg-gray-100 dark:hover:bg-white/10 font-medium transition-colors"
+              onClick={() => setMobileMenuOpen(false)}
             >
-              Try Demo
-            </button>
-            <Button 
+              How to Use
+            </Link>
+            <Button
               asChild
               className="w-full bg-gradient-to-r from-[#6366F1] to-[#14B8A6] hover:from-[#5558E3] hover:to-[#12A594] text-white"
             >
-              <Link href="/register" onClick={() => setMobileMenuOpen(false)}>Sign Up</Link>
+              <Link href="/register" onClick={() => setMobileMenuOpen(false)}>
+                Sign Up
+              </Link>
             </Button>
           </div>
         </div>

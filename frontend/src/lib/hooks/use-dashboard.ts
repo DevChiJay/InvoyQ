@@ -15,6 +15,7 @@ export interface DashboardStats {
   totalInventoryValue?: number;
   monthlyExpenses?: number;
   monthlyExpenseCount?: number;
+  currency?: string;
 }
 
 export const useDashboardStats = () => {
@@ -27,6 +28,7 @@ export const useDashboardStats = () => {
         invoiceStatsResponse,
         productStatsResponse,
         expensesResponse,
+        firstInvoiceResponse,
       ] = await Promise.all([
         clientsAPI.getStats(),
         invoicesAPI.getStats(),
@@ -47,6 +49,12 @@ export const useDashboardStats = () => {
               },
             };
           }),
+        invoicesAPI
+          .getAll({ limit: 1, offset: 0, sort_by: "created_at", sort_order: 1 })
+          .catch((err) => {
+            console.error("Failed to fetch first invoice:", err);
+            return { data: [] };
+          }),
       ]);
 
       const clientStats = clientStatsResponse.data.stats;
@@ -62,6 +70,10 @@ export const useDashboardStats = () => {
           0,
         ) || 0;
 
+      // Get currency from first invoice or default to USD
+      const firstInvoice = firstInvoiceResponse.data[0];
+      const currency = firstInvoice?.currency || "USD";
+
       return {
         totalClients: clientStats.total_count,
         totalInvoices: invoiceStats.total_count,
@@ -73,6 +85,7 @@ export const useDashboardStats = () => {
         totalInventoryValue: parseDecimal(productStats.total_inventory_value),
         monthlyExpenses,
         monthlyExpenseCount,
+        currency,
       };
     },
     staleTime: 1000 * 60 * 5, // 5 minutes

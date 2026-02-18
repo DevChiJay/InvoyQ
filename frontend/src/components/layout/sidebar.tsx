@@ -1,26 +1,26 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { cn } from '@/lib/utils';
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { cn } from "@/lib/utils";
 import {
   LayoutDashboard,
   Users,
   FileText,
-  CreditCard,
   Settings,
   Package,
   Receipt,
-} from 'lucide-react';
+  HelpCircle,
+} from "lucide-react";
 
 const navigation = [
-  { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-  { name: 'Products', href: '/dashboard/products', icon: Package },
-  { name: 'Invoices', href: '/dashboard/invoices', icon: FileText },
-  { name: 'Clients', href: '/dashboard/clients', icon: Users },
-  { name: 'Expenses', href: '/dashboard/expenses', icon: Receipt },
-  { name: 'Payments', href: '/dashboard/payments', icon: CreditCard },
-  { name: 'Settings', href: '/dashboard/settings', icon: Settings },
+  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+  { name: "Products", href: "/dashboard/products", icon: Package },
+  { name: "Invoices", href: "/dashboard/invoices", icon: FileText },
+  { name: "Clients", href: "/dashboard/clients", icon: Users },
+  { name: "Expenses", href: "/dashboard/expenses", icon: Receipt },
+  { name: "Help", href: "/how-to-use", icon: HelpCircle },
+  { name: "Settings", href: "/dashboard/settings", icon: Settings },
 ];
 
 export default function Sidebar() {
@@ -33,24 +33,28 @@ export default function Sidebar() {
           <ul role="list" className="flex flex-1 flex-col gap-y-2">
             {navigation.map((item) => {
               // For Dashboard, only match exact path, for others allow sub-routes
-              const isActive = item.href === '/dashboard' 
-                ? pathname === item.href 
-                : pathname === item.href || pathname.startsWith(item.href + '/');
+              const isActive =
+                item.href === "/dashboard"
+                  ? pathname === item.href
+                  : pathname === item.href ||
+                    pathname.startsWith(item.href + "/");
               return (
                 <li key={item.name}>
                   <Link
                     href={item.href}
                     className={cn(
                       isActive
-                        ? 'bg-gradient-to-r from-teal-600 to-emerald-600 text-white shadow-md'
-                        : 'text-gray-700 dark:text-gray-300 hover:bg-teal-50 dark:hover:bg-teal-900/20',
-                      'group flex gap-x-3 rounded-lg p-3 text-sm leading-6 font-semibold transition-all'
+                        ? "bg-gradient-to-r from-teal-600 to-emerald-600 text-white shadow-md"
+                        : "text-gray-700 dark:text-gray-300 hover:bg-teal-50 dark:hover:bg-teal-900/20",
+                      "group flex gap-x-3 rounded-lg p-3 text-sm leading-6 font-semibold transition-all",
                     )}
                   >
                     <item.icon
                       className={cn(
-                        'h-5 w-5 shrink-0',
-                        isActive ? 'text-white' : 'text-teal-600 dark:text-teal-400'
+                        "h-5 w-5 shrink-0",
+                        isActive
+                          ? "text-white"
+                          : "text-teal-600 dark:text-teal-400",
                       )}
                       aria-hidden="true"
                     />

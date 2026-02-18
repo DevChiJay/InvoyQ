@@ -1,12 +1,19 @@
-'use client';
+"use client";
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, FileText, DollarSign, AlertCircle, Package, Receipt } from 'lucide-react';
-import Link from 'next/link';
-import type { DashboardStats } from '@/lib/hooks/use-dashboard';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Users,
+  FileText,
+  DollarSign,
+  AlertCircle,
+  Package,
+  Receipt,
+} from "lucide-react";
+import Link from "next/link";
+import type { DashboardStats } from "@/lib/hooks/use-dashboard";
 
 interface StatsCardsProps {
-  stats: DashboardStats;
+  stats: DashboardStats & { currency?: string };
   isLoading?: boolean;
 }
 
@@ -31,9 +38,10 @@ export function StatsCards({ stats, isLoading }: StatsCardsProps) {
   }
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
+    const currency = stats.currency || "USD";
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: currency,
     }).format(amount);
   };
 
@@ -55,7 +63,9 @@ export function StatsCards({ stats, isLoading }: StatsCardsProps) {
       <Link href="/dashboard/invoices">
         <Card className="cursor-pointer hover:bg-accent transition-colors">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Invoices</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Total Invoices
+            </CardTitle>
             <FileText className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -74,7 +84,9 @@ export function StatsCards({ stats, isLoading }: StatsCardsProps) {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(stats.totalRevenue)}</div>
+            <div className="text-2xl font-bold">
+              {formatCurrency(stats.totalRevenue)}
+            </div>
             <p className="text-xs text-muted-foreground">From paid invoices</p>
           </CardContent>
         </Card>
@@ -83,13 +95,18 @@ export function StatsCards({ stats, isLoading }: StatsCardsProps) {
       <Link href="/dashboard/products">
         <Card className="cursor-pointer hover:bg-accent transition-colors">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Products</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Active Products
+            </CardTitle>
             <Package className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.totalProducts || 0}</div>
             <p className="text-xs text-muted-foreground">
-              {stats.totalInventoryValue ? formatCurrency(stats.totalInventoryValue) : 'No'} inventory value
+              {stats.totalInventoryValue
+                ? formatCurrency(stats.totalInventoryValue)
+                : "No"}{" "}
+              inventory value
             </p>
           </CardContent>
         </Card>
@@ -98,11 +115,15 @@ export function StatsCards({ stats, isLoading }: StatsCardsProps) {
       <Link href="/dashboard/expenses">
         <Card className="cursor-pointer hover:bg-accent transition-colors">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Monthly Expenses</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Monthly Expenses
+            </CardTitle>
             <Receipt className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(stats.monthlyExpenses || 0)}</div>
+            <div className="text-2xl font-bold">
+              {formatCurrency(stats.monthlyExpenses || 0)}
+            </div>
             <p className="text-xs text-muted-foreground">
               {stats.monthlyExpenseCount || 0} expenses this month
             </p>
@@ -117,7 +138,9 @@ export function StatsCards({ stats, isLoading }: StatsCardsProps) {
             <AlertCircle className="h-4 w-4 text-destructive" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-destructive">{stats.overdueInvoices}</div>
+            <div className="text-2xl font-bold text-destructive">
+              {stats.overdueInvoices}
+            </div>
             <p className="text-xs text-muted-foreground">Require attention</p>
           </CardContent>
         </Card>
