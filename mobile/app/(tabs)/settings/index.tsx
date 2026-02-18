@@ -188,9 +188,13 @@ export default function SettingsScreen() {
       <Card variant="elevated" style={styles.section}>
         <SettingItem
           icon="help-circle-outline"
-          title="Help Center"
-          subtitle="Get help and support"
-          onPress={() => {}}
+          title="Help"
+          subtitle="Learn how to use InvoyQ"
+          onPress={() =>
+            Linking.openURL(
+              `${process.env.EXPO_PUBLIC_FRONTEND_URL}/how-to-use`,
+            )
+          }
           colors={colors}
         />
         <View style={[styles.divider, { backgroundColor: colors.border }]} />

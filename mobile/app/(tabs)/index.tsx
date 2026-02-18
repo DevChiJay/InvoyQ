@@ -339,34 +339,40 @@ export default function DashboardScreen() {
 
         {/* Alerts */}
         {lowStockProducts > 0 && (
-          <Card variant="elevated" style={styles.alertCard}>
-            <View
-              style={[
-                styles.alertContent,
-                { backgroundColor: colors.warningLight },
-              ]}
-            >
-              <Ionicons name="warning" size={24} color={colors.warning} />
-              <View style={styles.alertText}>
-                <Text style={[styles.alertTitle, { color: colors.text }]}>
-                  Low Stock Alert
-                </Text>
-                <Text
-                  style={[styles.alertMessage, { color: colors.textSecondary }]}
-                >
-                  {lowStockProducts} product{lowStockProducts > 1 ? "s" : ""}{" "}
-                  running low on stock
-                </Text>
-              </View>
-              <TouchableOpacity onPress={() => router.push("/(tabs)/products")}>
+          <TouchableOpacity
+            onPress={() => router.push("/(tabs)/products")}
+            activeOpacity={0.7}
+          >
+            <Card variant="elevated" style={styles.alertCard}>
+              <View
+                style={[
+                  styles.alertContent,
+                  { backgroundColor: colors.warningLight },
+                ]}
+              >
+                <Ionicons name="warning" size={24} color={colors.warning} />
+                <View style={styles.alertText}>
+                  <Text style={[styles.alertTitle, { color: colors.text }]}>
+                    Low Stock Alert
+                  </Text>
+                  <Text
+                    style={[
+                      styles.alertMessage,
+                      { color: colors.textSecondary },
+                    ]}
+                  >
+                    {lowStockProducts} product{lowStockProducts > 1 ? "s" : ""}{" "}
+                    running low on stock
+                  </Text>
+                </View>
                 <Ionicons
                   name="chevron-forward"
                   size={20}
                   color={colors.textSecondary}
                 />
-              </TouchableOpacity>
-            </View>
-          </Card>
+              </View>
+            </Card>
+          </TouchableOpacity>
         )}
 
         {/* Recent Invoices */}
@@ -384,60 +390,45 @@ export default function DashboardScreen() {
 
           {invoices && invoices.length > 0 ? (
             invoices.slice(0, 3).map((invoice) => (
-              <TouchableOpacity
-                key={invoice.id}
-                onPress={() => {
-                  // Navigate to invoices tab first, then to the detail screen
-                  router.replace({
-                    pathname: "/(tabs)/invoices/[id]",
-                    params: { id: invoice.id, from: "dashboard" },
-                  });
-                }}
-                activeOpacity={0.7}
-              >
-                <Card variant="elevated" style={styles.listItem}>
-                  <View style={styles.listItemHeader}>
-                    <View>
-                      <Text
-                        style={[styles.listItemTitle, { color: colors.text }]}
-                      >
-                        {invoice.number || `INV-${invoice.id.slice(-6)}`}
-                      </Text>
-                      <Text
-                        style={[
-                          styles.listItemSubtitle,
-                          { color: colors.textSecondary },
-                        ]}
-                      >
-                        {invoice.client?.name || "Unknown Client"}
-                      </Text>
-                    </View>
-                    <View style={styles.listItemRight}>
-                      <Text
-                        style={[
-                          styles.listItemAmount,
-                          { color: colors.primary },
-                        ]}
-                      >
-                        {formatCurrency(invoice.total || "0", invoice.currency)}
-                      </Text>
-                      <Badge
-                        label={invoice.status.toUpperCase()}
-                        variant={
-                          invoice.status === "paid"
-                            ? "success"
-                            : invoice.status === "sent"
-                              ? "info"
-                              : invoice.status === "overdue"
-                                ? "error"
-                                : "warning"
-                        }
-                        size="sm"
-                      />
-                    </View>
+              <Card key={invoice.id} variant="elevated" style={styles.listItem}>
+                <View style={styles.listItemHeader}>
+                  <View>
+                    <Text
+                      style={[styles.listItemTitle, { color: colors.text }]}
+                    >
+                      {invoice.number || `INV-${invoice.id.slice(-6)}`}
+                    </Text>
+                    <Text
+                      style={[
+                        styles.listItemSubtitle,
+                        { color: colors.textSecondary },
+                      ]}
+                    >
+                      {invoice.client?.name || "Unknown Client"}
+                    </Text>
                   </View>
-                </Card>
-              </TouchableOpacity>
+                  <View style={styles.listItemRight}>
+                    <Text
+                      style={[styles.listItemAmount, { color: colors.primary }]}
+                    >
+                      {formatCurrency(invoice.total || "0", invoice.currency)}
+                    </Text>
+                    <Badge
+                      label={invoice.status.toUpperCase()}
+                      variant={
+                        invoice.status === "paid"
+                          ? "success"
+                          : invoice.status === "sent"
+                            ? "info"
+                            : invoice.status === "overdue"
+                              ? "error"
+                              : "warning"
+                      }
+                      size="sm"
+                    />
+                  </View>
+                </View>
+              </Card>
             ))
           ) : (
             <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
@@ -461,51 +452,36 @@ export default function DashboardScreen() {
 
           {expenses && expenses.length > 0 ? (
             expenses.slice(0, 3).map((expense) => (
-              <TouchableOpacity
-                key={expense.id}
-                onPress={() => {
-                  // Navigate to expenses tab first, then to the detail screen
-                  router.replace({
-                    pathname: "/(tabs)/expenses/[id]",
-                    params: { id: expense.id, from: "dashboard" },
-                  });
-                }}
-                activeOpacity={0.7}
-              >
-                <Card variant="elevated" style={styles.listItem}>
-                  <View style={styles.listItemHeader}>
-                    <View style={styles.expenseInfo}>
-                      <IconBadge
-                        icon="receipt-outline"
-                        backgroundColor={colors.accentLight + "20"}
-                        iconColor={colors.accent}
-                        size={32}
-                      />
-                      <View>
-                        <Text
-                          style={[styles.listItemTitle, { color: colors.text }]}
-                        >
-                          {expense.description}
-                        </Text>
-                        <Text
-                          style={[
-                            styles.listItemSubtitle,
-                            { color: colors.textSecondary },
-                          ]}
-                        >
-                          {expense.category} •{" "}
-                          {formatDate(expense.expense_date)}
-                        </Text>
-                      </View>
+              <Card key={expense.id} variant="elevated" style={styles.listItem}>
+                <View style={styles.listItemHeader}>
+                  <View style={styles.expenseInfo}>
+                    <IconBadge
+                      icon="receipt-outline"
+                      backgroundColor={colors.accentLight + "20"}
+                      iconColor={colors.accent}
+                      size={32}
+                    />
+                    <View>
+                      <Text
+                        style={[styles.listItemTitle, { color: colors.text }]}
+                      >
+                        {expense.description}
+                      </Text>
+                      <Text
+                        style={[
+                          styles.listItemSubtitle,
+                          { color: colors.textSecondary },
+                        ]}
+                      >
+                        {expense.category} • {formatDate(expense.expense_date)}
+                      </Text>
                     </View>
-                    <Text
-                      style={[styles.expenseAmount, { color: colors.error }]}
-                    >
-                      -{formatCurrency(expense.amount, expense.currency)}
-                    </Text>
                   </View>
-                </Card>
-              </TouchableOpacity>
+                  <Text style={[styles.expenseAmount, { color: colors.error }]}>
+                    -{formatCurrency(expense.amount, expense.currency)}
+                  </Text>
+                </View>
+              </Card>
             ))
           ) : (
             <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
