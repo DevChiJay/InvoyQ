@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import { Button } from '@/components/ui/button';
-import Link from 'next/link';
-import { ArrowRight, Sparkles } from 'lucide-react';
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
+import { ArrowRight, Sparkles } from "lucide-react";
 
 export default function CTASection() {
   return (
@@ -23,15 +23,16 @@ export default function CTASection() {
           <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6">
             Ready to Simplify Your Invoicing?
           </h2>
-          
+
           <p className="text-xl md:text-2xl text-[#E2E8F0] mb-10 max-w-2xl mx-auto">
-            Join thousands of businesses saving time and getting paid faster with AI-powered invoice management.
+            Join thousands of businesses managing invoices, expenses, and
+            payments all in one powerful platform.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            <Button 
-              size="lg" 
-              asChild 
+            <Button
+              size="lg"
+              asChild
               className="gap-2 text-lg px-8 py-6 bg-white text-[#6366F1] hover:bg-[#E2E8F0] shadow-lg hover:shadow-xl transition-all"
             >
               <Link href="/register">
@@ -39,10 +40,10 @@ export default function CTASection() {
                 <ArrowRight className="h-5 w-5" />
               </Link>
             </Button>
-            <Button 
-              size="lg" 
-              variant="outline" 
-              asChild 
+            <Button
+              size="lg"
+              variant="outline"
+              asChild
               className="text-lg px-8 py-6 bg-white/10 border-2 border-white text-white hover:bg-white hover:text-[#6366F1]"
             >
               <Link href="#pricing">View Pricing</Link>
@@ -50,7 +51,7 @@ export default function CTASection() {
           </div>
 
           <p className="text-sm text-teal-100 mt-6">
-            No credit card required • 10 free extractions • Upgrade anytime
+            No credit card required • 10 free invoices • Upgrade anytime
           </p>
         </div>
       </div>

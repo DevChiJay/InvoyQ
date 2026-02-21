@@ -49,6 +49,12 @@ export default function Navbar() {
             >
               How to Use
             </Link>
+            <Link
+              href="/contact"
+              className="text-gray-700 dark:text-[#E2E8F0] hover:text-[#14B8A6] dark:hover:text-[#14B8A6] font-medium transition-colors"
+            >
+              Contact
+            </Link>
             <Button
               asChild
               className="bg-gradient-to-r from-[#6366F1] to-[#14B8A6] hover:from-[#5558E3] hover:to-[#12A594] shadow-md hover:shadow-lg transition-all text-white"
@@ -91,6 +97,13 @@ export default function Navbar() {
               onClick={() => setMobileMenuOpen(false)}
             >
               How to Use
+            </Link>
+            <Link
+              href="/contact"
+              className="block px-3 py-2 rounded-md text-gray-700 dark:text-[#E2E8F0] hover:bg-gray-100 dark:hover:bg-white/10 font-medium transition-colors"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Contact
             </Link>
             <Button
               asChild

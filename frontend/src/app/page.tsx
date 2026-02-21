@@ -1,17 +1,17 @@
-'use client';
+"use client";
 
-import { useEffect, useRef } from 'react';
-import { useRouter } from 'next/navigation';
-import { useAuthStore } from '@/stores/auth-store';
-import Navbar from '@/components/landing/navbar';
-import HeroSection from '@/components/landing/hero-section';
-import FeaturesSection from '@/components/landing/features-section';
-import HowItWorks from '@/components/landing/how-it-works';
-import DemoSection from '@/components/demo/demo-section';
-import TestimonialsSection from '@/components/landing/testimonials-section';
-import PricingSection from '@/components/landing/pricing-section';
-import CTASection from '@/components/landing/cta-section';
-import Footer from '@/components/landing/footer';
+import { useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
+import { useAuthStore } from "@/stores/auth-store";
+import Navbar from "@/components/landing/navbar";
+import HeroSection from "@/components/landing/hero-section";
+import FeaturesSection from "@/components/landing/features-section";
+import HowItWorks from "@/components/landing/how-it-works";
+import TestimonialsSection from "@/components/landing/testimonials-section";
+import PricingSection from "@/components/landing/pricing-section";
+import CTASection from "@/components/landing/cta-section";
+import Footer from "@/components/landing/footer";
+import ScrollToTop from "@/components/landing/scroll-to-top";
 
 export default function Home() {
   const router = useRouter();
@@ -29,7 +29,7 @@ export default function Home() {
   // Redirect authenticated users to dashboard
   useEffect(() => {
     if (_hasHydrated && isAuthenticated) {
-      router.push('/dashboard');
+      router.push("/dashboard");
     }
   }, [_hasHydrated, isAuthenticated, router]);
 
@@ -52,11 +52,11 @@ export default function Home() {
       <HeroSection />
       <HowItWorks />
       <FeaturesSection />
-      <DemoSection />
       <TestimonialsSection />
       <PricingSection />
       <CTASection />
       <Footer />
+      <ScrollToTop />
     </main>
   );
 }

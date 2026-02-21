@@ -424,3 +424,38 @@ export const demoExtract = async (text: string) => {
   // file field is not added, will be null on backend
   return extractionAPI.extractJobDetails(formData);
 };
+
+// Contact form types
+export interface ContactRequest {
+  fullName: string;
+  email: string;
+  message: string;
+  sendTo: string;
+  subject?: string;
+}
+
+export interface ContactResponse {
+  success: boolean;
+  message: string;
+}
+
+// Contact API - public endpoint, no authentication required
+export const sendContactMessage = async (
+  data: ContactRequest,
+): Promise<ContactResponse> => {
+  try {
+    const response = await axios.post<ContactResponse>(
+      "https://apihq.store/v1/contact",
+      {
+        full_name: data.fullName,
+        email: data.email,
+        message: data.message,
+        send_to: data.sendTo,
+        subject: data.subject,
+      },
+    );
+    return response.data;
+  } catch (error: any) {
+    throw error;
+  }
+};

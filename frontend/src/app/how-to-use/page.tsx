@@ -1930,15 +1930,26 @@ export default function HowToUsePage() {
                 className="border rounded-lg px-6 bg-white dark:bg-gray-800"
               >
                 <AccordionTrigger className="hover:no-underline">
-                  <span className="text-left font-semibold">
+                  <span className="text-left font-semibold flex items-center gap-2 flex-wrap">
                     Is there a mobile app for InvoyQ?
+                    <Badge className="bg-gradient-to-r from-orange-500 to-amber-500 text-white border-none">
+                      Early Access
+                    </Badge>
                   </span>
                 </AccordionTrigger>
                 <AccordionContent className="text-muted-foreground">
-                  Yes! InvoyQ has mobile apps for both iOS and Android, allowing
-                  you to manage invoices, track expenses, and view business
-                  stats on the go. The mobile app offers all the core features
-                  of the web platform in a mobile-optimized interface.
+                  Yes! InvoyQ mobile apps for iOS and Android are currently in
+                  early access. Join the beta program to get early access and
+                  manage invoices, track expenses, and view business stats on
+                  the go.{" "}
+                  <a
+                    href="mailto:support@invoyq.com?subject=Mobile App Early Access Request"
+                    className="text-teal-600 hover:underline font-medium"
+                  >
+                    Contact us
+                  </a>{" "}
+                  to join the beta program and be among the first to experience
+                  the mobile app.
                 </AccordionContent>
               </AccordionItem>
 
