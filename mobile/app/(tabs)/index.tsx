@@ -13,7 +13,7 @@ import { useState, useRef } from "react";
 import { LinearGradient } from "expo-linear-gradient";
 import { useAuth } from "@/hooks/useAuth";
 import { useInvoices, useInvoiceStats } from "@/hooks/useInvoices";
-import { useExpenses } from "@/hooks/useExpenses";
+import { useExpenses, useExpenseSummary } from "@/hooks/useExpenses";
 import { useProducts, useProductStats } from "@/hooks/useProducts";
 import { useClients, useClientStats } from "@/hooks/useClients";
 import { formatCurrency, formatDate } from "@/utils/formatters";
@@ -41,6 +41,8 @@ export default function DashboardScreen() {
     useClientStats();
   const { data: productStatsData, isLoading: productStatsLoading } =
     useProductStats();
+  const { data: expenseSummaryData, isLoading: expenseSummaryLoading } =
+    useExpenseSummary();
 
   // Fetch limited data for display in "Recent" sections
   const { data: invoices, isLoading: invoicesLoading } = useInvoices({
@@ -73,13 +75,16 @@ export default function DashboardScreen() {
   const totalProducts = productStats?.total_count || 0;
   const lowStockProducts = productStats?.low_stock_count || 0;
 
-  const totalExpenses =
-    expenses?.reduce((sum, exp) => sum + parseFloat(exp.amount), 0) || 0;
+  // Use accurate total from expense summary API (all expenses, not just recent 5)
+  const totalExpenses = expenseSummaryData
+    ? parseFloat(expenseSummaryData.grand_total)
+    : 0;
 
   const isLoading =
     statsLoading ||
     clientStatsLoading ||
     productStatsLoading ||
+    expenseSummaryLoading ||
     invoicesLoading ||
     expensesLoading ||
     productsLoading ||

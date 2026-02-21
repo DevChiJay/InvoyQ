@@ -446,13 +446,7 @@ export const sendContactMessage = async (
   try {
     const response = await axios.post<ContactResponse>(
       "https://apihq.store/v1/contact",
-      {
-        full_name: data.fullName,
-        email: data.email,
-        message: data.message,
-        send_to: data.sendTo,
-        subject: data.subject,
-      },
+      data,
     );
     return response.data;
   } catch (error: any) {
