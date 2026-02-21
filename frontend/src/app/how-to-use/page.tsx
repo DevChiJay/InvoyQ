@@ -46,6 +46,16 @@ import {
 import Link from "next/link";
 import { useAuthStore } from "@/stores/auth-store";
 import Navbar from "@/components/landing/navbar";
+import Image from "next/image";
+
+import Signup from "../../../public/screenshots/signup-form.png";
+import Dashboard from "../../../public/screenshots/dashboard-overview.png";
+import NewInvoice from "../../../public/screenshots/new-invoice.png";
+import InvoiceDetail from "../../../public/screenshots/invoice-detail.png";
+import NewProduct from "../../../public/screenshots/new-product.png";
+import ProductList from "../../../public/screenshots/products-list.png";
+import ClientsList from "../../../public/screenshots/clients-list.png";
+import ExpenseDetail from "../../../public/screenshots/expense-detail.png";
 
 export default function HowToUsePage() {
   const { user } = useAuthStore();
@@ -275,15 +285,13 @@ export default function HowToUsePage() {
                     </div>
 
                     {/* Screenshot Placeholder */}
-                    <div className="rounded-lg border-2 border-dashed border-muted-foreground/25 bg-muted/30 p-12 text-center">
-                      <ImageIcon className="h-16 w-16 mx-auto mb-4 text-muted-foreground/50" />
-                      <p className="text-sm font-medium text-muted-foreground">
-                        Screenshot: Sign Up / Login Page
-                      </p>
-                      <p className="text-xs text-muted-foreground/75 mt-1">
-                        Add screenshot: auth-signup.png
-                      </p>
-                    </div>
+                    <Image
+                      className="rounded-lg border-2 border-dashed border-muted-foreground/25 bg-muted/30 text-center"
+                      src={Signup}
+                      alt="signup shot"
+                      width={1100}
+                      height={625}
+                    />
 
                     <Separator />
 
@@ -373,40 +381,14 @@ export default function HowToUsePage() {
                   <CardContent>
                     {/* Video Embed Placeholder */}
                     <div className="relative w-full rounded-lg overflow-hidden bg-black aspect-video">
-                      <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-gray-900 to-gray-800">
-                        <div className="text-center">
-                          <PlayCircle className="h-20 w-20 mx-auto mb-4 text-white/50" />
-                          <p className="text-white font-medium mb-2">
-                            Video Tutorial Coming Soon
-                          </p>
-                          <p className="text-white/70 text-sm">
-                            Replace with your video URL
-                          </p>
-                        </div>
-                      </div>
-                      {/* 
-                    REPLACE THE ABOVE DIV WITH YOUR VIDEO EMBED:
-                    
-                    For YouTube:
-                    <iframe
-                      className="absolute inset-0 w-full h-full"
-                      src="https://www.youtube.com/embed/YOUR_VIDEO_ID"
-                      title="InvoyQ Tutorial"
-                      frameBorder="0"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      allowFullScreen
-                    ></iframe>
-                    
-                    For Vimeo:
-                    <iframe
-                      className="absolute inset-0 w-full h-full"
-                      src="https://player.vimeo.com/video/YOUR_VIDEO_ID"
-                      title="InvoyQ Tutorial"
-                      frameBorder="0"
-                      allow="autoplay; fullscreen; picture-in-picture"
-                      allowFullScreen
-                    ></iframe>
-                    */}
+                      <iframe
+                        className="absolute inset-0 w-full h-full"
+                        src="https://www.youtube.com/embed/rCQs4TsycI0?si=eLNL0oSg7Ml9d8ll"
+                        title="InvoyQ Tutorial"
+                        frameBorder="0"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                      ></iframe>
                     </div>
                     <p className="text-sm text-muted-foreground mt-4 text-center">
                       This comprehensive video guide covers everything from
@@ -441,15 +423,13 @@ export default function HowToUsePage() {
                     </div>
 
                     {/* Screenshot Placeholder */}
-                    <div className="rounded-lg border-2 border-dashed border-muted-foreground/25 bg-muted/30 p-12 text-center">
-                      <ImageIcon className="h-16 w-16 mx-auto mb-4 text-muted-foreground/50" />
-                      <p className="text-sm font-medium text-muted-foreground">
-                        Screenshot: Dashboard Overview
-                      </p>
-                      <p className="text-xs text-muted-foreground/75 mt-1">
-                        Add screenshot: dashboard-overview.png
-                      </p>
-                    </div>
+                    <Image
+                      className="rounded-lg border-2 border-dashed border-muted-foreground/25 bg-muted/30 text-center"
+                      src={Dashboard}
+                      alt="dashboard shot"
+                      width={1100}
+                      height={625}
+                    />
 
                     <Separator />
 
@@ -800,15 +780,13 @@ export default function HowToUsePage() {
                     </div>
 
                     {/* Screenshot Placeholder */}
-                    <div className="rounded-lg border-2 border-dashed border-muted-foreground/25 bg-muted/30 p-12 text-center">
-                      <ImageIcon className="h-16 w-16 mx-auto mb-4 text-muted-foreground/50" />
-                      <p className="text-sm font-medium text-muted-foreground">
-                        Screenshot: Invoice Creation Form
-                      </p>
-                      <p className="text-xs text-muted-foreground/75 mt-1">
-                        Add screenshot: invoice-create-form.png
-                      </p>
-                    </div>
+                    <Image
+                      className="rounded-lg border-2 border-dashed border-muted-foreground/25 bg-muted/30 text-center"
+                      src={NewInvoice}
+                      alt="new invoice shot"
+                      width={1100}
+                      height={625}
+                    />
 
                     <Separator />
 
@@ -934,15 +912,13 @@ export default function HowToUsePage() {
                     </div>
 
                     {/* Screenshot Placeholder */}
-                    <div className="rounded-lg border-2 border-dashed border-muted-foreground/25 bg-muted/30 p-12 text-center">
-                      <ImageIcon className="h-16 w-16 mx-auto mb-4 text-muted-foreground/50" />
-                      <p className="text-sm font-medium text-muted-foreground">
-                        Screenshot: Invoice Detail View
-                      </p>
-                      <p className="text-xs text-muted-foreground/75 mt-1">
-                        Add screenshot: invoice-detail.png
-                      </p>
-                    </div>
+                    <Image
+                      className="rounded-lg border-2 border-dashed border-muted-foreground/25 bg-muted/30 text-center"
+                      src={InvoiceDetail}
+                      alt="invoice shot"
+                      width={1100}
+                      height={625}
+                    />
 
                     <div className="pt-4">
                       <Button
@@ -1094,15 +1070,13 @@ export default function HowToUsePage() {
                     </div>
 
                     {/* Screenshot Placeholder */}
-                    <div className="rounded-lg border-2 border-dashed border-muted-foreground/25 bg-muted/30 p-12 text-center">
-                      <ImageIcon className="h-16 w-16 mx-auto mb-4 text-muted-foreground/50" />
-                      <p className="text-sm font-medium text-muted-foreground">
-                        Screenshot: Product Creation Form
-                      </p>
-                      <p className="text-xs text-muted-foreground/75 mt-1">
-                        Add screenshot: product-create-form.png
-                      </p>
-                    </div>
+                    <Image
+                      className="rounded-lg border-2 border-dashed border-muted-foreground/25 bg-muted/30 text-center"
+                      src={NewProduct}
+                      alt="new product shot"
+                      width={1100}
+                      height={625}
+                    />
 
                     <Separator />
 
@@ -1295,15 +1269,13 @@ export default function HowToUsePage() {
                     </div>
 
                     {/* Screenshot Placeholder */}
-                    <div className="rounded-lg border-2 border-dashed border-muted-foreground/25 bg-muted/30 p-12 text-center">
-                      <ImageIcon className="h-16 w-16 mx-auto mb-4 text-muted-foreground/50" />
-                      <p className="text-sm font-medium text-muted-foreground">
-                        Screenshot: Products List View
-                      </p>
-                      <p className="text-xs text-muted-foreground/75 mt-1">
-                        Add screenshot: products-list.png
-                      </p>
-                    </div>
+                    <Image
+                      className="rounded-lg border-2 border-dashed border-muted-foreground/25 bg-muted/30 text-center"
+                      src={ProductList}
+                      alt="product list shot"
+                      width={1100}
+                      height={625}
+                    />
 
                     <div className="pt-4">
                       <Button
@@ -1547,15 +1519,13 @@ export default function HowToUsePage() {
                     </div>
 
                     {/* Screenshot Placeholder */}
-                    <div className="rounded-lg border-2 border-dashed border-muted-foreground/25 bg-muted/30 p-12 text-center">
-                      <ImageIcon className="h-16 w-16 mx-auto mb-4 text-muted-foreground/50" />
-                      <p className="text-sm font-medium text-muted-foreground">
-                        Screenshot: Clients List View
-                      </p>
-                      <p className="text-xs text-muted-foreground/75 mt-1">
-                        Add screenshot: clients-list.png
-                      </p>
-                    </div>
+                    <Image
+                      className="rounded-lg border-2 border-dashed border-muted-foreground/25 bg-muted/30 text-center"
+                      src={ClientsList}
+                      alt="clients list shot"
+                      width={1100}
+                      height={625}
+                    />
 
                     <div className="pt-4">
                       <Button
@@ -1803,15 +1773,13 @@ export default function HowToUsePage() {
                     </div>
 
                     {/* Screenshot Placeholder */}
-                    <div className="rounded-lg border-2 border-dashed border-muted-foreground/25 bg-muted/30 p-12 text-center">
-                      <ImageIcon className="h-16 w-16 mx-auto mb-4 text-muted-foreground/50" />
-                      <p className="text-sm font-medium text-muted-foreground">
-                        Screenshot: Expenses List & Summary
-                      </p>
-                      <p className="text-xs text-muted-foreground/75 mt-1">
-                        Add screenshot: expenses-dashboard.png
-                      </p>
-                    </div>
+                    <Image
+                      className="rounded-lg border-2 border-dashed border-muted-foreground/25 bg-muted/30 text-center"
+                      src={ExpenseDetail}
+                      alt="expense detail shot"
+                      width={1100}
+                      height={625}
+                    />
 
                     <div className="pt-4">
                       <Button
@@ -2022,7 +1990,7 @@ export default function HowToUsePage() {
                   asChild
                   size="lg"
                   variant="outline"
-                  className="border-white text-white hover:bg-white/10"
+                  className="border-white text-white bg-white/10"
                 >
                   <Link href="/dashboard/settings">
                     <Settings className="mr-2 h-5 w-5" />
