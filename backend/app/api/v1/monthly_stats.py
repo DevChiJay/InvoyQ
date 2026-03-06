@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, Query
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from datetime import datetime
 
-from app.db.mongodb import get_database
+from app.db.mongo import get_database
 from app.dependencies.auth import get_current_user
 from app.repositories.user_repository import UserInDB
 from app.repositories.monthly_stats_repository import MonthlyStatsRepository

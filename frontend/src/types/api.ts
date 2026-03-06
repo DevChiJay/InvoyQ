@@ -469,7 +469,7 @@ export interface MonthlyStats {
   total_invoices: number;
   paid_invoices: number;
   unpaid_invoices: number;
-  products_sold: number;
+  total_products_sold: number;
   top_products: TopProduct[];
   new_clients: number;
   period_start: string; // YYYY-MM-DD

@@ -226,7 +226,9 @@ export default function MonthlyStatsPage() {
                 <ShoppingBag className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{stats.products_sold}</div>
+                <div className="text-2xl font-bold">
+                  {stats.total_products_sold}
+                </div>
                 <p className="text-xs text-muted-foreground mt-1">
                   Total quantity sold
                 </p>
