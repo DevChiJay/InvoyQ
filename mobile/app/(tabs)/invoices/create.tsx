@@ -15,12 +15,14 @@ import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { z } from "zod";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import { useTheme } from "@/hooks/useTheme";
 import { useClients, useCreateClient } from "@/hooks/useClients";
 import { useProducts, useCreateProduct } from "@/hooks/useProducts";
 import { useCreateInvoice } from "@/hooks/useInvoices";
 import { useDebounce } from "@/hooks/useDebounce";
+import { useBusinessReminder } from "@/hooks/useBusinessReminder";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { FormField } from "@/components/ui/FormField";
@@ -30,7 +32,9 @@ import { Select, SelectOption } from "@/components/ui/Select";
 import { DatePicker } from "@/components/ui/DatePicker";
 import { NumberInput } from "@/components/ui/NumberInput";
 import { SearchBar } from "@/components/ui/SearchBar";
+import { BusinessReminderModal } from "@/components/ui/BusinessReminderModal";
 import { formatCurrency } from "@/utils/formatters";
+import { STORAGE_KEYS } from "@/constants/config";
 
 // Validation schema
 const invoiceSchema = z.object({
@@ -126,6 +130,11 @@ export default function CreateInvoiceScreen() {
   const [showCustomItemModal, setShowCustomItemModal] = useState(false);
   const [showCreateClientModal, setShowCreateClientModal] = useState(false);
   const [showCreateProductModal, setShowCreateProductModal] = useState(false);
+  const [showBusinessReminderModal, setShowBusinessReminderModal] =
+    useState(false);
+
+  // Business reminder hook
+  const { shouldShowReminder, dismissReminder } = useBusinessReminder();
 
   // Search states
   const [productSearchQuery, setProductSearchQuery] = useState("");
@@ -531,10 +540,27 @@ export default function CreateInvoiceScreen() {
 
       const newInvoice = await createInvoice.mutateAsync(payload as any);
 
+      // Check if this is the first invoice
+      const firstInvoiceCreated = await AsyncStorage.getItem(
+        STORAGE_KEYS.FIRST_INVOICE_CREATED,
+      );
+      const isFirstInvoice = firstInvoiceCreated !== "true";
+
+      if (isFirstInvoice) {
+        // Mark first invoice as created
+        await AsyncStorage.setItem(STORAGE_KEYS.FIRST_INVOICE_CREATED, "true");
+      }
+
       Alert.alert("Success", "Invoice created successfully!", [
         {
           text: "OK",
-          onPress: () => router.replace(`/invoices/${newInvoice.id}`),
+          onPress: () => {
+            router.replace(`/invoices/${newInvoice.id}`);
+            // Show business reminder after navigation, if applicable
+            if (isFirstInvoice && shouldShowReminder) {
+              setTimeout(() => setShowBusinessReminderModal(true), 500);
+            }
+          },
         },
       ]);
     } catch (error: any) {
@@ -1506,6 +1532,15 @@ export default function CreateInvoiceScreen() {
           </View>
         </KeyboardAvoidingView>
       </Modal>
+
+      {/* Business Reminder Modal */}
+      <BusinessReminderModal
+        visible={showBusinessReminderModal}
+        onDismiss={() => {
+          setShowBusinessReminderModal(false);
+          dismissReminder();
+        }}
+      />
     </View>
   );
 }

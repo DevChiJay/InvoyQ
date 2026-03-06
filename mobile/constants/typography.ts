@@ -1,19 +1,20 @@
 export const Typography = {
   sizes: {
-    xs: 12,
-    sm: 14,
-    md: 16,
-    lg: 18,
-    xl: 20,
-    '2xl': 24,
-    '3xl': 30,
-    '4xl': 36,
+    xs: 18,
+    sm: 21,
+    md: 24,
+    lg: 27,
+    xl: 30,
+    "2xl": 36,
+    "3xl": 45,
+    "4xl": 54,
   },
   weights: {
-    regular: '400' as const,
-    medium: '500' as const,
-    semibold: '600' as const,
-    bold: '700' as const,
+    regular: "400" as const,
+    medium: "500" as const,
+    semibold: "600" as const,
+    bold: "700" as const,
+    extrabold: "800" as const,
   },
   lineHeights: {
     tight: 1.2,
@@ -23,8 +24,8 @@ export const Typography = {
 };
 
 export const FontFamilies = {
-  regular: 'System',
-  medium: 'System',
-  semibold: 'System',
-  bold: 'System',
+  regular: "System",
+  medium: "System",
+  semibold: "System",
+  bold: "System",
 };

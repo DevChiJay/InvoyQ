@@ -454,17 +454,57 @@ async def send_invoice_email(
             invoice_data=InvoiceUpdate(status="sent")
         )
     
-    # Send email
+    # Prepare invoice data for email/PDF
+    invoice_data = {
+        'number': invoice.number or "Draft",
+        'issued_date': invoice.issued_date.strftime("%B %d, %Y") if invoice.issued_date else "",
+        'due_date': invoice.due_date.strftime("%B %d, %Y") if invoice.due_date else "",
+        'currency': invoice.currency,
+        'subtotal': float(invoice.subtotal) if invoice.subtotal else 0,
+        'discount': float(invoice.discount) if invoice.discount else 0,
+        'tax': float(invoice.tax) if invoice.tax else 0,
+        'total': float(invoice.total) if invoice.total else 0,
+        'notes': invoice.notes or "",
+        'payment_link': invoice.payment_link or "",
+        'items': [
+            {
+                'description': item.description,
+                'quantity': float(item.quantity),
+                'unit_price': float(item.unit_price),
+                'amount': float(item.amount),
+                'tax_rate': float(item.tax_rate) if item.tax_rate else 0
+            }
+            for item in invoice.items
+        ]
+    }
+    
+    # Prepare client data
+    client_data = {
+        'name': client.name,
+        'email': client.email or "",
+        'phone': client.phone or "",
+        'address': client.address or ""
+    }
+    
+    # Prepare user business info
+    user_business_info = {
+        'full_name': current_user.full_name or "",
+        'email': current_user.email,
+        'phone': getattr(current_user, 'phone', None) or "",
+        'company_name': getattr(current_user, 'company_name', None) or "",
+        'company_address': getattr(current_user, 'company_address', None) or "",
+        'tax_id': getattr(current_user, 'tax_id', None) or "",
+        'website': getattr(current_user, 'website', None) or ""
+    }
+    
+    # Send email with detailed invoice and PDF attachment
     try:
-        await email_service.send_invoice_email(
+        await email_service.send_invoice_with_details(
             to_email=recipient_email,
-            client_name=client.name,
-            invoice_number=invoice.number or "Draft",
-            invoice_total=str(invoice.total),
-            currency=invoice.currency,
-            due_date=invoice.due_date.strftime("%B %d, %Y") if invoice.due_date else "Not specified",
-            user_name=current_user.full_name or "InvoYQ User",
-            company_name=getattr(current_user, 'company_name', None)
+            invoice_data=invoice_data,
+            client_data=client_data,
+            user_business_info=user_business_info,
+            attach_pdf=True
         )
     except Exception as e:
         raise HTTPException(
