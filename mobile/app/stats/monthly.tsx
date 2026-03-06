@@ -49,6 +49,14 @@ export default function MonthlyStatsScreen() {
             title: "Monthly Statistics",
             headerStyle: { backgroundColor: colors.surface },
             headerTintColor: colors.text,
+            headerLeft: () => (
+              <TouchableOpacity
+                onPress={() => router.back()}
+                style={styles.headerButton}
+              >
+                <Ionicons name="arrow-back" size={24} color={colors.text} />
+              </TouchableOpacity>
+            ),
           }}
         />
         <ErrorState
@@ -66,15 +74,15 @@ export default function MonthlyStatsScreen() {
           title: "Monthly Statistics",
           headerStyle: { backgroundColor: colors.surface },
           headerTintColor: colors.text,
+          headerLeft: () => (
+            <TouchableOpacity
+              onPress={() => router.back()}
+              style={styles.headerButton}
+            >
+              <Ionicons name="arrow-back" size={24} color={colors.text} />
+            </TouchableOpacity>
+          ),
         }}
-      />
-
-      {/* Month Navigator */}
-      <MonthNavigator
-        month={month}
-        year={year}
-        onMonthChange={setMonthYear}
-        showTodayButton={true}
       />
 
       <ScrollView
@@ -84,6 +92,14 @@ export default function MonthlyStatsScreen() {
           { paddingBottom: insets.bottom + Spacing.xl },
         ]}
       >
+        {/* Month Navigator */}
+        <MonthNavigator
+          month={month}
+          year={year}
+          onMonthChange={setMonthYear}
+          showTodayButton={true}
+        />
+
         {isLoading ? (
           <>
             <SkeletonCard style={styles.skeletonCard} />
@@ -474,5 +490,9 @@ const styles = StyleSheet.create({
   },
   skeletonCard: {
     marginBottom: Spacing.md,
+  },
+  headerButton: {
+    padding: Spacing.sm,
+    marginLeft: Spacing.xs,
   },
 });
