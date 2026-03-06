@@ -4,13 +4,11 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  TouchableOpacity,
   ActivityIndicator,
 } from "react-native";
-import { Stack, router } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
+import { Ionicons } from "@expo/vector-icons";
 
 import { useTheme } from "@/hooks/useTheme";
 import { useMonthlyStats } from "@/hooks/useMonthlyStats";
@@ -44,24 +42,9 @@ export default function MonthlyStatsScreen() {
   if (error) {
     return (
       <View style={[styles.container, { backgroundColor: colors.background }]}>
-        <Stack.Screen
-          options={{
-            title: "Monthly Statistics",
-            headerStyle: { backgroundColor: colors.surface },
-            headerTintColor: colors.text,
-            headerLeft: () => (
-              <TouchableOpacity
-                onPress={() => router.back()}
-                style={styles.headerButton}
-              >
-                <Ionicons name="arrow-back" size={24} color={colors.text} />
-              </TouchableOpacity>
-            ),
-          }}
-        />
         <ErrorState
           message="Failed to load monthly statistics"
-          onRetry={() => router.back()}
+          onRetry={() => {}}
         />
       </View>
     );
@@ -69,22 +52,6 @@ export default function MonthlyStatsScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <Stack.Screen
-        options={{
-          title: "Monthly Statistics",
-          headerStyle: { backgroundColor: colors.surface },
-          headerTintColor: colors.text,
-          headerLeft: () => (
-            <TouchableOpacity
-              onPress={() => router.back()}
-              style={styles.headerButton}
-            >
-              <Ionicons name="arrow-back" size={24} color={colors.text} />
-            </TouchableOpacity>
-          ),
-        }}
-      />
-
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={[
@@ -490,9 +457,5 @@ const styles = StyleSheet.create({
   },
   skeletonCard: {
     marginBottom: Spacing.md,
-  },
-  headerButton: {
-    padding: Spacing.sm,
-    marginLeft: Spacing.xs,
   },
 });
