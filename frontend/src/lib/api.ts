@@ -27,6 +27,8 @@ import type {
   ExpenseUpdate,
   ExpenseListResponse,
   ExpenseSummaryResponse,
+  MonthlyStatsParams,
+  MonthlyStatsResponse,
 } from "@/types/api";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
@@ -415,6 +417,12 @@ export const expensesAPI = {
     period?: "week" | "month" | "year";
     reference_date?: string;
   }) => api.get<ExpenseSummaryResponse>("/v1/expenses/summary", { params }),
+};
+
+// Stats API
+export const statsAPI = {
+  getMonthlyStats: (params: MonthlyStatsParams) =>
+    api.get<MonthlyStatsResponse>("/v1/stats/monthly", { params }),
 };
 
 // Demo extraction helper - uses the same endpoint as authenticated extraction

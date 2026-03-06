@@ -452,3 +452,37 @@ export const EXPENSE_CATEGORIES = [
   "maintenance",
   "other",
 ] as const;
+
+// Monthly Stats Types
+export interface TopProduct {
+  product_id: string;
+  name: string;
+  quantity_sold: number;
+}
+
+export interface MonthlyStats {
+  month: number;
+  year: number;
+  total_revenue: string; // Decimal as string
+  total_expenses: string; // Decimal as string
+  net_income: string; // Decimal as string
+  total_invoices: number;
+  paid_invoices: number;
+  unpaid_invoices: number;
+  products_sold: number;
+  top_products: TopProduct[];
+  new_clients: number;
+  period_start: string; // YYYY-MM-DD
+  period_end: string; // YYYY-MM-DD
+  currency: string;
+}
+
+export interface MonthlyStatsParams {
+  month: number;
+  year: number;
+  currency: string;
+}
+
+export interface MonthlyStatsResponse {
+  stats: MonthlyStats;
+}

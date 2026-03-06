@@ -284,6 +284,48 @@ export default function DashboardScreen() {
           </LinearGradient>
         </View>
 
+        {/* Monthly Stats Card */}
+        <TouchableOpacity
+          onPress={() => router.push("/stats/monthly")}
+          activeOpacity={0.8}
+          style={styles.monthlyStatsContainer}
+        >
+          <Card variant="elevated" style={styles.monthlyStatsCard}>
+            <View style={styles.monthlyStatsContent}>
+              <View style={styles.monthlyStatsLeft}>
+                <View
+                  style={[
+                    styles.monthlyStatsIconContainer,
+                    { backgroundColor: colors.primaryLight },
+                  ]}
+                >
+                  <Ionicons name="bar-chart" size={28} color={colors.primary} />
+                </View>
+                <View style={styles.monthlyStatsText}>
+                  <Text
+                    style={[styles.monthlyStatsTitle, { color: colors.text }]}
+                  >
+                    Monthly Statistics
+                  </Text>
+                  <Text
+                    style={[
+                      styles.monthlyStatsSubtitle,
+                      { color: colors.textSecondary },
+                    ]}
+                  >
+                    View detailed monthly breakdown
+                  </Text>
+                </View>
+              </View>
+              <Ionicons
+                name="chevron-forward"
+                size={24}
+                color={colors.textSecondary}
+              />
+            </View>
+          </Card>
+        </TouchableOpacity>
+
         {/* Collection Rate */}
         <Card variant="elevated" style={styles.collectionCard}>
           <View style={styles.collectionHeader}>
@@ -536,6 +578,7 @@ const styles = StyleSheet.create({
   },
   statCardWrapper: {
     flex: 1,
+    minHeight: 120,
   },
   greeting: {
     fontSize: Typography.sizes.md,
@@ -554,6 +597,7 @@ const styles = StyleSheet.create({
   statCard: {
     flex: 1,
     padding: Spacing.lg,
+    minHeight: 120,
   },
   statValue: {
     fontSize: Typography.sizes.xl,
@@ -590,6 +634,42 @@ const styles = StyleSheet.create({
   quickStatLabel: {
     fontSize: Typography.sizes.xs,
     marginTop: 2,
+  },
+  monthlyStatsContainer: {
+    paddingHorizontal: Spacing.lg,
+    marginTop: Spacing.lg,
+  },
+  monthlyStatsCard: {
+    padding: Spacing.lg,
+  },
+  monthlyStatsContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  monthlyStatsLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
+  },
+  monthlyStatsIconContainer: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: Spacing.md,
+  },
+  monthlyStatsText: {
+    flex: 1,
+  },
+  monthlyStatsTitle: {
+    fontSize: Typography.sizes.md,
+    fontWeight: Typography.weights.bold,
+    marginBottom: 2,
+  },
+  monthlyStatsSubtitle: {
+    fontSize: Typography.sizes.sm,
   },
   collectionCard: {
     margin: Spacing.lg,
