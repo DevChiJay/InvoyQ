@@ -1,12 +1,13 @@
-import * as SecureStore from 'expo-secure-store';
-import { STORAGE_KEYS } from '@/constants/config';
+import * as SecureStore from "expo-secure-store";
+import { STORAGE_KEYS } from "@/constants/config";
+import { logger } from "@/utils/logger";
 
 export const tokenStorage = {
   async getToken(): Promise<string | null> {
     try {
       return await SecureStore.getItemAsync(STORAGE_KEYS.AUTH_TOKEN);
     } catch (error) {
-      console.error('Error getting token:', error);
+      logger.error("Error getting token:", error);
       return null;
     }
   },
@@ -15,7 +16,7 @@ export const tokenStorage = {
     try {
       await SecureStore.setItemAsync(STORAGE_KEYS.AUTH_TOKEN, token);
     } catch (error) {
-      console.error('Error setting token:', error);
+      logger.error("Error setting token:", error);
     }
   },
 
@@ -23,7 +24,7 @@ export const tokenStorage = {
     try {
       await SecureStore.deleteItemAsync(STORAGE_KEYS.AUTH_TOKEN);
     } catch (error) {
-      console.error('Error removing token:', error);
+      logger.error("Error removing token:", error);
     }
   },
 
@@ -32,7 +33,7 @@ export const tokenStorage = {
       const token = await SecureStore.getItemAsync(STORAGE_KEYS.AUTH_TOKEN);
       return !!token;
     } catch (error) {
-      console.error('Error checking token:', error);
+      logger.error("Error checking token:", error);
       return false;
     }
   },
@@ -42,7 +43,7 @@ export const tokenStorage = {
     try {
       return await SecureStore.getItemAsync(STORAGE_KEYS.REFRESH_TOKEN);
     } catch (error) {
-      console.error('Error getting refresh token:', error);
+      logger.error("Error getting refresh token:", error);
       return null;
     }
   },
@@ -51,7 +52,7 @@ export const tokenStorage = {
     try {
       await SecureStore.setItemAsync(STORAGE_KEYS.REFRESH_TOKEN, token);
     } catch (error) {
-      console.error('Error setting refresh token:', error);
+      logger.error("Error setting refresh token:", error);
     }
   },
 
@@ -59,7 +60,7 @@ export const tokenStorage = {
     try {
       await SecureStore.deleteItemAsync(STORAGE_KEYS.REFRESH_TOKEN);
     } catch (error) {
-      console.error('Error removing refresh token:', error);
+      logger.error("Error removing refresh token:", error);
     }
   },
 

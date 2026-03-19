@@ -7,11 +7,11 @@ from datetime import date, datetime
 from calendar import monthrange
 from decimal import Decimal
 from typing import List, Optional
-import logging
 
 from app.schemas.monthly_stats import MonthlyStats, TopProduct
+from app.utils.logger import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class MonthlyStatsRepository:

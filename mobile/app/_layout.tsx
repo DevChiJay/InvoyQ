@@ -5,6 +5,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "@/utils/queryClient";
 import { setupNetworkManager } from "@/utils/offline";
 import { tokenStorage } from "@/services/storage/tokenStorage";
+import { logger } from "@/utils/logger";
 import {
   ActivityIndicator,
   View,
@@ -36,7 +37,7 @@ export default function RootLayout() {
       setConnectionError(false);
       return token;
     } catch (error) {
-      console.error("Error checking auth:", error);
+      logger.error("Error checking auth:", error);
       setConnectionError(true);
       return false;
     }
@@ -48,7 +49,7 @@ export default function RootLayout() {
       const netState = await NetInfo.fetch();
 
       if (!netState.isConnected) {
-        console.log("No network connection on startup");
+        logger.warn("No network connection on startup");
         setConnectionError(true);
       }
 
@@ -57,7 +58,7 @@ export default function RootLayout() {
       setHasSeenOnboarding(!!onboardingSeen);
       setIsReady(true);
     } catch (error) {
-      console.error("App initialization error:", error);
+      logger.error("App initialization error:", error);
       setConnectionError(true);
       setIsReady(true); // Still mark as ready to allow retry
     }

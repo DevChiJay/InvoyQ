@@ -1,4 +1,5 @@
 import axios from "axios";
+import { logger } from "@/lib/logger";
 import type {
   User,
   UserUpdate,
@@ -112,6 +113,7 @@ api.interceptors.response.use(
       }
 
       try {
+        logger.info("Attempting to refresh access token...");
         const response = await axios.post(`${API_URL}/v1/auth/refresh`, {
           refresh_token: refreshToken,
         });
@@ -121,6 +123,8 @@ api.interceptors.response.use(
         // Store new tokens
         localStorage.setItem("access_token", access_token);
         localStorage.setItem("refresh_token", newRefreshToken);
+
+        logger.info("Token refresh successful");
 
         // Update authorization header
         originalRequest.headers.Authorization = `Bearer ${access_token}`;
@@ -132,6 +136,7 @@ api.interceptors.response.use(
         return api(originalRequest);
       } catch (refreshError) {
         // Refresh failed - clear tokens and redirect to login
+        logger.error("Token refresh failed:", refreshError);
         processQueue(refreshError, null);
         localStorage.removeItem("access_token");
         localStorage.removeItem("refresh_token");

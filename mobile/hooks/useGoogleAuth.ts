@@ -6,6 +6,7 @@ import { googleAuthApi } from "@/services/api/google-auth";
 import { tokenStorage } from "@/services/storage/tokenStorage";
 import { useAuth } from "./useAuth";
 import { router } from "expo-router";
+import { logger } from "@/utils/logger";
 import Constants from "expo-constants";
 
 // Required for web-based Google Sign-In to work properly
@@ -49,11 +50,11 @@ export function useGoogleAuth() {
 
         // Log token preview in development mode
         if (__DEV__) {
-          console.log(
+          logger.debug(
             "Google OAuth success - ID token preview:",
             id_token.substring(0, 20) + "...",
           );
-          console.log("Platform:", Platform.OS);
+          logger.debug("Platform:", Platform.OS);
         }
 
         // Send ID token to backend
@@ -76,13 +77,13 @@ export function useGoogleAuth() {
 
         return { success: true };
       } else if (result.type === "error") {
-        console.error("Google auth error:", result.error);
+        logger.error("Google auth error:", result.error);
         throw new Error("Google authentication failed");
       }
 
       return { success: false };
     } catch (error: any) {
-      console.error("Google sign-in error:", error);
+      logger.error("Google sign-in error:", error);
 
       // Extract more meaningful error message
       let errorMessage = "Unable to sign in with Google. Please try again.";
@@ -90,7 +91,7 @@ export function useGoogleAuth() {
       if (error.response?.data?.detail) {
         errorMessage = error.response.data.detail;
         if (__DEV__) {
-          console.log("Backend error detail:", error.response.data);
+          logger.debug("Backend error detail:", error.response.data);
         }
       } else if (error.message) {
         errorMessage = error.message;

@@ -4,7 +4,6 @@ from typing import Literal
 import hmac
 import hashlib
 import json
-import logging
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
@@ -17,10 +16,11 @@ from app.services.paystack import create_subscription_payment_link as paystack_l
 from app.services.stripe import create_subscription_payment_link as stripe_link, verify_payment as stripe_verify
 from app.schemas.user import UserRead
 from app.core.config import settings
+from app.utils.logger import get_logger
 from pydantic import BaseModel
 
 # Set up logging
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 router = APIRouter()
 
