@@ -1,28 +1,41 @@
-'use client';
+"use client";
 
-import { useState, useRef } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import { useInvoice, useDeleteInvoice, useSendInvoiceEmail } from '@/lib/hooks/use-invoices';
-import { useClient } from '@/lib/hooks/use-clients';
-import { useSendReminder } from '@/lib/hooks/use-payments';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { ConfirmDialog } from '@/components/ui/confirm-dialog';
-import { InvoicePreview } from '@/components/invoices/invoice-preview';
-import { InvoicePDFViewer } from '@/components/invoices/invoice-pdf-viewer';
-import { ProFeatureGate } from '@/components/payments/pro-feature-gate';
-import { Pencil, Trash2, ArrowLeft, Bell } from 'lucide-react';
-import Link from 'next/link';
-import { formatRelativeDate } from '@/lib/format';
-import { toast } from 'sonner';
+import { useState, useRef } from "react";
+import { useParams, useRouter } from "next/navigation";
+import dynamic from "next/dynamic";
+import {
+  useInvoice,
+  useDeleteInvoice,
+  useSendInvoiceEmail,
+} from "@/lib/hooks/use-invoices";
+import { useClient } from "@/lib/hooks/use-clients";
+import { useSendReminder } from "@/lib/hooks/use-payments";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { InvoicePreview } from "@/components/invoices/invoice-preview";
+import { ProFeatureGate } from "@/components/payments/pro-feature-gate";
+import { Pencil, Trash2, ArrowLeft, Bell } from "lucide-react";
+import Link from "next/link";
+import { formatRelativeDate } from "@/lib/format";
+import { toast } from "sonner";
+
+// Dynamically import InvoicePDFViewer with ssr: false to avoid Node.js module issues in dev mode
+const InvoicePDFViewer = dynamic(
+  () =>
+    import("@/components/invoices/invoice-pdf-viewer").then(
+      (mod) => mod.InvoicePDFViewer,
+    ),
+  { ssr: false },
+);
 
 export default function InvoiceDetailPage() {
   const params = useParams();
   const router = useRouter();
   const invoiceId = params.id as string;
   const { data: invoice, isLoading } = useInvoice(invoiceId);
-  const { data: client } = useClient(invoice?.client_id || '');
+  const { data: client } = useClient(invoice?.client_id || "");
   const deleteInvoice = useDeleteInvoice();
   const sendReminder = useSendReminder();
   const sendInvoiceEmail = useSendInvoiceEmail();
@@ -34,59 +47,55 @@ export default function InvoiceDetailPage() {
       new Promise((resolve, reject) => {
         deleteInvoice.mutate(invoiceId, {
           onSuccess: () => {
-            router.push('/dashboard/invoices');
+            router.push("/dashboard/invoices");
             resolve(true);
           },
           onError: reject,
         });
       }),
       {
-        loading: 'Deleting invoice...',
-        success: 'Invoice deleted successfully',
-        error: 'Failed to delete invoice',
-      }
+        loading: "Deleting invoice...",
+        success: "Invoice deleted successfully",
+        error: "Failed to delete invoice",
+      },
     );
   };
 
   const handleSendReminder = () => {
-    toast.promise(
-      sendReminder.mutateAsync(invoiceId),
-      {
-        loading: 'Sending reminder email...',
-        success: 'Reminder sent to client successfully',
-        error: 'Failed to send reminder. Please try again.',
-      }
-    );
+    toast.promise(sendReminder.mutateAsync(invoiceId), {
+      loading: "Sending reminder email...",
+      success: "Reminder sent to client successfully",
+      error: "Failed to send reminder. Please try again.",
+    });
   };
 
   const handleSendInvoice = () => {
     if (!client?.email) {
-      toast.error('Client does not have an email address');
+      toast.error("Client does not have an email address");
       return;
     }
-    
-    toast.promise(
-      sendInvoiceEmail.mutateAsync({ id: invoiceId }),
-      {
-        loading: 'Sending invoice email...',
-        success: `Invoice sent to ${client.email}`,
-        error: 'Failed to send invoice. Please try again.',
-      }
-    );
+
+    toast.promise(sendInvoiceEmail.mutateAsync({ id: invoiceId }), {
+      loading: "Sending invoice email...",
+      success: `Invoice sent to ${client.email}`,
+      error: "Failed to send invoice. Please try again.",
+    });
   };
 
-  const getStatusBadgeVariant = (status: string): 'default' | 'secondary' | 'destructive' | 'outline' => {
+  const getStatusBadgeVariant = (
+    status: string,
+  ): "default" | "secondary" | "destructive" | "outline" => {
     switch (status) {
-      case 'paid':
-        return 'default';
-      case 'sent':
-        return 'secondary';
-      case 'overdue':
-        return 'destructive';
-      case 'draft':
-        return 'outline';
+      case "paid":
+        return "default";
+      case "sent":
+        return "secondary";
+      case "overdue":
+        return "destructive";
+      case "draft":
+        return "outline";
       default:
-        return 'secondary';
+        return "secondary";
     }
   };
 
@@ -154,7 +163,9 @@ export default function InvoiceDetailPage() {
           </Button>
           <div>
             <div className="flex items-center gap-3">
-              <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">{invoice.number}</h2>
+              <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">
+                {invoice.number}
+              </h2>
               <Badge variant={getStatusBadgeVariant(invoice.status)}>
                 {invoice.status.toUpperCase()}
               </Badge>
@@ -169,19 +180,23 @@ export default function InvoiceDetailPage() {
             variant="default"
             size="sm"
             onClick={handleSendInvoice}
-            disabled={sendInvoiceEmail.isPending || invoice.status === 'paid' || !client?.email}
+            disabled={
+              sendInvoiceEmail.isPending ||
+              invoice.status === "paid" ||
+              !client?.email
+            }
           >
             <Bell className="mr-2 h-4 w-4" />
-            {sendInvoiceEmail.isPending ? 'Sending...' : 'Send Invoice'}
+            {sendInvoiceEmail.isPending ? "Sending..." : "Send Invoice"}
           </Button>
           <Button
             variant="outline"
             size="sm"
             onClick={handleSendReminder}
-            disabled={sendReminder.isPending || invoice.status === 'paid'}
+            disabled={sendReminder.isPending || invoice.status === "paid"}
           >
             <Bell className="mr-2 h-4 w-4" />
-            {sendReminder.isPending ? 'Sending...' : 'Send Reminder'}
+            {sendReminder.isPending ? "Sending..." : "Send Reminder"}
           </Button>
           <Button variant="outline" size="sm" asChild>
             <Link href={`/dashboard/invoices/${invoice.id}/edit`}>
@@ -189,10 +204,10 @@ export default function InvoiceDetailPage() {
               Edit
             </Link>
           </Button>
-          <Button 
-            variant="destructive" 
-            size="sm" 
-            onClick={() => setShowDeleteDialog(true)} 
+          <Button
+            variant="destructive"
+            size="sm"
+            onClick={() => setShowDeleteDialog(true)}
             disabled={deleteInvoice.isPending}
           >
             <Trash2 className="mr-2 h-4 w-4" />
@@ -207,7 +222,13 @@ export default function InvoiceDetailPage() {
       </div>
 
       {/* PDF Viewer */}
-      {client && <InvoicePDFViewer invoice={invoice} client={client} previewRef={previewRef} />}
+      {client && (
+        <InvoicePDFViewer
+          invoice={invoice}
+          client={client}
+          previewRef={previewRef}
+        />
+      )}
 
       {/* Delete Confirmation Dialog */}
       <ConfirmDialog

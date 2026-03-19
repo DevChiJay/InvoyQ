@@ -505,7 +505,7 @@ export const generateInvoiceHTML = (invoice: InvoiceOut): string => {
                   </td>
                   <td>${item.quantity}</td>
                   <td>${formatCurrency(parseFloat(item.unit_price), invoice.currency)}</td>
-                  <td>${item.tax_rate}%</td>
+                  <td>${formatCurrency((parseFloat(item.amount) * parseFloat(item.tax_rate)) / 100, invoice.currency)}</td>
                   <td>${formatCurrency(parseFloat(item.amount), invoice.currency)}</td>
                 </tr>
               `,

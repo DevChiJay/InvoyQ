@@ -180,7 +180,11 @@ export function InvoicePreview({ invoice, client }: InvoicePreviewProps) {
                       )}
                     </td>
                     <td className="py-3 px-2 text-[13px] font-bold text-black text-right border-r-2 border-gray-300">
-                      {item.tax_rate}%
+                      {formatCurrency(
+                        (parseFloat(item.amount) * parseFloat(item.tax_rate)) /
+                          100,
+                        invoice.currency ?? "NGN",
+                      )}
                     </td>
                     <td className="py-3 px-2 text-[13px] font-bold text-black text-right">
                       {formatCurrency(
