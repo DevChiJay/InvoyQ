@@ -62,10 +62,18 @@ app = FastAPI(
     lifespan=lifespan
 )
 
+if os.getenv("ENV") == "production":
+    origins = [
+        "https://invoyq.com",
+        "https://www.invoyq.com",
+    ]
+else:
+    origins = ["*"]  # dev only
+
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Configure this more restrictively in production
+    allow_origins=origins,  # Configure this more restrictively in production
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
