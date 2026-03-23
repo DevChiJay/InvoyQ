@@ -30,6 +30,7 @@ export default function Navbar() {
                 width={160}
                 height={42}
                 className="h-10 w-auto dark:brightness-0 dark:invert"
+                style={{ height: "auto" }}
                 priority
               />
             </Link>

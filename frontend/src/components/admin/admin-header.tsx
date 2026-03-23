@@ -26,6 +26,7 @@ export default function AdminHeader() {
                 width={140}
                 height={38}
                 className="h-9 w-auto dark:brightness-0 dark:invert"
+                style={{ height: "auto" }}
                 priority
               />
               <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-semibold bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300">

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { Separator } from "@/components/ui/separator";
 import { FileText } from "lucide-react";
 
@@ -22,7 +23,7 @@ export default function Footer() {
   return (
     <footer className="bg-[#0F172A] text-[#E2E8F0] border-t border-white/10">
       <div className="container mx-auto px-4 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Brand */}
           <div>
             <Link href="/" className="flex items-center gap-2 mb-4">
@@ -68,6 +69,28 @@ export default function Footer() {
                 </li>
               ))}
             </ul>
+          </div>
+
+          {/* Mobile App */}
+          <div>
+            <h3 className="font-semibold text-white mb-4">
+              Download Mobile App
+            </h3>
+            <Link
+              href="https://play.google.com/store/apps/details?id=com.invoyq.app"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-block transition-transform hover:scale-105"
+            >
+              <Image
+                src="/google-play.png"
+                alt="Get it on Google Play"
+                width={180}
+                height={60}
+                className="h-12 w-auto"
+                style={{ height: "auto" }}
+              />
+            </Link>
           </div>
         </div>
 

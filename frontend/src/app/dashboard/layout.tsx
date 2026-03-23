@@ -1,12 +1,12 @@
-'use client';
+"use client";
 
-import { useEffect, useRef } from 'react';
-import { useRouter } from 'next/navigation';
-import { useAuthStore } from '@/stores/auth-store';
-import { ErrorBoundary } from '@/components/error-boundary';
-import Header from '@/components/layout/header';
-import Sidebar from '@/components/layout/sidebar';
-import MobileNav from '@/components/layout/mobile-nav';
+import { useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
+import { useAuthStore } from "@/stores/auth-store";
+import { ErrorBoundary } from "@/components/error-boundary";
+import Header from "@/components/layout/header";
+import Sidebar from "@/components/layout/sidebar";
+import MobileNav from "@/components/layout/mobile-nav";
 
 export default function DashboardLayout({
   children,
@@ -28,7 +28,7 @@ export default function DashboardLayout({
   useEffect(() => {
     // Only redirect after hydration is complete
     if (_hasHydrated && !isAuthenticated && !isLoading) {
-      router.push('/login');
+      router.push("/login");
     }
   }, [_hasHydrated, isAuthenticated, isLoading, router]);
 
@@ -57,13 +57,10 @@ export default function DashboardLayout({
         <div className="flex">
           <Sidebar />
           <main className="flex-1 p-6 lg:ml-64">
-            <div className="max-w-7xl mx-auto">
-              {children}
-            </div>
+            <div className="max-w-7xl mx-auto">{children}</div>
           </main>
         </div>
       </div>
     </ErrorBoundary>
   );
 }
-

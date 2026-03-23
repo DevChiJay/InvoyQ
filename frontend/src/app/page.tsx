@@ -53,7 +53,7 @@ export default function Home() {
       <HowItWorks />
       <FeaturesSection />
       <TestimonialsSection />
-      <PricingSection />
+      {/* <PricingSection /> */}
       <CTASection />
       <Footer />
       <ScrollToTop />

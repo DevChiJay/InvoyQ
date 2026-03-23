@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Sparkles } from "lucide-react";
 
@@ -36,7 +37,7 @@ export default function HeroSection() {
           </p>
 
           {/* CTA Buttons */}
-          <div className="flex justify-center items-center mb-16">
+          <div className="flex justify-center items-center gap-6 mb-16">
             <Button
               size="lg"
               asChild
@@ -47,6 +48,23 @@ export default function HeroSection() {
                 <ArrowRight className="h-5 w-5" />
               </Link>
             </Button>
+
+            {/* Google Play Badge */}
+            <Link
+              href="https://play.google.com/store/apps/details?id=com.invoyq.app"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="transition-transform hover:scale-105"
+            >
+              <Image
+                src="/google-play.png"
+                alt="Get it on Google Play"
+                width={180}
+                height={60}
+                className="h-14 w-auto"
+                style={{ height: "auto" }}
+              />
+            </Link>
           </div>
 
           {/* Stats */}

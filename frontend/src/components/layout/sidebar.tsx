@@ -3,25 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import {
-  LayoutDashboard,
-  Users,
-  FileText,
-  Settings,
-  Package,
-  Receipt,
-  HelpCircle,
-} from "lucide-react";
-
-const navigation = [
-  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { name: "Products", href: "/dashboard/products", icon: Package },
-  { name: "Invoices", href: "/dashboard/invoices", icon: FileText },
-  { name: "Clients", href: "/dashboard/clients", icon: Users },
-  { name: "Expenses", href: "/dashboard/expenses", icon: Receipt },
-  { name: "Help", href: "/how-to-use", icon: HelpCircle },
-  { name: "Settings", href: "/dashboard/settings", icon: Settings },
-];
+import { navigation } from "@/constants/navigation";
 
 export default function Sidebar() {
   const pathname = usePathname();

@@ -6,26 +6,8 @@ import { usePathname } from "next/navigation";
 import { useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { useUIStore } from "@/stores/ui-store";
-import {
-  LayoutDashboard,
-  Users,
-  FileText,
-  Settings,
-  Package,
-  Receipt,
-  HelpCircle,
-  X,
-} from "lucide-react";
-
-const navigation = [
-  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { name: "Clients", href: "/dashboard/clients", icon: Users },
-  { name: "Invoices", href: "/dashboard/invoices", icon: FileText },
-  { name: "Products", href: "/dashboard/products", icon: Package },
-  { name: "Expenses", href: "/dashboard/expenses", icon: Receipt },
-  { name: "Help", href: "/how-to-use", icon: HelpCircle },
-  { name: "Settings", href: "/dashboard/settings", icon: Settings },
-];
+import { X } from "lucide-react";
+import { navigation } from "@/constants/navigation";
 
 export default function MobileNav() {
   const pathname = usePathname();
@@ -81,6 +63,7 @@ export default function MobileNav() {
                 width={120}
                 height={32}
                 className="h-8 w-auto dark:brightness-0 dark:invert"
+                style={{ height: "auto" }}
                 priority
               />
             </Link>
@@ -131,6 +114,22 @@ export default function MobileNav() {
               })}
             </ul>
           </nav>
+
+          <Link
+            href="https://play.google.com/store/apps/details?id=com.invoyq.app"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="transition-transform hover:scale-105"
+          >
+            <Image
+              src="/google-play.png"
+              alt="Get it on Google Play"
+              width={180}
+              height={60}
+              className="h-[60px] w-auto"
+              style={{ height: "auto" }}
+            />
+          </Link>
         </div>
       </aside>
     </>
