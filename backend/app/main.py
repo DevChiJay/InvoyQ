@@ -16,6 +16,7 @@ from app.api.v1.reminders import router as reminders_router
 from app.api.v1.products import router as products_router
 from app.api.v1.expenses import router as expenses_router
 from app.api.v1.monthly_stats import router as monthly_stats_router
+from app.api.v1.admin import router as admin_router
 from app.db.mongo import connect_to_mongo, close_mongo_connection, get_database
 from app.db.indexes import create_all_indexes
 from app.core.config import settings
@@ -169,7 +170,8 @@ app.include_router(products_router, prefix="/v1/products", tags=["products"])
 app.include_router(expenses_router, prefix="/v1/expenses", tags=["expenses"])
 app.include_router(extraction_router, prefix="/v1", tags=["extraction"]) 
 app.include_router(reminders_router, prefix="/v1", tags=["reminders"])
-app.include_router(monthly_stats_router, prefix="/v1/stats", tags=["stats"]) 
+app.include_router(monthly_stats_router, prefix="/v1/stats", tags=["stats"])
+app.include_router(admin_router, prefix="/v1/admin", tags=["admin"]) 
 
 # Serve generated files via /static for local/dev usage
 os.makedirs(settings.STORAGE_LOCAL_DIR, exist_ok=True)

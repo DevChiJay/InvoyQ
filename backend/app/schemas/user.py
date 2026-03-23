@@ -43,6 +43,7 @@ class UserRead(UserBase):
     is_active: bool
     is_verified: bool
     is_pro: bool
+    is_admin: bool = False
     subscription_status: str | None = None
     subscription_provider: str | None = None
     subscription_start_date: datetime | None = None

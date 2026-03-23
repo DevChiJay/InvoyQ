@@ -6,6 +6,7 @@ export interface User {
   is_active: boolean;
   is_verified: boolean; // NEW - email verification status
   is_pro: boolean;
+  is_admin: boolean; // Admin flag
   subscription_status: string | null;
   subscription_provider: string | null; // NEW
   subscription_start_date: string | null; // NEW
@@ -485,4 +486,75 @@ export interface MonthlyStatsParams {
 
 export interface MonthlyStatsResponse {
   stats: MonthlyStats;
+}
+
+// Admin Types
+export interface AdminUser {
+  id: string;
+  email: string;
+  full_name: string | null;
+  is_active: boolean;
+  is_verified: boolean;
+  is_pro: boolean;
+  is_admin: boolean;
+  avatar_url: string | null;
+  registration_source: string | null;
+  created_at: string;
+  updated_at: string;
+  subscription_status: string | null;
+  subscription_provider: string | null;
+  company_name: string | null;
+  phone: string | null;
+  invoice_count: number;
+}
+
+export interface AdminUserListResponse {
+  items: AdminUser[];
+  total: number;
+  limit: number;
+  offset: number;
+  has_more: boolean;
+}
+
+export interface AdminUserListParams {
+  search?: string;
+  is_active?: boolean;
+  is_pro?: boolean;
+  registration_source?: string;
+  limit?: number;
+  skip?: number;
+  sort_by?: string;
+  sort_order?: 1 | -1;
+}
+
+export interface AdminUserUpdate {
+  full_name?: string;
+  email?: string;
+  is_active?: boolean;
+  is_pro?: boolean;
+}
+
+export interface AdminUserInvoice {
+  id: string;
+  number: string;
+  status: string;
+  currency: string;
+  subtotal: string;
+  tax: string;
+  total: string;
+  issued_date: string;
+  due_date: string;
+  client_name: string | null;
+  created_at: string;
+}
+
+export interface AdminUserInvoicesResponse {
+  user_id: string;
+  user_email: string;
+  user_name: string | null;
+  items: AdminUserInvoice[];
+  total: number;
+  limit: number;
+  offset: number;
+  has_more: boolean;
 }

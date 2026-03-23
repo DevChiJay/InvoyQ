@@ -30,6 +30,11 @@ import type {
   ExpenseSummaryResponse,
   MonthlyStatsParams,
   MonthlyStatsResponse,
+  AdminUser,
+  AdminUserListResponse,
+  AdminUserListParams,
+  AdminUserUpdate,
+  AdminUserInvoicesResponse,
 } from "@/types/api";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
@@ -465,4 +470,33 @@ export const sendContactMessage = async (
   } catch (error: any) {
     throw error;
   }
+};
+
+// Admin API - requires admin authentication
+export const adminAPI = {
+  // Users
+  getUsers: (params?: AdminUserListParams) =>
+    api.get<AdminUserListResponse>("/v1/admin/users", { params }),
+
+  getUser: (userId: string) => api.get<AdminUser>(`/v1/admin/users/${userId}`),
+
+  updateUser: (userId: string, data: AdminUserUpdate) =>
+    api.patch<AdminUser>(`/v1/admin/users/${userId}`, data),
+
+  deleteUser: (userId: string) => api.delete(`/v1/admin/users/${userId}`),
+
+  // User Invoices
+  getUserInvoices: (
+    userId: string,
+    params?: {
+      status?: string;
+      limit?: number;
+      skip?: number;
+      sort_by?: string;
+      sort_order?: 1 | -1;
+    },
+  ) =>
+    api.get<AdminUserInvoicesResponse>(`/v1/admin/users/${userId}/invoices`, {
+      params,
+    }),
 };

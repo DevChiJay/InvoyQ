@@ -19,6 +19,7 @@ class UserInDB(UserOut):
     hashed_password: Optional[str] = None
     is_active: bool = True
     is_pro: bool = False
+    is_admin: bool = False
     subscription_status: Optional[str] = None
     subscription_provider: Optional[str] = None
     subscription_provider_id: Optional[str] = None
@@ -322,3 +323,104 @@ class UserRepository(BaseRepository[UserInDB]):
             True if email exists, False otherwise
         """
         return await self.exists({"email": email})
+    
+    async def list_users(
+        self,
+        search: Optional[str] = None,
+        is_active: Optional[bool] = None,
+        is_pro: Optional[bool] = None,
+        registration_source: Optional[str] = None,
+        skip: int = 0,
+        limit: int = 50,
+        sort_by: str = "created_at",
+        sort_order: int = -1
+    ) -> tuple[list[UserInDB], int]:
+        """
+        List all users with optional filters (admin only).
+        
+        Args:
+            search: Search by email or full_name
+            is_active: Filter by active status
+            is_pro: Filter by pro status
+            registration_source: Filter by registration source
+            skip: Pagination offset
+            limit: Maximum results
+            sort_by: Field to sort by
+            sort_order: 1 for asc, -1 for desc
+            
+        Returns:
+            Tuple of (users list, total count)
+        """
+        filter_query: dict = {}
+        
+        if search:
+            filter_query["$or"] = [
+                {"email": {"$regex": search, "$options": "i"}},
+                {"full_name": {"$regex": search, "$options": "i"}}
+            ]
+        
+        if is_active is not None:
+            filter_query["is_active"] = is_active
+        
+        if is_pro is not None:
+            filter_query["is_pro"] = is_pro
+        
+        if registration_source is not None:
+            filter_query["registration_source"] = registration_source
+        
+        # Get total count
+        total = await self.collection.count_documents(filter_query)
+        
+        # Get paginated results
+        users = await self.get_many(
+            filter_query,
+            skip=skip,
+            limit=limit,
+            sort=[(sort_by, sort_order)]
+        )
+        
+        return users, total
+    
+    async def admin_update_user(
+        self,
+        user_id: str,
+        is_active: Optional[bool] = None,
+        is_pro: Optional[bool] = None,
+        full_name: Optional[str] = None,
+        email: Optional[str] = None
+    ) -> Optional[UserInDB]:
+        """
+        Admin update of user fields.
+        
+        Args:
+            user_id: User ID to update
+            is_active: New active status
+            is_pro: New pro status
+            full_name: New full name
+            email: New email
+            
+        Returns:
+            Updated user or None if not found
+        """
+        update_fields = {"updated_at": datetime.utcnow()}
+        
+        if is_active is not None:
+            update_fields["is_active"] = is_active
+        if is_pro is not None:
+            update_fields["is_pro"] = is_pro
+        if full_name is not None:
+            update_fields["full_name"] = full_name
+        if email is not None:
+            update_fields["email"] = email
+        
+        result = await self.collection.find_one_and_update(
+            {"_id": self._to_object_id(user_id)},
+            {"$set": update_fields},
+            return_document=True
+        )
+        
+        if not result:
+            return None
+        
+        result["_id"] = str(result["_id"])
+        return UserInDB(**result)

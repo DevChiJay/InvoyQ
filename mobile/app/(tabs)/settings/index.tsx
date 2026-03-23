@@ -260,7 +260,7 @@ export default function SettingsScreen() {
       </Card>
 
       <Text style={[styles.version, { color: colors.textTertiary }]}>
-        Version 1.1.0
+        Version 1.1.1
       </Text>
     </ScrollView>
   );
