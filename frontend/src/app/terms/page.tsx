@@ -1,7 +1,14 @@
-import Link from 'next/link';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { FileText, ArrowLeft } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import type { Metadata } from "next";
+import Link from "next/link";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { FileText, ArrowLeft } from "lucide-react";
+import { Button } from "@/components/ui/button";
+
+export const metadata: Metadata = {
+  title: "Terms of Service",
+  description:
+    "InvoYQ Terms of Service — Read our terms and conditions for using the InvoYQ invoicing platform.",
+};
 
 export default function TermsOfService() {
   return (
@@ -35,14 +42,14 @@ export default function TermsOfService() {
 
           <Card className="shadow-lg">
             <CardContent className="p-8 space-y-8">
-              
               <section>
                 <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4">
                   1. Acceptance of Terms
                 </h2>
                 <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
-                  By accessing and using InvoYQ ("the Service"), you agree to be bound by these Terms of Service ("Terms"). 
-                  If you do not agree to these Terms, please do not use our Service.
+                  By accessing and using InvoYQ ("the Service"), you agree to be
+                  bound by these Terms of Service ("Terms"). If you do not agree
+                  to these Terms, please do not use our Service.
                 </p>
               </section>
 
@@ -51,10 +58,13 @@ export default function TermsOfService() {
                   2. Description of Service
                 </h2>
                 <p className="text-gray-600 dark:text-gray-300 leading-relaxed mb-4">
-                  InvoYQ is an AI-powered invoice extraction and management platform that helps businesses:
+                  InvoYQ is an AI-powered invoice extraction and management
+                  platform that helps businesses:
                 </p>
                 <ul className="list-disc list-inside text-gray-600 dark:text-gray-300 space-y-2 ml-4">
-                  <li>Extract data from invoice documents using AI technology</li>
+                  <li>
+                    Extract data from invoice documents using AI technology
+                  </li>
                   <li>Manage client information and relationships</li>
                   <li>Generate and organize invoices</li>
                   <li>Process payments through integrated payment providers</li>
@@ -67,13 +77,22 @@ export default function TermsOfService() {
                   3. User Accounts and Registration
                 </h2>
                 <p className="text-gray-600 dark:text-gray-300 leading-relaxed mb-4">
-                  To use certain features of our Service, you must create an account. You agree to:
+                  To use certain features of our Service, you must create an
+                  account. You agree to:
                 </p>
                 <ul className="list-disc list-inside text-gray-600 dark:text-gray-300 space-y-2 ml-4">
-                  <li>Provide accurate and complete information during registration</li>
+                  <li>
+                    Provide accurate and complete information during
+                    registration
+                  </li>
                   <li>Maintain the security of your account credentials</li>
-                  <li>Notify us immediately of any unauthorized use of your account</li>
-                  <li>Accept responsibility for all activities under your account</li>
+                  <li>
+                    Notify us immediately of any unauthorized use of your
+                    account
+                  </li>
+                  <li>
+                    Accept responsibility for all activities under your account
+                  </li>
                 </ul>
               </section>
 
@@ -86,20 +105,27 @@ export default function TermsOfService() {
                     InvoYQ offers both free and paid subscription plans:
                   </p>
                   <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
-                    <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Free Plan</h3>
+                    <h3 className="font-semibold text-gray-900 dark:text-white mb-2">
+                      Free Plan
+                    </h3>
                     <p className="text-gray-600 dark:text-gray-300 text-sm">
-                      Limited to 10 AI extractions per month with basic features.
+                      Limited to 10 AI extractions per month with basic
+                      features.
                     </p>
                   </div>
                   <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
-                    <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Pro Plan</h3>
+                    <h3 className="font-semibold text-gray-900 dark:text-white mb-2">
+                      Pro Plan
+                    </h3>
                     <p className="text-gray-600 dark:text-gray-300 text-sm">
-                      $19 USD or ₦20,000 NGN per month with unlimited extractions and advanced features.
+                      $19 USD or ₦20,000 NGN per month with unlimited
+                      extractions and advanced features.
                     </p>
                   </div>
                   <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
-                    Subscriptions are billed monthly and automatically renew unless cancelled. 
-                    You may cancel your subscription at any time through your account settings.
+                    Subscriptions are billed monthly and automatically renew
+                    unless cancelled. You may cancel your subscription at any
+                    time through your account settings.
                   </p>
                 </div>
               </section>
@@ -109,9 +135,11 @@ export default function TermsOfService() {
                   5. Data Privacy and Security
                 </h2>
                 <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
-                  We take your privacy seriously. Your uploaded documents and extracted data are processed securely and 
-                  stored in accordance with our Privacy Policy. We do not share your business data with third parties 
-                  except as necessary to provide our services or as required by law.
+                  We take your privacy seriously. Your uploaded documents and
+                  extracted data are processed securely and stored in accordance
+                  with our Privacy Policy. We do not share your business data
+                  with third parties except as necessary to provide our services
+                  or as required by law.
                 </p>
               </section>
 
@@ -136,9 +164,11 @@ export default function TermsOfService() {
                   7. Limitation of Liability
                 </h2>
                 <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
-                  InvoYQ is provided "as is" without warranties of any kind. We shall not be liable for any indirect, 
-                  incidental, special, or consequential damages arising from your use of the Service. Our total liability 
-                  shall not exceed the amount you paid for the Service in the 12 months preceding the claim.
+                  InvoYQ is provided "as is" without warranties of any kind. We
+                  shall not be liable for any indirect, incidental, special, or
+                  consequential damages arising from your use of the Service.
+                  Our total liability shall not exceed the amount you paid for
+                  the Service in the 12 months preceding the claim.
                 </p>
               </section>
 
@@ -147,8 +177,9 @@ export default function TermsOfService() {
                   8. Termination
                 </h2>
                 <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
-                  We may terminate or suspend your account at our discretion if you violate these Terms. 
-                  Upon termination, your access to the Service will cease, but these Terms will remain in effect 
+                  We may terminate or suspend your account at our discretion if
+                  you violate these Terms. Upon termination, your access to the
+                  Service will cease, but these Terms will remain in effect
                   regarding your past use of the Service.
                 </p>
               </section>
@@ -158,9 +189,10 @@ export default function TermsOfService() {
                   9. Changes to Terms
                 </h2>
                 <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
-                  We reserve the right to modify these Terms at any time. We will notify users of significant changes 
-                  via email or through the Service. Your continued use of the Service after changes constitutes 
-                  acceptance of the new Terms.
+                  We reserve the right to modify these Terms at any time. We
+                  will notify users of significant changes via email or through
+                  the Service. Your continued use of the Service after changes
+                  constitutes acceptance of the new Terms.
                 </p>
               </section>
 
@@ -169,16 +201,19 @@ export default function TermsOfService() {
                   10. Contact Information
                 </h2>
                 <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
-                  If you have questions about these Terms of Service, please contact us at support@devchi.me.
+                  If you have questions about these Terms of Service, please
+                  contact us at support@devchi.me.
                 </p>
               </section>
 
               <div className="border-t pt-6 mt-8">
                 <p className="text-sm text-gray-500 dark:text-gray-400 text-center">
-                  InvoYQ is created by <span className="font-medium text-gray-700 dark:text-gray-300">Devchi Digital</span>
+                  InvoYQ is created by{" "}
+                  <span className="font-medium text-gray-700 dark:text-gray-300">
+                    Devchi Digital
+                  </span>
                 </p>
               </div>
-
             </CardContent>
           </Card>
         </div>

@@ -1,0 +1,66 @@
+{
+  "cli": {
+    "version": ">= 16.6.2",
+    "appVersionSource": "remote"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_API_BASE_URL": "https://",
+        "EXPO_PUBLIC_FRONTEND_URL": "https://",
+        "EXPO_PUBLIC_GOOGLE_CLIENT_ID_IOS": "",
+        "EXPO_PUBLIC_GOOGLE_CLIENT_ID_ANDROID": "",
+        "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": ""
+      },
+      "channel": "development"
+    },
+    "preview": {
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk",
+        "autoIncrement": true
+      },
+      "env": {
+        "EXPO_PUBLIC_API_BASE_URL": "https://",
+        "EXPO_PUBLIC_FRONTEND_URL": "https://",
+        "EXPO_PUBLIC_GOOGLE_CLIENT_ID_IOS": "",
+        "EXPO_PUBLIC_GOOGLE_CLIENT_ID_ANDROID": "",
+        "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": ""
+      },
+      "channel": "preview"
+    },
+    "production": {
+      "distribution": "store",
+      "ios": {
+        "autoIncrement": true
+      },
+      "android": {
+        "buildType": "app-bundle",
+        "autoIncrement": true
+      },
+      "env": {
+        "EXPO_PUBLIC_API_BASE_URL": "https://",
+        "EXPO_PUBLIC_FRONTEND_URL": "https://",
+        "EXPO_PUBLIC_GOOGLE_CLIENT_ID_IOS": "",
+        "EXPO_PUBLIC_GOOGLE_CLIENT_ID_ANDROID": "",
+        "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": ""
+      },
+      "channel": "production"
+    }
+  },
+  "submit": {
+    "production": {
+      "android": {
+        "serviceAccountKeyPath": "./service-account-key.json",
+        "track": "production"
+      },
+      "ios": {
+        "appleId": "appleid@email.com",
+        "ascAppId": "123456789",
+        "appleTeamId": "A7PH4NUM3R"
+      }
+    }
+  }
+}

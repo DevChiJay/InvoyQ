@@ -31,11 +31,13 @@ export const metadata: Metadata = {
     template: "%s | InvoYQ",
   },
   description:
-    "Create professional invoices, track payments, manage clients, products, and expenses, and get paid faster with InvoYQ.",
+    "All-in-one invoicing dashboard to create, manage, and track invoices, clients, products, stock, and expenses—built for speed, clarity, and getting paid faster.",
   keywords: [
+    "invoice",
+    "sales tracker",
     "invoice creator",
-    "invoice management",
-    "invoice generator",
+    "stock management",
+    "inventory",
     "business management",
     "invoicing software",
     "client management",
@@ -61,7 +63,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "InvoYQ - All-in-One Invoicing Platform",
     description:
-      "Create professional invoices, track payments, manage clients, products, and expenses, and get paid faster with InvoYQ.",
+      "All-in-one invoicing dashboard to create, manage, and track invoices, clients, products, stock, and expenses—built for speed, clarity, and getting paid faster.",
     url: "/",
     siteName: "InvoYQ",
     locale: "en_US",
