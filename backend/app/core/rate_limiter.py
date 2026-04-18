@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
-from typing import Dict, List
-from fastapi import HTTPException, Request
+from typing import Callable, Dict, List
+from fastapi import Depends, HTTPException, Request
 import threading
 
 
@@ -65,6 +65,29 @@ class InMemoryRateLimiter:
                 detail=f"Rate limit exceeded. Maximum {self.max_requests} requests per {self.window_duration.total_seconds() / 60} minutes."
             )
 
+    def dependency(self) -> Callable:
+        """Return a FastAPI dependency that enforces this rate limit."""
+        limiter = self
 
-# Global rate limiter instance for extraction endpoint
+        async def _rate_limit_dep(request: Request):
+            limiter.check_rate_limit(request)
+
+        return _rate_limit_dep
+
+
+# --- Global rate limiter instances ---
+
+# Auth endpoints (login, register, Google auth): 5 req/min per IP
+auth_rate_limiter = InMemoryRateLimiter(max_requests=5, window_minutes=1)
+
+# Sensitive auth actions (password reset, resend verification): 3 req/min per IP
+password_reset_rate_limiter = InMemoryRateLimiter(max_requests=3, window_minutes=1)
+
+# Email-sending endpoints (send invoice, send reminder): 5 req/min per IP
+email_send_rate_limiter = InMemoryRateLimiter(max_requests=5, window_minutes=1)
+
+# File upload endpoints (avatar, logo): 10 req/min per IP
+upload_rate_limiter = InMemoryRateLimiter(max_requests=10, window_minutes=1)
+
+# Extraction endpoint: 10 req/min per IP
 extraction_rate_limiter = InMemoryRateLimiter(max_requests=10, window_minutes=1)

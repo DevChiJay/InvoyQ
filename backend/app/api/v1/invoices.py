@@ -18,6 +18,7 @@ from app.schemas.invoice_mongo import (
 )
 from app.services.email import email_service
 from app.utils.transactions import transaction_session
+from app.core.rate_limiter import email_send_rate_limiter
 from pydantic import BaseModel
 
 
@@ -403,7 +404,7 @@ class SendInvoiceRequest(BaseModel):
     email: Optional[str] = None
 
 
-@router.post("/invoices/{invoice_id}/send")
+@router.post("/invoices/{invoice_id}/send", dependencies=[Depends(email_send_rate_limiter.dependency())])
 async def send_invoice_email(
     invoice_id: str,
     request: SendInvoiceRequest,

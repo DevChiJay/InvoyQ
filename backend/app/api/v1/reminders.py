@@ -5,11 +5,12 @@ from app.db.mongo import get_database
 from app.dependencies.auth import get_current_user
 from app.repositories.user_repository import UserInDB
 from app.repositories.invoice_repository import InvoiceRepository
+from app.core.rate_limiter import email_send_rate_limiter
 
 router = APIRouter()
 
 
-@router.post("/send-reminder")
+@router.post("/send-reminder", dependencies=[Depends(email_send_rate_limiter.dependency())])
 async def send_reminder(
     invoice_id: str,
     db: AsyncIOMotorDatabase = Depends(get_database),

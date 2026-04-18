@@ -15,6 +15,7 @@ from app.schemas.auth import Token, TokenRefresh, AccessToken, GoogleAuthRequest
 from app.schemas.user import UserCreate, UserOut, EmailVerificationResponse, ResendVerificationRequest, PasswordResetRequest
 from app.core.security import verify_password, get_password_hash
 from app.services.email import email_service
+from app.core.rate_limiter import auth_rate_limiter, password_reset_rate_limiter
 
 router = APIRouter()
 
@@ -60,7 +61,7 @@ async def send_verification_email(user_id: str, email: str, full_name: str, db: 
     )
 
 
-@router.post("/register", response_model=UserOut, status_code=status.HTTP_201_CREATED)
+@router.post("/register", response_model=UserOut, status_code=status.HTTP_201_CREATED, dependencies=[Depends(auth_rate_limiter.dependency())])
 async def register(user_in: UserCreate, db: AsyncIOMotorDatabase = Depends(get_database)):
     user_repo = UserRepository(db)
     
@@ -93,7 +94,7 @@ async def register(user_in: UserCreate, db: AsyncIOMotorDatabase = Depends(get_d
     return user
 
 
-@router.post("/login", response_model=Token)
+@router.post("/login", response_model=Token, dependencies=[Depends(auth_rate_limiter.dependency())])
 async def login(
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: AsyncIOMotorDatabase = Depends(get_database),
@@ -154,7 +155,7 @@ async def verify_email(token: str, db: AsyncIOMotorDatabase = Depends(get_databa
     }
 
 
-@router.post("/resend-verification", response_model=dict)
+@router.post("/resend-verification", response_model=dict, dependencies=[Depends(password_reset_rate_limiter.dependency())])
 async def resend_verification(request: ResendVerificationRequest, db: AsyncIOMotorDatabase = Depends(get_database)):
     """Resend verification email to user"""
     user_repo = UserRepository(db)
@@ -303,7 +304,7 @@ async def google_callback(code: str, db: AsyncIOMotorDatabase = Depends(get_data
         raise HTTPException(status_code=500, detail=f"OAuth error: {str(e)}")
 
 
-@router.post("/google/mobile", response_model=Token)
+@router.post("/google/mobile", response_model=Token, dependencies=[Depends(auth_rate_limiter.dependency())])
 async def google_mobile_auth(
     auth_request: GoogleAuthRequest,
     db: AsyncIOMotorDatabase = Depends(get_database)
@@ -393,7 +394,7 @@ async def google_mobile_auth(
         raise HTTPException(status_code=500, detail=f"Authentication error: {str(e)}")
 
 
-@router.post("/refresh", response_model=Token)
+@router.post("/refresh", response_model=Token, dependencies=[Depends(auth_rate_limiter.dependency())])
 async def refresh_token(
     token_data: TokenRefresh,
     db: AsyncIOMotorDatabase = Depends(get_database),
@@ -476,7 +477,7 @@ async def logout(
 
 # ==================== Password Reset ====================
 
-@router.post("/request-password-reset")
+@router.post("/request-password-reset", dependencies=[Depends(password_reset_rate_limiter.dependency())])
 async def request_password_reset(
     request: ResendVerificationRequest,
     db: AsyncIOMotorDatabase = Depends(get_database)

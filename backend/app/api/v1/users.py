@@ -7,6 +7,7 @@ from app.repositories.user_repository import UserRepository, UserInDB
 from app.db.mongo import get_database
 from app.services.storage import save_bytes
 from app.core.security import verify_password, get_password_hash
+from app.core.rate_limiter import upload_rate_limiter, password_reset_rate_limiter
 import uuid
 from pathlib import Path
 
@@ -41,7 +42,7 @@ async def update_me(
     user_dict['has_password'] = updated_user.hashed_password is not None
     return UserRead(**user_dict)
 
-@router.post("/upload-avatar", response_model=dict)
+@router.post("/upload-avatar", response_model=dict, dependencies=[Depends(upload_rate_limiter.dependency())])
 async def upload_avatar(
     file: UploadFile = File(...),
     current_user: UserInDB = Depends(get_current_user),
@@ -75,7 +76,7 @@ async def upload_avatar(
     
     return {"url": public_url, "message": "Avatar uploaded successfully"}
 
-@router.post("/upload-logo", response_model=dict)
+@router.post("/upload-logo", response_model=dict, dependencies=[Depends(upload_rate_limiter.dependency())])
 async def upload_company_logo(
     file: UploadFile = File(...),
     current_user: UserInDB = Depends(get_current_user),
@@ -109,7 +110,7 @@ async def upload_company_logo(
     
     return {"url": public_url, "message": "Company logo uploaded successfully"}
 
-@router.post("/change-password", response_model=dict)
+@router.post("/change-password", response_model=dict, dependencies=[Depends(password_reset_rate_limiter.dependency())])
 async def change_password(
     password_data: ChangePassword,
     current_user: UserInDB = Depends(get_current_user),
@@ -139,7 +140,7 @@ async def change_password(
     
     return {"message": "Password changed successfully"}
 
-@router.post("/set-password", response_model=dict)
+@router.post("/set-password", response_model=dict, dependencies=[Depends(password_reset_rate_limiter.dependency())])
 async def set_password(
     password_data: SetPassword,
     current_user: UserInDB = Depends(get_current_user),

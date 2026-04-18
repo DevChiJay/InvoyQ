@@ -16,7 +16,7 @@ def get_extractor(provider: Optional[str] = None):
     return OpenAIExtractor(api_key=settings.OPENAI_API_KEY)
 
 
-@router.post("/extract-job-details")
+@router.post("/extract-job-details", dependencies=[Depends(extraction_rate_limiter.dependency())])
 async def extract_job_details(
     request: Request,
     db: AsyncIOMotorDatabase = Depends(get_database),
@@ -24,8 +24,6 @@ async def extract_job_details(
     text: Optional[str] = Form(default=None),
     file: Optional[UploadFile] = File(default=None),
 ):
-    # Apply rate limiting
-    extraction_rate_limiter.check_rate_limit(request)
     # Acquire inputs; we send image directly to GPT-Vision (no local OCR)
     raw_text = (text or "").strip()
     file_bytes = None
