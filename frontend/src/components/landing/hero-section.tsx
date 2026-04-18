@@ -37,7 +37,7 @@ export default function HeroSection() {
           </p>
 
           {/* CTA Buttons */}
-          <div className="flex justify-center items-center gap-6 mb-16">
+          <div className="flex justify-center items-center gap-6 mb-4">
             <Button
               size="lg"
               asChild
@@ -48,7 +48,9 @@ export default function HeroSection() {
                 <ArrowRight className="h-5 w-5" />
               </Link>
             </Button>
+          </div>
 
+          <div className="flex justify-center items-center gap-4 mb-16">
             {/* Google Play Badge */}
             <Link
               href="https://play.google.com/store/apps/details?id=com.invoyq.app"
@@ -61,8 +63,21 @@ export default function HeroSection() {
                 alt="Get it on Google Play"
                 width={180}
                 height={60}
-                className="h-14 w-auto"
-                style={{ height: "auto" }}
+                className="h-[90px] w-auto"
+              />
+            </Link>
+            <Link
+              href="https://apps.apple.com/app/invoyq/id6761304674"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="transition-transform hover:scale-105"
+            >
+              <Image
+                src="/appstore.png"
+                alt="Download on the App Store"
+                width={180}
+                height={60}
+                className="h-[60px] w-auto"
               />
             </Link>
           </div>

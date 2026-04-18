@@ -127,7 +127,20 @@ export default function MobileNav() {
               width={180}
               height={60}
               className="h-[60px] w-auto"
-              style={{ height: "auto" }}
+            />
+          </Link>
+          <Link
+            href="https://apps.apple.com/app/invoyq/id6761304674"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="transition-transform hover:scale-105"
+          >
+            <Image
+              src="/appstore.png"
+              alt="Download on the App Store"
+              width={180}
+              height={60}
+              className="h-[40px] w-auto ml-3"
             />
           </Link>
         </div>

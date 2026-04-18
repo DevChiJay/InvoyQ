@@ -87,8 +87,21 @@ export default function Footer() {
                 alt="Get it on Google Play"
                 width={180}
                 height={60}
-                className="h-12 w-auto"
-                style={{ height: "auto" }}
+                className="h-[90px] w-auto"
+              />
+            </Link>
+            <Link
+              href="https://apps.apple.com/app/invoyq/id6761304674"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-block transition-transform hover:scale-105 ml-4"
+            >
+              <Image
+                src="/appstore.png"
+                alt="Download on the App Store"
+                width={180}
+                height={60}
+                className="h-[60px] w-auto"
               />
             </Link>
           </div>

@@ -63,6 +63,20 @@ export default function Header() {
                 className="h-[60px] w-auto"
               />
             </Link>
+            <Link
+              href="https://apps.apple.com/app/invoyq/id6761304674"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hidden sm:block transition-transform hover:scale-105"
+            >
+              <Image
+                src="/appstore.png"
+                alt="Download on the App Store"
+                width={180}
+                height={60}
+                className="h-[40px] w-auto"
+              />
+            </Link>
 
             <div className="flex items-center gap-2">
               <div className="h-9 w-9 rounded-full bg-gradient-to-br from-[#6366F1] to-[#14B8A6] flex items-center justify-center text-white font-semibold text-sm">
