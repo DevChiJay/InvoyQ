@@ -86,11 +86,17 @@ api.interceptors.response.use(
 
     // Handle 401 errors (unauthorized) - attempt token refresh
     if (error.response?.status === 401 && !originalRequest._retry) {
-      // Don't retry refresh endpoint itself
+      // Don't retry refresh endpoint itself - clear tokens and redirect
       if (originalRequest.url?.includes("/auth/refresh")) {
         localStorage.removeItem("access_token");
         localStorage.removeItem("refresh_token");
         window.location.href = "/login";
+        return Promise.reject(error);
+      }
+
+      // Don't attempt refresh for other auth endpoints (login, register, etc.)
+      // Let the error propagate so the form can display it to the user
+      if (originalRequest.url?.includes("/v1/auth/")) {
         return Promise.reject(error);
       }
 
