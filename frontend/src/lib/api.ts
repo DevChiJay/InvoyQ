@@ -325,6 +325,20 @@ export const extractionAPI = {
     }),
 };
 
+export const freeExtractionAPI = {
+  extractInvoice: (text: string) => {
+    const formData = new FormData();
+    formData.append("text", text);
+    return api.post<BackendExtractionData>(
+      "/v1/free-extract-invoice",
+      formData,
+      {
+        headers: { "Content-Type": "multipart/form-data" },
+      },
+    );
+  },
+};
+
 export const paymentsAPI = {
   createSubscription: (data: {
     provider: "paystack" | "stripe";

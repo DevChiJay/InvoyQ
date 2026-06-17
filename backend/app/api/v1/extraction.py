@@ -6,7 +6,7 @@ from app.db.mongo import get_database
 from app.repositories.extraction_repository import ExtractionRepository
 from app.core.config import settings
 from app.services.openai_extractor import OpenAIExtractor
-from app.core.rate_limiter import extraction_rate_limiter
+from app.core.rate_limiter import extraction_rate_limiter, free_extract_rate_limiter
 
 router = APIRouter()
 
@@ -55,3 +55,28 @@ async def extract_job_details(
     )
 
     return {"extraction_id": extraction.id, "parsed": parsed}
+
+
+@router.post("/free-extract-invoice", dependencies=[Depends(free_extract_rate_limiter.dependency())])
+async def free_extract_invoice(
+    request: Request,
+    text: str = Form(...),
+):
+    """
+    Public endpoint — no authentication required.
+    Accepts plain text describing a transaction and returns structured invoice data.
+    Rate-limited to 3 requests per IP per 24 hours.
+    """
+    raw_text = text.strip()
+    if not raw_text:
+        raise HTTPException(status_code=400, detail="text field must not be empty.")
+
+    extractor = get_extractor()
+    try:
+        parsed: Dict[str, Any] = await extractor._call_openai_text(raw_text)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Extraction failed: {e}")
+
+    return parsed

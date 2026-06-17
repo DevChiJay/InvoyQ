@@ -91,3 +91,6 @@ upload_rate_limiter = InMemoryRateLimiter(max_requests=10, window_minutes=1)
 
 # Extraction endpoint: 10 req/min per IP
 extraction_rate_limiter = InMemoryRateLimiter(max_requests=10, window_minutes=1)
+
+# Free public extraction endpoint: 3 req/day per IP (1440 minutes = 24 hours)
+free_extract_rate_limiter = InMemoryRateLimiter(max_requests=3, window_minutes=1440)
