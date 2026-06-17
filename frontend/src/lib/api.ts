@@ -14,6 +14,7 @@ import type {
   InvoiceStatsResponse,
   InvoiceStatsParams,
   BackendExtractionResponse,
+  BackendExtractionData,
   SubscriptionStatus,
   Payment,
   AuthResponse,

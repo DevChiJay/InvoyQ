@@ -244,8 +244,7 @@ export default function InvoiceGeneratorPage() {
                     : "text-[#14B8A6]"
               }`}
             >
-              {remaining} of {MAX_FREE_USES} free generation
-              {MAX_FREE_USES !== 1 ? "s" : ""} left today
+              {remaining} of {MAX_FREE_USES} free generations left today
             </span>
           </p>
         </div>
