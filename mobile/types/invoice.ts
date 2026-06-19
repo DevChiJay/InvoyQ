@@ -70,6 +70,14 @@ export interface InvoiceListParams {
   sort_order?: 1 | -1;
 }
 
+export interface InvoiceListResponse {
+  items: InvoiceOut[];
+  total: number;
+  limit: number;
+  offset: number;
+  has_more: boolean;
+}
+
 export interface InvoiceStats {
   total_revenue: string;
   paid_amount: string;

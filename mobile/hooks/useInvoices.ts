@@ -1,4 +1,9 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  useQuery,
+  useInfiniteQuery,
+  useMutation,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { invoicesApi } from "@/services/api/invoices";
 import {
   InvoiceCreate,
@@ -8,9 +13,13 @@ import {
 } from "@/types/invoice";
 import { PRODUCT_KEYS } from "./useProducts";
 
+const PAGE_SIZE = 50;
+
 export const INVOICE_KEYS = {
   all: ["invoices"] as const,
   list: (params: InvoiceListParams) => ["invoices", "list", params] as const,
+  infinite: (params: Omit<InvoiceListParams, "skip" | "limit">) =>
+    ["invoices", "infinite", params] as const,
   detail: (id: string) => ["invoices", "detail", id] as const,
   stats: (params: InvoiceStatsParams) => ["invoices", "stats", params] as const,
 };
@@ -19,6 +28,20 @@ export function useInvoices(params?: InvoiceListParams) {
   return useQuery({
     queryKey: INVOICE_KEYS.list(params || {}),
     queryFn: () => invoicesApi.list(params),
+    staleTime: 2 * 60 * 1000,
+  });
+}
+
+export function useInfiniteInvoices(
+  params?: Omit<InvoiceListParams, "skip" | "limit">,
+) {
+  return useInfiniteQuery({
+    queryKey: INVOICE_KEYS.infinite(params || {}),
+    queryFn: ({ pageParam = 0 }) =>
+      invoicesApi.list({ ...params, limit: PAGE_SIZE, skip: pageParam }),
+    getNextPageParam: (lastPage) =>
+      lastPage.has_more ? lastPage.offset + lastPage.items.length : undefined,
+    initialPageParam: 0,
     staleTime: 2 * 60 * 1000,
   });
 }

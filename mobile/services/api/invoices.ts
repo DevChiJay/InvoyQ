@@ -4,12 +4,15 @@ import {
   InvoiceCreate,
   InvoiceUpdate,
   InvoiceListParams,
+  InvoiceListResponse,
   InvoiceStatsResponse,
   InvoiceStatsParams,
 } from "@/types/invoice";
 
 export const invoicesApi = {
-  list: async (params: InvoiceListParams = {}): Promise<InvoiceOut[]> => {
+  list: async (
+    params: InvoiceListParams = {},
+  ): Promise<InvoiceListResponse> => {
     const response = await apiClient.get("/invoices", { params });
     return response.data;
   },

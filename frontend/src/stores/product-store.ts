@@ -1,13 +1,13 @@
-import { create } from 'zustand';
-import { productsAPI } from '@/lib/api';
-import { Product, PaginatedResponse } from '@/types/api';
+import { create } from "zustand";
+import { productsAPI } from "@/lib/api";
+import { Product, PaginatedResponse } from "@/types/api";
 
 interface ProductFilters {
   search?: string;
   is_active?: boolean;
   skip?: number;
   limit?: number;
-  sort_by?: 'name' | 'sku' | 'unit_price' | 'quantity_available' | 'created_at';
+  sort_by?: "name" | "sku" | "unit_price" | "quantity_available" | "created_at";
   sort_order?: 1 | -1;
 }
 
@@ -34,16 +34,19 @@ interface ProductStore {
     quantity_available?: number;
     is_active?: boolean;
   }) => Promise<Product>;
-  updateProduct: (id: string, data: Partial<{
-    sku: string;
-    name: string;
-    description?: string;
-    unit_price: string;
-    tax_rate?: string;
-    currency?: string;
-    quantity_available?: number;
-    is_active?: boolean;
-  }>) => Promise<Product>;
+  updateProduct: (
+    id: string,
+    data: Partial<{
+      sku: string;
+      name: string;
+      description?: string;
+      unit_price: string;
+      tax_rate?: string;
+      currency?: string;
+      quantity_available?: number;
+      is_active?: boolean;
+    }>,
+  ) => Promise<Product>;
   deleteProduct: (id: string) => Promise<void>;
   adjustQuantity: (id: string, adjustment: number) => Promise<Product>;
   setFilters: (filters: ProductFilters) => void;
@@ -62,7 +65,7 @@ export const useProductStore = create<ProductStore>((set, get) => ({
   filters: {
     skip: 0,
     limit: 20,
-    sort_by: 'created_at',
+    sort_by: "created_at",
     sort_order: -1,
   },
 
@@ -72,17 +75,21 @@ export const useProductStore = create<ProductStore>((set, get) => ({
     try {
       const mergedFilters = { ...get().filters, ...filters };
       const response = await productsAPI.getAll(mergedFilters);
-      
-      set({
-        products: response.data.items,
+      const isLoadingMore = (mergedFilters.skip || 0) > 0;
+
+      set((state) => ({
+        products: isLoadingMore
+          ? [...state.products, ...response.data.items]
+          : response.data.items,
         total: response.data.total,
         hasMore: response.data.has_more,
         filters: mergedFilters,
         isLoading: false,
-      });
+      }));
     } catch (error: unknown) {
       set({
-        error: (error as any).response?.data?.detail || 'Failed to fetch products',
+        error:
+          (error as any).response?.data?.detail || "Failed to fetch products",
         isLoading: false,
       });
     }
@@ -96,7 +103,8 @@ export const useProductStore = create<ProductStore>((set, get) => ({
       set({ currentProduct: response.data, isLoading: false });
     } catch (error: unknown) {
       set({
-        error: (error as any).response?.data?.detail || 'Failed to fetch product',
+        error:
+          (error as any).response?.data?.detail || "Failed to fetch product",
         isLoading: false,
       });
     }
@@ -108,17 +116,18 @@ export const useProductStore = create<ProductStore>((set, get) => ({
     try {
       const response = await productsAPI.create(data);
       const product = response.data;
-      
+
       // Optimistically add to list
       set((state) => ({
         products: [product, ...state.products],
         total: state.total + 1,
         isLoading: false,
       }));
-      
+
       return product;
     } catch (error: unknown) {
-      const errorMessage = (error as any).response?.data?.detail || 'Failed to create product';
+      const errorMessage =
+        (error as any).response?.data?.detail || "Failed to create product";
       set({ error: errorMessage, isLoading: false });
       throw new Error(errorMessage);
     }
@@ -130,17 +139,19 @@ export const useProductStore = create<ProductStore>((set, get) => ({
     try {
       const response = await productsAPI.update(id, data);
       const product = response.data;
-      
+
       // Update in list
       set((state) => ({
         products: state.products.map((p) => (p.id === id ? product : p)),
-        currentProduct: state.currentProduct?.id === id ? product : state.currentProduct,
+        currentProduct:
+          state.currentProduct?.id === id ? product : state.currentProduct,
         isLoading: false,
       }));
-      
+
       return product;
     } catch (error: unknown) {
-      const errorMessage = (error as any).response?.data?.detail || 'Failed to update product';
+      const errorMessage =
+        (error as any).response?.data?.detail || "Failed to update product";
       set({ error: errorMessage, isLoading: false });
       throw new Error(errorMessage);
     }
@@ -151,17 +162,18 @@ export const useProductStore = create<ProductStore>((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       await productsAPI.delete(id);
-      
+
       // Mark as inactive in the list
       set((state) => ({
         products: state.products.map((p) =>
-          p.id === id ? { ...p, is_active: false } : p
+          p.id === id ? { ...p, is_active: false } : p,
         ),
         isLoading: false,
       }));
     } catch (error: unknown) {
       set({
-        error: (error as any).response?.data?.detail || 'Failed to delete product',
+        error:
+          (error as any).response?.data?.detail || "Failed to delete product",
         isLoading: false,
       });
       throw error;
@@ -174,17 +186,19 @@ export const useProductStore = create<ProductStore>((set, get) => ({
     try {
       const response = await productsAPI.adjustQuantity(id, { adjustment });
       const product = response.data;
-      
+
       // Update in list
       set((state) => ({
         products: state.products.map((p) => (p.id === id ? product : p)),
-        currentProduct: state.currentProduct?.id === id ? product : state.currentProduct,
+        currentProduct:
+          state.currentProduct?.id === id ? product : state.currentProduct,
         isLoading: false,
       }));
-      
+
       return product;
     } catch (error: unknown) {
-      const errorMessage = (error as any).response?.data?.detail || 'Failed to adjust quantity';
+      const errorMessage =
+        (error as any).response?.data?.detail || "Failed to adjust quantity";
       set({ error: errorMessage, isLoading: false });
       throw new Error(errorMessage);
     }
@@ -210,7 +224,7 @@ export const useProductStore = create<ProductStore>((set, get) => ({
       filters: {
         skip: 0,
         limit: 20,
-        sort_by: 'created_at',
+        sort_by: "created_at",
         sort_order: -1,
       },
     }),

@@ -177,7 +177,7 @@ export interface InvoiceListParams {
   status?: "draft" | "sent" | "paid" | "overdue" | "cancelled";
   client_id?: string; // MongoDB ObjectId
   limit?: number;
-  offset?: number;
+  skip?: number;
   due_from?: string;
   due_to?: string;
   search?: string; // Search by invoice number or client name
@@ -189,6 +189,14 @@ export interface InvoiceListParams {
     | "status"
     | "created_at";
   sort_order?: 1 | -1; // 1=ascending, -1=descending
+}
+
+export interface InvoiceListResponse {
+  items: Invoice[];
+  total: number;
+  limit: number;
+  offset: number;
+  has_more: boolean;
 }
 
 // Invoice Stats Types
@@ -231,6 +239,10 @@ export interface BackendExtractionData {
   client_name?: string | null;
   client_email?: string | null;
   client_address?: string | null;
+  sender_name?: string | null;
+  sender_email?: string | null;
+  sender_address?: string | null;
+  status?: string | null;
   confidence?: number;
 }
 

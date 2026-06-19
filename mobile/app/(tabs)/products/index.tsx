@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   RefreshControl,
+  ActivityIndicator,
 } from "react-native";
 import { Stack, router } from "expo-router";
 import { useProducts } from "@/hooks/useProducts";
@@ -48,7 +49,11 @@ export default function ProductsScreen() {
     hasNextPage,
     isFetchingNextPage,
     refetch,
-  } = useProducts();
+  } = useProducts({
+    search: debouncedSearch || undefined,
+    is_active:
+      filter === "active" ? true : filter === "inactive" ? false : undefined,
+  });
   const [refreshing, setRefreshing] = useState(false);
 
   // Restore filter state
@@ -81,45 +86,27 @@ export default function ProductsScreen() {
 
   const products = data?.pages.flatMap((page) => page.items) ?? [];
 
-  // Filter products based on search query and filter
+  // Only apply client-side stock-level filtering; search and active/inactive are server-side
   const filteredProducts = useMemo(() => {
-    let filtered = products;
-
-    // Apply search
-    if (debouncedSearch) {
-      const query = debouncedSearch.toLowerCase();
-      filtered = filtered.filter(
-        (product) =>
-          product.name.toLowerCase().includes(query) ||
-          product.sku.toLowerCase().includes(query) ||
-          product.description?.toLowerCase().includes(query),
-      );
+    if (filter === "all" || filter === "active" || filter === "inactive") {
+      return products;
     }
 
-    // Apply filter
-    if (filter !== "all") {
-      filtered = filtered.filter((product) => {
-        switch (filter) {
-          case "in-stock":
-            return product.quantity_available > 10;
-          case "low-stock":
-            return (
-              product.quantity_available > 0 && product.quantity_available <= 10
-            );
-          case "out-of-stock":
-            return product.quantity_available === 0;
-          case "active":
-            return product.is_active;
-          case "inactive":
-            return !product.is_active;
-          default:
-            return true;
-        }
-      });
-    }
-
-    return filtered;
-  }, [products, debouncedSearch, filter]);
+    return products.filter((product) => {
+      switch (filter) {
+        case "in-stock":
+          return product.quantity_available > 10;
+        case "low-stock":
+          return (
+            product.quantity_available > 0 && product.quantity_available <= 10
+          );
+        case "out-of-stock":
+          return product.quantity_available === 0;
+        default:
+          return true;
+      }
+    });
+  }, [products, filter]);
 
   const getStockCount = (type: FilterType) => {
     if (type === "all") return products.length;

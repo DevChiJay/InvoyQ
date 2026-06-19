@@ -1,24 +1,37 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useInvoices, useDeleteInvoice } from '@/lib/hooks/use-invoices';
-import { InvoiceList } from '@/components/invoices/invoice-list';
-import { Button } from '@/components/ui/button';
-import { ConfirmDialog } from '@/components/ui/confirm-dialog';
-import { Plus } from 'lucide-react';
-import Link from 'next/link';
-import { toast } from 'sonner';
-import type { InvoiceListParams } from '@/types/api';
+import { useState, useCallback } from "react";
+import {
+  useInfiniteInvoices,
+  useDeleteInvoice,
+} from "@/lib/hooks/use-invoices";
+import { InvoiceList } from "@/components/invoices/invoice-list";
+import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { Plus } from "lucide-react";
+import Link from "next/link";
+import { toast } from "sonner";
+import type { InvoiceListParams } from "@/types/api";
 
 export default function InvoicesPage() {
-  const [filters, setFilters] = useState<InvoiceListParams>({
-    sort_by: 'created_at',
+  const [filters, setFilters] = useState<
+    Omit<InvoiceListParams, "skip" | "limit">
+  >({
+    sort_by: "created_at",
     sort_order: -1,
   });
-  const { data: invoices, isLoading } = useInvoices(filters);
+
+  const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } =
+    useInfiniteInvoices(filters);
+
+  const invoices = data?.pages.flatMap((p) => p.items) ?? [];
+
   const deleteInvoice = useDeleteInvoice();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [invoiceToDelete, setInvoiceToDelete] = useState<{ id: string; number: string } | null>(null);
+  const [invoiceToDelete, setInvoiceToDelete] = useState<{
+    id: string;
+    number: string;
+  } | null>(null);
 
   const handleFilterChange = (newFilters: Partial<InvoiceListParams>) => {
     setFilters((prev) => ({ ...prev, ...newFilters }));
@@ -40,12 +53,18 @@ export default function InvoicesPage() {
         });
       }),
       {
-        loading: 'Deleting invoice...',
-        success: 'Invoice deleted successfully',
-        error: 'Failed to delete invoice',
-      }
+        loading: "Deleting invoice...",
+        success: "Invoice deleted successfully",
+        error: "Failed to delete invoice",
+      },
     );
   };
+
+  const handleLoadMore = useCallback(() => {
+    if (hasNextPage && !isFetchingNextPage) {
+      fetchNextPage();
+    }
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   return (
     <div className="space-y-6">
@@ -65,11 +84,14 @@ export default function InvoicesPage() {
       </div>
 
       <InvoiceList
-        invoices={invoices || []}
+        invoices={invoices}
         isLoading={isLoading}
         onDelete={handleDeleteClick}
         filters={filters}
         onFilterChange={handleFilterChange}
+        hasMore={!!hasNextPage}
+        isLoadingMore={isFetchingNextPage}
+        onLoadMore={handleLoadMore}
       />
 
       {/* Delete Confirmation Dialog */}

@@ -11,6 +11,7 @@ import type {
   InvoiceCreate,
   InvoiceUpdate,
   InvoiceListParams,
+  InvoiceListResponse,
   InvoiceStatsResponse,
   InvoiceStatsParams,
   BackendExtractionResponse,
@@ -262,8 +263,8 @@ export const usersAPI = {
 };
 
 export const clientsAPI = {
-  getAll: (limit?: number, offset?: number) =>
-    api.get<Client[]>("/v1/clients", { params: { limit, offset } }),
+  getAll: (limit?: number, skip?: number, search?: string) =>
+    api.get<Client[]>("/v1/clients", { params: { limit, skip, search } }),
 
   getById: (id: string) => api.get<Client>(`/v1/clients/${id}`),
 
@@ -279,7 +280,7 @@ export const clientsAPI = {
 
 export const invoicesAPI = {
   getAll: (params?: InvoiceListParams) =>
-    api.get<Invoice[]>("/v1/invoices", { params }),
+    api.get<InvoiceListResponse>("/v1/invoices", { params }),
 
   getById: (id: string) => api.get<Invoice>(`/v1/invoices/${id}`),
 

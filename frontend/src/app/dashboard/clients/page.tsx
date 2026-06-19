@@ -1,20 +1,31 @@
-'use client';
+"use client";
 
-import { useClients, useDeleteClient } from '@/lib/hooks/use-clients';
-import { ClientList } from '@/components/clients/client-list';
-import { Button } from '@/components/ui/button';
-import { ConfirmDialog } from '@/components/ui/confirm-dialog';
-import { UserPlus } from 'lucide-react';
-import { useState } from 'react';
-import { ClientFormModal } from '@/components/clients/client-form-modal';
-import { toast } from 'sonner';
+import { useInfiniteClients, useDeleteClient } from "@/lib/hooks/use-clients";
+import { ClientList } from "@/components/clients/client-list";
+import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { UserPlus } from "lucide-react";
+import { useState, useCallback } from "react";
+import { ClientFormModal } from "@/components/clients/client-form-modal";
+import { toast } from "sonner";
+import { useDebounce } from "@/lib/hooks/use-debounce";
 
 export default function ClientsPage() {
-  const { data: clients, isLoading } = useClients();
+  const [searchTerm, setSearchTerm] = useState("");
+  const debouncedSearch = useDebounce(searchTerm, 300);
+
+  const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } =
+    useInfiniteClients(debouncedSearch || undefined);
+
+  const clients = data?.pages.flat() ?? [];
+
   const deleteClient = useDeleteClient();
   const [isClientModalOpen, setIsClientModalOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [clientToDelete, setClientToDelete] = useState<{ id: string; name: string } | null>(null);
+  const [clientToDelete, setClientToDelete] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
 
   const handleDeleteClick = (id: string, name: string) => {
     setClientToDelete({ id, name });
@@ -32,12 +43,18 @@ export default function ClientsPage() {
         });
       }),
       {
-        loading: 'Deleting client...',
-        success: 'Client deleted successfully',
-        error: 'Failed to delete client',
-      }
+        loading: "Deleting client...",
+        success: "Client deleted successfully",
+        error: "Failed to delete client",
+      },
     );
   };
+
+  const handleLoadMore = useCallback(() => {
+    if (hasNextPage && !isFetchingNextPage) {
+      fetchNextPage();
+    }
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   return (
     <div className="space-y-6">
@@ -45,7 +62,7 @@ export default function ClientsPage() {
         open={isClientModalOpen}
         onOpenChange={setIsClientModalOpen}
       />
-      
+
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-3xl font-bold tracking-tight">Clients</h2>
@@ -60,9 +77,14 @@ export default function ClientsPage() {
       </div>
 
       <ClientList
-        clients={clients || []}
+        clients={clients}
         isLoading={isLoading}
         onDelete={handleDeleteClick}
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
+        hasMore={!!hasNextPage}
+        isLoadingMore={isFetchingNextPage}
+        onLoadMore={handleLoadMore}
       />
 
       {/* Delete Confirmation Dialog */}

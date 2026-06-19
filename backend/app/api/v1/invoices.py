@@ -14,7 +14,7 @@ from app.repositories.invoice_repository import InvoiceRepository
 from app.repositories.product_repository import ProductRepository
 from app.schemas.invoice_mongo import (
     InvoiceCreate, InvoiceOut, InvoiceUpdate, UserBusinessInfo,
-    InvoiceStatsResponse
+    InvoiceStatsResponse, InvoiceListResponse
 )
 from app.services.email import email_service
 from app.utils.transactions import transaction_session
@@ -41,9 +41,9 @@ def _create_user_business_info(user: UserInDB) -> UserBusinessInfo:
     )
 
 
-@router.get("/invoices", response_model=List[InvoiceOut])
+@router.get("/invoices", response_model=InvoiceListResponse)
 async def list_invoices(
-    limit: int = Query(50, ge=1, le=100),
+    limit: int = Query(50, ge=1, le=500),
     skip: int = Query(0, ge=0),
     status: Optional[str] = Query(None),
     client_id: Optional[str] = Query(None),
@@ -57,50 +57,70 @@ async def list_invoices(
 ):
     """
     List invoices for the authenticated user.
-    
+
     Supports filtering by status, client, and due date range.
     Supports search by invoice number or client name.
-    Returns paginated results with sorting.
+    Returns paginated results with metadata (total, has_more).
     """
     repo = InvoiceRepository(db)
     client_repo = ClientRepository(db)
-    
+
+    # Resolve client-name part of search into client_ids before querying invoices
+    # so the search filter is applied inside MongoDB (before the skip/limit)
+    search_client_ids: Optional[List[str]] = None
+    number_search: Optional[str] = None
+    if search:
+        number_search = search
+        matching_clients = await client_repo.list_by_user(
+            user_id=str(current_user.id),
+            search=search,
+            limit=500,
+        )
+        search_client_ids = [c.id for c in matching_clients]
+
     invoices = await repo.list_by_user(
         user_id=str(current_user.id),
         status=status,
         client_id=client_id,
         due_from=due_from,
         due_to=due_to,
+        number_search=number_search,
+        search_client_ids=search_client_ids,
         skip=skip,
         limit=limit,
         sort_by=sort_by,
         sort_order=sort_order
     )
-    
-    # Add user business info and client data to each invoice
+
+    total = await repo.count_by_user(
+        user_id=str(current_user.id),
+        status=status,
+        client_id=client_id,
+        due_from=due_from,
+        due_to=due_to,
+        number_search=number_search,
+        search_client_ids=search_client_ids,
+    )
+
+    # Attach user business info and client data to each invoice
     result = []
     for invoice in invoices:
-        # Get client data
         client = await client_repo.get_by_id_and_user(
             client_id=invoice.client_id,
             user_id=str(current_user.id)
         )
-        
         invoice_out = InvoiceOut(**invoice.model_dump())
         invoice_out.user_business_info = _create_user_business_info(current_user)
         invoice_out.client = client.model_dump() if client else None
-        
-        # Apply search filter if provided
-        if search:
-            search_lower = search.lower()
-            matches_number = invoice.number and search_lower in invoice.number.lower()
-            matches_client = client and search_lower in client.name.lower()
-            if not (matches_number or matches_client):
-                continue
-        
         result.append(invoice_out)
-    
-    return result
+
+    return InvoiceListResponse(
+        items=result,
+        total=total,
+        limit=limit,
+        offset=skip,
+        has_more=(skip + len(result)) < total,
+    )
 
 
 @router.get("/invoices/stats", response_model=InvoiceStatsResponse)

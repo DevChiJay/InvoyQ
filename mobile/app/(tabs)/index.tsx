@@ -45,7 +45,7 @@ export default function DashboardScreen() {
     useExpenseSummary();
 
   // Fetch limited data for display in "Recent" sections
-  const { data: invoices, isLoading: invoicesLoading } = useInvoices({
+  const { data: invoicesData, isLoading: invoicesLoading } = useInvoices({
     limit: 5,
   });
   const { data: expensesData, isLoading: expensesLoading } = useExpenses({
@@ -58,6 +58,7 @@ export default function DashboardScreen() {
 
   const expenses = expensesData?.items || [];
   const products = productsData?.pages?.[0]?.items || [];
+  const recentInvoices = invoicesData?.items ?? [];
 
   // Use accurate stats from API instead of calculating from limited list
   const stats = statsData?.stats;
@@ -156,8 +157,11 @@ export default function DashboardScreen() {
                 <GradientCard
                   colors={[colors.primary, colors.primaryDark]}
                   style={styles.statCard}
+                  shadowColor={colors.primary}
                 >
-                  <Ionicons name="trending-up" size={24} color="#FFFFFF" />
+                  <View style={styles.statIconWrapper}>
+                    <Ionicons name="trending-up" size={26} color="#FFFFFF" />
+                  </View>
                   <Text style={styles.statValue}>
                     {formatCurrency(totalRevenue)}
                   </Text>
@@ -173,8 +177,11 @@ export default function DashboardScreen() {
                 <GradientCard
                   colors={[colors.error, "#DC2626"]}
                   style={styles.statCard}
+                  shadowColor={colors.error}
                 >
-                  <Ionicons name="trending-down" size={24} color="#FFFFFF" />
+                  <View style={styles.statIconWrapper}>
+                    <Ionicons name="trending-down" size={26} color="#FFFFFF" />
+                  </View>
                   <Text style={styles.statValue}>
                     {formatCurrency(totalExpenses)}
                   </Text>
@@ -435,8 +442,8 @@ export default function DashboardScreen() {
             </TouchableOpacity>
           </View>
 
-          {invoices && invoices.length > 0 ? (
-            invoices.slice(0, 3).map((invoice) => (
+          {recentInvoices.length > 0 ? (
+            recentInvoices.slice(0, 3).map((invoice) => (
               <Card key={invoice.id} variant="elevated" style={styles.listItem}>
                 <View style={styles.listItemHeader}>
                   <View>
@@ -578,7 +585,7 @@ const styles = StyleSheet.create({
   },
   statCardWrapper: {
     flex: 1,
-    minHeight: 120,
+    minHeight: 150,
   },
   greeting: {
     fontSize: Typography.sizes.md,
@@ -596,19 +603,30 @@ const styles = StyleSheet.create({
   },
   statCard: {
     flex: 1,
-    padding: Spacing.lg,
-    minHeight: 120,
+    minHeight: 150,
+    justifyContent: "flex-end",
+  },
+  statIconWrapper: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: Spacing.sm,
   },
   statValue: {
     fontSize: Typography.sizes.xl,
     fontWeight: Typography.weights.bold,
     color: "#FFFFFF",
-    marginTop: Spacing.sm,
+    marginTop: 2,
   },
   statLabel: {
     fontSize: Typography.sizes.sm,
-    color: "rgba(255, 255, 255, 0.9)",
-    marginTop: 4,
+    color: "rgba(255, 255, 255, 0.85)",
+    marginTop: 2,
+    fontWeight: Typography.weights.medium,
+    letterSpacing: 0.3,
   },
   quickStats: {
     flexDirection: "row",

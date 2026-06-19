@@ -10,6 +10,10 @@ PROMPT_SYSTEM = (
     "Return only JSON with keys: jobs (list of strings), deadlines (list of ISO dates or strings), "
     "payment_terms (string|null), amount (number|null), currency (string|null), "
     "client_name (string|null), client_email (string|null), client_address (string|null), "
+    "sender_name (string|null — the business or person issuing the invoice), "
+    "sender_email (string|null — the email of the invoice sender), "
+    "sender_address (string|null — the address of the invoice sender), "
+    "status (one of: draft, sent, paid, overdue, cancelled — infer from context; null if not clear), "
     "confidence (0-100)."
 )
 
@@ -60,6 +64,10 @@ class OpenAIExtractor:
                     "client_name": None,
                     "client_email": None,
                     "client_address": None,
+                    "sender_name": None,
+                    "sender_email": None,
+                    "sender_address": None,
+                    "status": None,
                     "confidence": 50,
                 }
 
@@ -118,6 +126,10 @@ class OpenAIExtractor:
                     "client_name": None,
                     "client_email": None,
                     "client_address": None,
+                    "sender_name": None,
+                    "sender_email": None,
+                    "sender_address": None,
+                    "status": None,
                     "confidence": 50,
                 }
 

@@ -181,6 +181,8 @@ class InvoiceRepository(BaseRepository[InvoiceInDB]):
         date_from: Optional[datetime] = None,
         date_to: Optional[datetime] = None,
         date_range_query: Optional[Dict[str, Any]] = None,
+        number_search: Optional[str] = None,
+        search_client_ids: Optional[List[str]] = None,
         skip: int = 0,
         limit: int = 50,
         sort_by: str = "created_at",
@@ -246,13 +248,58 @@ class InvoiceRepository(BaseRepository[InvoiceInDB]):
                 date_filter["$lte"] = date_to
             if date_filter:
                 filter_query["issued_date"] = date_filter
-        
+
+        # Search filter — applied in DB before limit so results are accurate
+        if number_search or search_client_ids:
+            or_conditions = []
+            if number_search:
+                or_conditions.append(
+                    {"number": {"$regex": number_search, "$options": "i"}}
+                )
+            if search_client_ids:
+                or_conditions.append({"client_id": {"$in": search_client_ids}})
+            filter_query["$or"] = or_conditions
+
         return await self.get_many(
             filter_query,
             skip=skip,
             limit=limit,
             sort=[(sort_by, sort_order)]
         )
+
+    async def count_by_user(
+        self,
+        user_id: str,
+        client_id: Optional[str] = None,
+        status: Optional[str] = None,
+        due_from: Optional[date] = None,
+        due_to: Optional[date] = None,
+        number_search: Optional[str] = None,
+        search_client_ids: Optional[List[str]] = None,
+    ) -> int:
+        """Count invoices matching the same filter used by list_by_user."""
+        filter_query: Dict[str, Any] = {"user_id": user_id}
+        if client_id:
+            filter_query["client_id"] = client_id
+        if status:
+            filter_query["status"] = status
+        if due_from or due_to:
+            due_filter: Dict[str, Any] = {}
+            if due_from:
+                due_filter["$gte"] = due_from
+            if due_to:
+                due_filter["$lte"] = due_to
+            filter_query["due_date"] = due_filter
+        if number_search or search_client_ids:
+            or_conditions = []
+            if number_search:
+                or_conditions.append(
+                    {"number": {"$regex": number_search, "$options": "i"}}
+                )
+            if search_client_ids:
+                or_conditions.append({"client_id": {"$in": search_client_ids}})
+            filter_query["$or"] = or_conditions
+        return await self.count(filter_query)
     
     async def update_invoice(
         self,
@@ -376,27 +423,6 @@ class InvoiceRepository(BaseRepository[InvoiceInDB]):
             "user_id": user_id
         })
         return result.deleted_count > 0
-    
-    async def count_by_user(
-        self,
-        user_id: str,
-        status: Optional[str] = None
-    ) -> int:
-        """
-        Count invoices for a user.
-        
-        Args:
-            user_id: User ID
-            status: Filter by status
-            
-        Returns:
-            Number of invoices
-        """
-        filter_query = {"user_id": user_id}
-        if status:
-            filter_query["status"] = status
-        
-        return await self.count(filter_query)
     
     async def count_by_user_and_date(
         self,

@@ -91,12 +91,25 @@ function buildInvoiceFromExtraction(data: BackendExtractionData): {
     address: data.client_address || "123 Main St, Anytown",
   };
 
+  const VALID_STATUSES = [
+    "draft",
+    "sent",
+    "paid",
+    "overdue",
+    "cancelled",
+  ] as const;
+  type InvoiceStatus = (typeof VALID_STATUSES)[number];
+  const extractedStatus = (data.status ?? "").toLowerCase() as InvoiceStatus;
+  const invoiceStatus: InvoiceStatus = VALID_STATUSES.includes(extractedStatus)
+    ? extractedStatus
+    : "draft";
+
   const invoice: Invoice = {
     id: "preview",
     user_id: "preview",
     client_id: "preview",
     number: "PREVIEW-001",
-    status: "draft",
+    status: invoiceStatus,
     issued_date: today,
     due_date: dueDate,
     currency: currency,
@@ -110,9 +123,9 @@ function buildInvoiceFromExtraction(data: BackendExtractionData): {
     items,
     events: [],
     user_business_info: {
-      full_name: "Your Business Name",
-      company_name: "Your Business Name",
-      email: "hello@yourbusiness.com",
+      full_name: data.sender_name || "Your Business Name",
+      company_name: data.sender_name || "Your Business Name",
+      email: data.sender_email || "hello@yourbusiness.com",
     },
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),

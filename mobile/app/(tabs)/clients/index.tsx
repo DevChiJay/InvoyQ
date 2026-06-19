@@ -3,11 +3,12 @@ import {
   Text,
   FlatList,
   TouchableOpacity,
+  ActivityIndicator,
   StyleSheet,
   RefreshControl,
 } from "react-native";
 import { Stack, router } from "expo-router";
-import { useClients } from "@/hooks/useClients";
+import { useInfiniteClients } from "@/hooks/useClients";
 import { useTheme } from "@/hooks/useTheme";
 import { useDebounce } from "@/hooks/useDebounce";
 import { useFilterState } from "@/hooks/useFilterState";
@@ -21,15 +22,27 @@ import {
 import { Spacing, BorderRadius } from "@/constants/colors";
 import { Typography } from "@/constants/typography";
 import { Ionicons } from "@expo/vector-icons";
-import { useState, useMemo, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 
 export default function ClientsScreen() {
   const { colors } = useTheme();
   const { filterState, isLoaded, updateFilter } = useFilterState("clients");
   const [searchQuery, setSearchQuery] = useState("");
   const debouncedSearch = useDebounce(searchQuery, 300);
-  const { data: clients, isLoading, error, refetch } = useClients();
   const [refreshing, setRefreshing] = useState(false);
+
+  const {
+    data,
+    isLoading,
+    error,
+    refetch,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteClients(debouncedSearch || undefined);
+
+  // Flatten pages into a single list
+  const clients = data?.pages.flat() ?? [];
 
   // Restore search query from filter state
   useEffect(() => {
@@ -40,7 +53,7 @@ export default function ClientsScreen() {
 
   // Save search query to filter state
   useEffect(() => {
-    if (isLoaded && debouncedSearch) {
+    if (isLoaded && debouncedSearch !== undefined) {
       updateFilter("searchQuery", debouncedSearch);
     }
   }, [debouncedSearch, isLoaded]);
@@ -51,19 +64,11 @@ export default function ClientsScreen() {
     setRefreshing(false);
   };
 
-  // Filter clients based on search query
-  const filteredClients = useMemo(() => {
-    if (!clients) return [];
-    if (!debouncedSearch) return clients;
-
-    const query = debouncedSearch.toLowerCase();
-    return clients.filter(
-      (client) =>
-        client.name.toLowerCase().includes(query) ||
-        client.email?.toLowerCase().includes(query) ||
-        client.phone?.toLowerCase().includes(query),
-    );
-  }, [clients, debouncedSearch]);
+  const onEndReached = useCallback(() => {
+    if (hasNextPage && !isFetchingNextPage) {
+      fetchNextPage();
+    }
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   if (isLoading) {
     return (
@@ -128,15 +133,25 @@ export default function ClientsScreen() {
       </View>
 
       <FlatList
-        data={filteredClients}
+        data={clients}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContent}
+        onEndReached={onEndReached}
+        onEndReachedThreshold={0.3}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
             tintColor={colors.primary}
           />
+        }
+        ListFooterComponent={
+          isFetchingNextPage ? (
+            <ActivityIndicator
+              color={colors.primary}
+              style={styles.loadingFooter}
+            />
+          ) : null
         }
         ListEmptyComponent={
           <EmptyState
@@ -276,6 +291,9 @@ const styles = StyleSheet.create({
   listContent: {
     padding: Spacing.md,
     paddingTop: 0,
+  },
+  loadingFooter: {
+    paddingVertical: Spacing.md,
   },
   clientCard: {
     marginBottom: Spacing.md,

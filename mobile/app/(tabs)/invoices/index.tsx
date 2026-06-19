@@ -4,10 +4,11 @@ import {
   FlatList,
   StyleSheet,
   TouchableOpacity,
+  ActivityIndicator,
   RefreshControl,
 } from "react-native";
 import { Stack, router } from "expo-router";
-import { useInvoices } from "@/hooks/useInvoices";
+import { useInfiniteInvoices } from "@/hooks/useInvoices";
 import { useTheme } from "@/hooks/useTheme";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
@@ -24,7 +25,7 @@ import { Spacing } from "@/constants/colors";
 import { Typography } from "@/constants/typography";
 import { Ionicons } from "@expo/vector-icons";
 import { formatCurrency, formatDate } from "@/utils/formatters";
-import { useState, useMemo, useEffect } from "react";
+import { useState, useCallback, useEffect } from "react";
 
 const statusFilters = [
   { label: "All", value: "all" },
@@ -35,7 +36,6 @@ const statusFilters = [
 ];
 
 export default function InvoicesScreen() {
-  const { data, isLoading, error, refetch } = useInvoices();
   const { colors } = useTheme();
   const { filterState, isLoaded, updateFilter } = useFilterState("invoices");
   const [searchQuery, setSearchQuery] = useState("");
@@ -43,17 +43,32 @@ export default function InvoicesScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const debouncedSearch = useDebounce(searchQuery, 300);
 
+  const {
+    data,
+    isLoading,
+    error,
+    refetch,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteInvoices({
+    search: debouncedSearch || undefined,
+    status: selectedStatus !== "all" ? selectedStatus : undefined,
+    sort_by: "created_at",
+    sort_order: -1,
+  });
+
+  const invoices = data?.pages.flatMap((p) => p.items) ?? [];
+
   // Restore filter state
   useEffect(() => {
     if (isLoaded) {
       if (filterState.searchQuery) {
         setSearchQuery(filterState.searchQuery);
       }
-      // Only restore status if it's not 'all'
       if (filterState.selectedStatus && filterState.selectedStatus !== "all") {
         setSelectedStatus(filterState.selectedStatus);
       } else if (filterState.selectedStatus === "all") {
-        // Clear 'all' from storage since it's the default
         updateFilter("selectedStatus", undefined);
       }
     }
@@ -61,60 +76,32 @@ export default function InvoicesScreen() {
 
   // Save filter state
   useEffect(() => {
-    if (isLoaded && debouncedSearch) {
+    if (isLoaded && debouncedSearch !== undefined) {
       updateFilter("searchQuery", debouncedSearch);
     }
   }, [debouncedSearch, isLoaded]);
 
   useEffect(() => {
     if (isLoaded) {
-      // Only save status if it's not 'all' (which is the default)
       if (selectedStatus !== "all") {
         updateFilter("selectedStatus", selectedStatus);
       } else {
-        // Remove from storage when set to 'all'
         updateFilter("selectedStatus", undefined);
       }
     }
   }, [selectedStatus, isLoaded]);
-
-  const invoices = data || [];
-
-  // Filter invoices
-  const filteredInvoices = useMemo(() => {
-    return invoices.filter((invoice) => {
-      const matchesSearch =
-        !debouncedSearch ||
-        invoice.number?.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
-        invoice.client?.name
-          ?.toLowerCase()
-          .includes(debouncedSearch.toLowerCase());
-
-      const matchesStatus =
-        selectedStatus === "all" || invoice.status === selectedStatus;
-
-      return matchesSearch && matchesStatus;
-    });
-  }, [invoices, debouncedSearch, selectedStatus]);
-
-  // Calculate filter counts
-  const filterCounts = useMemo(() => {
-    const counts: Record<string, number> = { all: invoices.length };
-    statusFilters.forEach((filter) => {
-      if (filter.value !== "all") {
-        counts[filter.value] = invoices.filter(
-          (i) => i.status === filter.value,
-        ).length;
-      }
-    });
-    return counts;
-  }, [invoices]);
 
   const handleRefresh = async () => {
     setRefreshing(true);
     await refetch();
     setRefreshing(false);
   };
+
+  const onEndReached = useCallback(() => {
+    if (hasNextPage && !isFetchingNextPage) {
+      fetchNextPage();
+    }
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   const handleInvoicePress = (id: string) => {
     router.push({
@@ -209,7 +196,6 @@ export default function InvoicesScreen() {
           renderItem={({ item }) => (
             <FilterChip
               label={item.label}
-              count={filterCounts[item.value] || 0}
               selected={selectedStatus === item.value}
               onPress={() => setSelectedStatus(item.value)}
             />
@@ -220,15 +206,25 @@ export default function InvoicesScreen() {
 
       {/* Invoice List */}
       <FlatList
-        data={filteredInvoices}
+        data={invoices}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContent}
+        onEndReached={onEndReached}
+        onEndReachedThreshold={0.3}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
             onRefresh={handleRefresh}
             colors={[colors.primary]}
           />
+        }
+        ListFooterComponent={
+          isFetchingNextPage ? (
+            <ActivityIndicator
+              color={colors.primary}
+              style={styles.loadingFooter}
+            />
+          ) : null
         }
         ListEmptyComponent={
           <EmptyState
@@ -396,6 +392,9 @@ const styles = StyleSheet.create({
   },
   listContent: {
     padding: Spacing.md,
+  },
+  loadingFooter: {
+    paddingVertical: Spacing.md,
   },
   invoiceCard: {
     marginBottom: Spacing.md,

@@ -7,6 +7,7 @@ import {
   FlatList,
   StyleSheet,
   ScrollView,
+  ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "@/hooks/useTheme";
@@ -28,6 +29,10 @@ interface SelectProps {
   error?: boolean;
   searchable?: boolean;
   searchPlaceholder?: string;
+  /** Called with the raw search query (debounced). Use for server-side filtering. When provided, client-side filtering is skipped. */
+  onSearchChange?: (query: string) => void;
+  /** Show a loading indicator in the options list (e.g. while fetching server-side results) */
+  loading?: boolean;
 }
 
 export function Select({
@@ -38,6 +43,8 @@ export function Select({
   error,
   searchable = false,
   searchPlaceholder = "Search...",
+  onSearchChange,
+  loading = false,
 }: SelectProps) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
@@ -47,19 +54,27 @@ export function Select({
 
   const selectedOption = options.find((opt) => opt.value === value);
 
-  // Filter options based on search query
+  // Notify parent for server-side filtering; skip client-side filter when callback is provided
+  React.useEffect(() => {
+    if (onSearchChange) {
+      onSearchChange(debouncedSearch);
+    }
+  }, [debouncedSearch, onSearchChange]);
+
+  // Filter options based on search query (only when no server-side handler)
   const filteredOptions = useMemo(() => {
-    if (!searchable || !debouncedSearch) return options;
+    if (!searchable || !debouncedSearch || onSearchChange) return options;
     const query = debouncedSearch.toLowerCase();
     return options.filter((option) =>
       option.label.toLowerCase().includes(query),
     );
-  }, [options, debouncedSearch, searchable]);
+  }, [options, debouncedSearch, searchable, onSearchChange]);
 
   // Reset search when modal closes
   const handleModalClose = () => {
     setModalVisible(false);
     setSearchQuery("");
+    if (onSearchChange) onSearchChange("");
   };
 
   return (
@@ -129,6 +144,13 @@ export function Select({
                   placeholder={searchPlaceholder}
                 />
               </View>
+            )}
+
+            {loading && (
+              <ActivityIndicator
+                color={colors.primary}
+                style={{ marginVertical: 8 }}
+              />
             )}
 
             <FlatList

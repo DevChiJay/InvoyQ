@@ -18,11 +18,12 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import { useTheme } from "@/hooks/useTheme";
-import { useClients, useCreateClient } from "@/hooks/useClients";
+import { useClientSearch, useCreateClient } from "@/hooks/useClients";
 import { useProducts, useCreateProduct } from "@/hooks/useProducts";
 import { useCreateInvoice } from "@/hooks/useInvoices";
 import { useDebounce } from "@/hooks/useDebounce";
 import { useBusinessReminder } from "@/hooks/useBusinessReminder";
+import { ClientOut } from "@/types/client";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { FormField } from "@/components/ui/FormField";
@@ -107,8 +108,16 @@ export default function CreateInvoiceScreen() {
   const createInvoice = useCreateInvoice();
   const createClient = useCreateClient();
   const createProduct = useCreateProduct();
-  const { data: clientsData } = useClients();
   const { data: productsData } = useProducts();
+
+  // Client search state (server-side)
+  const [clientSearchQuery, setClientSearchQuery] = useState("");
+  const { data: clientSearchData, isFetching: isSearchingClients } =
+    useClientSearch(clientSearchQuery);
+
+  // Persist selected client object so preview survives search query changes
+  const [selectedClientData, setSelectedClientData] =
+    useState<ClientOut | null>(null);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -173,7 +182,7 @@ export default function CreateInvoiceScreen() {
     Record<string, string>
   >({});
 
-  const clients = clientsData || [];
+  const clients = clientSearchData || [];
   const products = productsData?.pages?.flatMap((page) => page.items) || [];
 
   // Filter products based on search query
@@ -196,6 +205,10 @@ export default function CreateInvoiceScreen() {
     })),
   ];
 
+  const handleClientSearchChange = (query: string) => {
+    setClientSearchQuery(query);
+  };
+
   const handleChange = (field: string, value: string | Date) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     if (errors[field]) {
@@ -212,6 +225,8 @@ export default function CreateInvoiceScreen() {
       setShowCreateClientModal(true);
     } else {
       handleChange("client_id", value);
+      const found = clients.find((c) => c.id === value);
+      if (found) setSelectedClientData(found);
     }
   };
 
@@ -229,6 +244,7 @@ export default function CreateInvoiceScreen() {
 
       // Set the newly created client as selected
       handleChange("client_id", result.id);
+      setSelectedClientData(result);
 
       // Reset and close modal
       setNewClient({ name: "", email: "", phone: "", address: "" });
@@ -580,7 +596,7 @@ export default function CreateInvoiceScreen() {
 
   const totals = calculateTotals();
 
-  const selectedClient = clients.find((c) => c.id === formData.client_id);
+  const selectedClient = selectedClientData;
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -609,6 +625,8 @@ export default function CreateInvoiceScreen() {
                 error={!!errors.client_id}
                 searchable={true}
                 searchPlaceholder="Search clients..."
+                onSearchChange={handleClientSearchChange}
+                loading={isSearchingClients}
               />
             </FormField>
 

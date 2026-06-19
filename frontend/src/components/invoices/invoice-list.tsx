@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
+import { useState, useEffect, useRef } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import {
   Table,
   TableBody,
@@ -12,11 +12,15 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
-import { Search, Eye, Pencil, Trash2, FileText } from 'lucide-react';
-import Link from 'next/link';
-import { formatRelativeDate, formatSimpleDate, formatCurrency } from '@/lib/format';
-import type { Invoice, InvoiceListParams } from '@/types/api';
+} from "@/components/ui/table";
+import { Search, Eye, Pencil, Trash2, FileText, Loader2 } from "lucide-react";
+import Link from "next/link";
+import {
+  formatRelativeDate,
+  formatSimpleDate,
+  formatCurrency,
+} from "@/lib/format";
+import type { Invoice, InvoiceListParams } from "@/types/api";
 
 interface InvoiceListProps {
   invoices: Invoice[];
@@ -24,13 +28,40 @@ interface InvoiceListProps {
   onDelete?: (id: string, number: string) => void;
   filters?: InvoiceListParams;
   onFilterChange?: (filters: Partial<InvoiceListParams>) => void;
+  hasMore?: boolean;
+  isLoadingMore?: boolean;
+  onLoadMore?: () => void;
 }
 
-export function InvoiceList({ invoices, isLoading, onDelete, filters, onFilterChange }: InvoiceListProps) {
-  const [searchInput, setSearchInput] = useState(filters?.search || '');
-  const [statusFilter, setStatusFilter] = useState<Invoice['status'] | 'all'>('all');
+export function InvoiceList({
+  invoices,
+  isLoading,
+  onDelete,
+  filters,
+  onFilterChange,
+  hasMore = false,
+  isLoadingMore = false,
+  onLoadMore,
+}: InvoiceListProps) {
+  const [searchInput, setSearchInput] = useState(filters?.search || "");
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
 
-  // Debounced search
+  // Infinite scroll sentinel
+  useEffect(() => {
+    if (!onLoadMore || !hasMore) return;
+    const el = sentinelRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) onLoadMore();
+      },
+      { threshold: 0.1 },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [onLoadMore, hasMore]);
+
+  // Debounced search — propagates to parent (server-side)
   useEffect(() => {
     const timer = setTimeout(() => {
       if (searchInput !== filters?.search && onFilterChange) {
@@ -40,29 +71,34 @@ export function InvoiceList({ invoices, isLoading, onDelete, filters, onFilterCh
     return () => clearTimeout(timer);
   }, [searchInput, filters?.search, onFilterChange]);
 
-  const handleSort = (field: InvoiceListParams['sort_by']) => {
+  const handleSort = (field: InvoiceListParams["sort_by"]) => {
     if (!onFilterChange || !field) return;
-    const newOrder = filters?.sort_by === field && filters?.sort_order === -1 ? 1 : -1;
+    const newOrder =
+      filters?.sort_by === field && filters?.sort_order === -1 ? 1 : -1;
     onFilterChange({ sort_by: field, sort_order: newOrder });
   };
 
-  const filteredInvoices = invoices.filter((invoice) => {
-    const matchesStatus = statusFilter === 'all' || invoice.status === statusFilter;
-    return matchesStatus;
-  });
+  const handleStatusFilter = (status: string) => {
+    if (!onFilterChange) return;
+    onFilterChange({
+      status: status === "all" ? undefined : (status as Invoice["status"]),
+    });
+  };
 
-  const getStatusBadgeVariant = (status: Invoice['status']) => {
+  const activeStatus = filters?.status ?? "all";
+
+  const getStatusBadgeVariant = (status: Invoice["status"]) => {
     switch (status) {
-      case 'paid':
-        return 'default';
-      case 'sent':
-        return 'secondary';
-      case 'overdue':
-        return 'destructive';
-      case 'draft':
-        return 'outline';
+      case "paid":
+        return "default";
+      case "sent":
+        return "secondary";
+      case "overdue":
+        return "destructive";
+      case "draft":
+        return "outline";
       default:
-        return 'secondary';
+        return "secondary";
     }
   };
 
@@ -122,37 +158,37 @@ export function InvoiceList({ invoices, isLoading, onDelete, filters, onFilterCh
         </div>
         <div className="flex gap-2">
           <Button
-            variant={statusFilter === 'all' ? 'default' : 'outline'}
+            variant={activeStatus === "all" ? "default" : "outline"}
             size="sm"
-            onClick={() => setStatusFilter('all')}
+            onClick={() => handleStatusFilter("all")}
           >
             All
           </Button>
           <Button
-            variant={statusFilter === 'draft' ? 'default' : 'outline'}
+            variant={activeStatus === "draft" ? "default" : "outline"}
             size="sm"
-            onClick={() => setStatusFilter('draft')}
+            onClick={() => handleStatusFilter("draft")}
           >
             Draft
           </Button>
           <Button
-            variant={statusFilter === 'sent' ? 'default' : 'outline'}
+            variant={activeStatus === "sent" ? "default" : "outline"}
             size="sm"
-            onClick={() => setStatusFilter('sent')}
+            onClick={() => handleStatusFilter("sent")}
           >
             Sent
           </Button>
           <Button
-            variant={statusFilter === 'paid' ? 'default' : 'outline'}
+            variant={activeStatus === "paid" ? "default" : "outline"}
             size="sm"
-            onClick={() => setStatusFilter('paid')}
+            onClick={() => handleStatusFilter("paid")}
           >
             Paid
           </Button>
           <Button
-            variant={statusFilter === 'overdue' ? 'default' : 'outline'}
+            variant={activeStatus === "overdue" ? "default" : "outline"}
             size="sm"
-            onClick={() => setStatusFilter('overdue')}
+            onClick={() => handleStatusFilter("overdue")}
           >
             Overdue
           </Button>
@@ -166,71 +202,102 @@ export function InvoiceList({ invoices, isLoading, onDelete, filters, onFilterCh
             <TableRow>
               <TableHead
                 className="cursor-pointer hover:bg-muted/50"
-                onClick={() => handleSort('number')}
+                onClick={() => handleSort("number")}
               >
-                Invoice # {filters?.sort_by === 'number' && (filters?.sort_order === -1 ? '↓' : '↑')}
+                Invoice #{" "}
+                {filters?.sort_by === "number" &&
+                  (filters?.sort_order === -1 ? "↓" : "↑")}
               </TableHead>
               <TableHead>Client</TableHead>
               <TableHead
                 className="cursor-pointer hover:bg-muted/50"
-                onClick={() => handleSort('issued_date')}
+                onClick={() => handleSort("issued_date")}
               >
-                Issued {filters?.sort_by === 'issued_date' && (filters?.sort_order === -1 ? '↓' : '↑')}
+                Issued{" "}
+                {filters?.sort_by === "issued_date" &&
+                  (filters?.sort_order === -1 ? "↓" : "↑")}
               </TableHead>
               <TableHead
                 className="cursor-pointer hover:bg-muted/50"
-                onClick={() => handleSort('due_date')}
+                onClick={() => handleSort("due_date")}
               >
-                Due Date {filters?.sort_by === 'due_date' && (filters?.sort_order === -1 ? '↓' : '↑')}
+                Due Date{" "}
+                {filters?.sort_by === "due_date" &&
+                  (filters?.sort_order === -1 ? "↓" : "↑")}
               </TableHead>
               <TableHead
                 className="cursor-pointer hover:bg-muted/50"
-                onClick={() => handleSort('status')}
+                onClick={() => handleSort("status")}
               >
-                Status {filters?.sort_by === 'status' && (filters?.sort_order === -1 ? '↓' : '↑')}
+                Status{" "}
+                {filters?.sort_by === "status" &&
+                  (filters?.sort_order === -1 ? "↓" : "↑")}
               </TableHead>
               <TableHead
                 className="text-right cursor-pointer hover:bg-muted/50"
-                onClick={() => handleSort('total')}
+                onClick={() => handleSort("total")}
               >
-                Amount {filters?.sort_by === 'total' && (filters?.sort_order === -1 ? '↓' : '↑')}
+                Amount{" "}
+                {filters?.sort_by === "total" &&
+                  (filters?.sort_order === -1 ? "↓" : "↑")}
               </TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredInvoices.map((invoice) => (
+            {invoices.map((invoice) => (
               <TableRow key={invoice.id} className="cursor-pointer">
                 <TableCell className="font-medium">
-                  <Link href={`/dashboard/invoices/${invoice.id}`} className="block">
+                  <Link
+                    href={`/dashboard/invoices/${invoice.id}`}
+                    className="block"
+                  >
                     {invoice.number}
                   </Link>
                 </TableCell>
                 <TableCell>
-                  <Link href={`/dashboard/invoices/${invoice.id}`} className="block">
+                  <Link
+                    href={`/dashboard/invoices/${invoice.id}`}
+                    className="block"
+                  >
                     {`Client #${invoice.client_id}`}
                   </Link>
                 </TableCell>
                 <TableCell>
-                  <Link href={`/dashboard/invoices/${invoice.id}`} className="block">
+                  <Link
+                    href={`/dashboard/invoices/${invoice.id}`}
+                    className="block"
+                  >
                     {formatRelativeDate(invoice.issued_date)}
                   </Link>
                 </TableCell>
                 <TableCell>
-                  <Link href={`/dashboard/invoices/${invoice.id}`} className="block">
+                  <Link
+                    href={`/dashboard/invoices/${invoice.id}`}
+                    className="block"
+                  >
                     {formatSimpleDate(invoice.due_date)}
                   </Link>
                 </TableCell>
                 <TableCell>
-                  <Link href={`/dashboard/invoices/${invoice.id}`} className="block">
+                  <Link
+                    href={`/dashboard/invoices/${invoice.id}`}
+                    className="block"
+                  >
                     <Badge variant={getStatusBadgeVariant(invoice.status)}>
                       {invoice.status}
                     </Badge>
                   </Link>
                 </TableCell>
                 <TableCell className="text-right font-semibold">
-                  <Link href={`/dashboard/invoices/${invoice.id}`} className="block">
-                    {formatCurrency(invoice.total ?? 0, invoice.currency ?? 'NGN')}
+                  <Link
+                    href={`/dashboard/invoices/${invoice.id}`}
+                    className="block"
+                  >
+                    {formatCurrency(
+                      invoice.total ?? 0,
+                      invoice.currency ?? "NGN",
+                    )}
                   </Link>
                 </TableCell>
                 <TableCell className="text-right">
@@ -248,7 +315,9 @@ export function InvoiceList({ invoices, isLoading, onDelete, filters, onFilterCh
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => onDelete?.(invoice.id, invoice.number ?? '')}
+                      onClick={() =>
+                        onDelete?.(invoice.id, invoice.number ?? "")
+                      }
                     >
                       <Trash2 className="h-4 w-4 text-destructive" />
                     </Button>
@@ -262,7 +331,7 @@ export function InvoiceList({ invoices, isLoading, onDelete, filters, onFilterCh
 
       {/* Mobile Card View */}
       <div className="md:hidden space-y-4">
-        {filteredInvoices.map((invoice) => (
+        {invoices.map((invoice) => (
           <Card key={invoice.id}>
             <CardContent className="pt-6">
               <div className="space-y-3">
@@ -287,16 +356,31 @@ export function InvoiceList({ invoices, isLoading, onDelete, filters, onFilterCh
                 </div>
                 <div className="flex justify-between text-sm font-semibold">
                   <span>Total:</span>
-                  <span>{formatCurrency(invoice.total ?? 0, invoice.currency ?? 'NGN')}</span>
+                  <span>
+                    {formatCurrency(
+                      invoice.total ?? 0,
+                      invoice.currency ?? "NGN",
+                    )}
+                  </span>
                 </div>
                 <div className="flex gap-2 pt-2">
-                  <Button variant="outline" size="sm" className="flex-1" asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1"
+                    asChild
+                  >
                     <Link href={`/dashboard/invoices/${invoice.id}`}>
                       <Eye className="mr-2 h-4 w-4" />
                       View
                     </Link>
                   </Button>
-                  <Button variant="outline" size="sm" className="flex-1" asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1"
+                    asChild
+                  >
                     <Link href={`/dashboard/invoices/${invoice.id}/edit`}>
                       <Pencil className="mr-2 h-4 w-4" />
                       Edit
@@ -305,7 +389,7 @@ export function InvoiceList({ invoices, isLoading, onDelete, filters, onFilterCh
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => onDelete?.(invoice.id, invoice.number ?? '')}
+                    onClick={() => onDelete?.(invoice.id, invoice.number ?? "")}
                   >
                     <Trash2 className="h-4 w-4 text-destructive" />
                   </Button>
@@ -316,12 +400,24 @@ export function InvoiceList({ invoices, isLoading, onDelete, filters, onFilterCh
         ))}
       </div>
 
-      {filteredInvoices.length === 0 && (
+      {invoices.length === 0 && !isLoading && (
         <Card>
           <CardContent className="py-12 text-center">
-            <p className="text-muted-foreground">No invoices match your search criteria.</p>
+            <p className="text-muted-foreground">
+              No invoices match your search criteria.
+            </p>
           </CardContent>
         </Card>
+      )}
+
+      {/* Infinite scroll sentinel */}
+      <div ref={sentinelRef} className="h-4" />
+
+      {/* Loading more indicator */}
+      {isLoadingMore && (
+        <div className="flex justify-center py-4">
+          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+        </div>
       )}
     </div>
   );

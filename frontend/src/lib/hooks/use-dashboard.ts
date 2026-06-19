@@ -50,10 +50,18 @@ export const useDashboardStats = () => {
             };
           }),
         invoicesAPI
-          .getAll({ limit: 1, offset: 0, sort_by: "created_at", sort_order: 1 })
+          .getAll({ limit: 1, skip: 0, sort_by: "created_at", sort_order: 1 })
           .catch((err) => {
             console.error("Failed to fetch first invoice:", err);
-            return { data: [] };
+            return {
+              data: {
+                items: [],
+                total: 0,
+                limit: 1,
+                skip: 0,
+                has_more: false,
+              },
+            };
           }),
       ]);
 
@@ -71,7 +79,7 @@ export const useDashboardStats = () => {
         ) || 0;
 
       // Get currency from first invoice or default to USD
-      const firstInvoice = firstInvoiceResponse.data[0];
+      const firstInvoice = firstInvoiceResponse.data.items?.[0];
       const currency = firstInvoice?.currency || "USD";
 
       return {
@@ -96,8 +104,8 @@ export const useRecentInvoices = (limit = 5) => {
   return useQuery({
     queryKey: ["recent-invoices", limit],
     queryFn: async (): Promise<Invoice[]> => {
-      const response = await invoicesAPI.getAll({ limit, offset: 0 });
-      return response.data;
+      const response = await invoicesAPI.getAll({ limit, skip: 0 });
+      return response.data.items;
     },
     staleTime: 1000 * 60 * 5, // 5 minutes
   });

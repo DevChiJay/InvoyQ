@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from motor.motor_asyncio import AsyncIOMotorDatabase
-from typing import List
+from typing import List, Optional
 
 from app.dependencies.auth import get_current_user
 from app.db.mongo import get_database
@@ -16,21 +16,23 @@ router = APIRouter()
 async def list_clients(
     limit: int = 50,
     skip: int = 0,
+    search: Optional[str] = None,
     db: AsyncIOMotorDatabase = Depends(get_database),
     current_user: UserInDB = Depends(get_current_user),
 ):
     client_repo = ClientRepository(db)
-    
+
     if limit <= 0:
         limit = 50
-    limit = min(limit, 100)
+    limit = min(limit, 500)
     if skip < 0:
         skip = 0
-    
+
     clients = await client_repo.list_by_user(
         user_id=current_user.id,
         limit=limit,
-        skip=skip
+        skip=skip,
+        search=search or None,
     )
     return clients
 

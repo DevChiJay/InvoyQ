@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { useRef, useEffect } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Table,
   TableBody,
@@ -11,24 +11,60 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
-import { Search, Mail, Phone, MapPin, Eye, Pencil, Trash2 } from 'lucide-react';
-import Link from 'next/link';
-import type { Client } from '@/types/api';
+} from "@/components/ui/table";
+import {
+  Search,
+  Mail,
+  Phone,
+  MapPin,
+  Eye,
+  Pencil,
+  Trash2,
+  Loader2,
+} from "lucide-react";
+import Link from "next/link";
+import type { Client } from "@/types/api";
 
 interface ClientListProps {
   clients: Client[];
   isLoading?: boolean;
   onDelete?: (id: string, name: string) => void;
+  searchTerm?: string;
+  onSearchChange?: (value: string) => void;
+  hasMore?: boolean;
+  isLoadingMore?: boolean;
+  onLoadMore?: () => void;
 }
 
-export function ClientList({ clients, isLoading, onDelete }: ClientListProps) {
-  const [searchTerm, setSearchTerm] = useState('');
+export function ClientList({
+  clients,
+  isLoading,
+  onDelete,
+  searchTerm = "",
+  onSearchChange,
+  hasMore = false,
+  isLoadingMore = false,
+  onLoadMore,
+}: ClientListProps) {
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
 
-  const filteredClients = clients.filter((client) =>
-    client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (client.email?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false)
-  );
+  // Trigger next page load when the sentinel element scrolls into view
+  useEffect(() => {
+    if (!onLoadMore || !hasMore) return;
+    const el = sentinelRef.current;
+    if (!el) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          onLoadMore();
+        }
+      },
+      { threshold: 0.1 },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [onLoadMore, hasMore]);
 
   if (isLoading) {
     return (
@@ -47,7 +83,7 @@ export function ClientList({ clients, isLoading, onDelete }: ClientListProps) {
     );
   }
 
-  if (clients.length === 0) {
+  if (clients.length === 0 && !searchTerm) {
     return (
       <Card>
         <CardHeader>
@@ -79,7 +115,7 @@ export function ClientList({ clients, isLoading, onDelete }: ClientListProps) {
         <Input
           placeholder="Search clients by name or email..."
           value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
+          onChange={(e) => onSearchChange?.(e.target.value)}
           className="pl-10"
         />
       </div>
@@ -97,7 +133,7 @@ export function ClientList({ clients, isLoading, onDelete }: ClientListProps) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredClients.map((client) => (
+            {clients.map((client) => (
               <TableRow key={client.id}>
                 <TableCell className="font-medium">{client.name}</TableCell>
                 <TableCell>
@@ -120,7 +156,9 @@ export function ClientList({ clients, isLoading, onDelete }: ClientListProps) {
                   {client.address ? (
                     <div className="flex items-center gap-2">
                       <MapPin className="h-4 w-4 text-muted-foreground" />
-                      <span className="max-w-[200px] truncate">{client.address}</span>
+                      <span className="max-w-[200px] truncate">
+                        {client.address}
+                      </span>
                     </div>
                   ) : (
                     <span className="text-muted-foreground">—</span>
@@ -155,7 +193,7 @@ export function ClientList({ clients, isLoading, onDelete }: ClientListProps) {
 
       {/* Mobile Card View */}
       <div className="md:hidden space-y-4">
-        {filteredClients.map((client) => (
+        {clients.map((client) => (
           <Card key={client.id}>
             <CardContent className="pt-6">
               <div className="space-y-3">
@@ -179,13 +217,23 @@ export function ClientList({ clients, isLoading, onDelete }: ClientListProps) {
                   </div>
                 )}
                 <div className="flex gap-2 pt-2">
-                  <Button variant="outline" size="sm" className="flex-1" asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1"
+                    asChild
+                  >
                     <Link href={`/dashboard/clients/${client.id}`}>
                       <Eye className="mr-2 h-4 w-4" />
                       View
                     </Link>
                   </Button>
-                  <Button variant="outline" size="sm" className="flex-1" asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1"
+                    asChild
+                  >
                     <Link href={`/dashboard/clients/${client.id}/edit`}>
                       <Pencil className="mr-2 h-4 w-4" />
                       Edit
@@ -204,6 +252,23 @@ export function ClientList({ clients, isLoading, onDelete }: ClientListProps) {
           </Card>
         ))}
       </div>
+
+      {/* Infinite scroll sentinel */}
+      <div ref={sentinelRef} className="h-4" />
+
+      {/* Loading more indicator */}
+      {isLoadingMore && (
+        <div className="flex justify-center py-4">
+          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+        </div>
+      )}
+
+      {/* No results for search */}
+      {clients.length === 0 && searchTerm && (
+        <p className="text-center text-sm text-muted-foreground py-8">
+          No clients match &ldquo;{searchTerm}&rdquo;
+        </p>
+      )}
     </div>
   );
 }

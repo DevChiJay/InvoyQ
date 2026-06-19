@@ -1,19 +1,48 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  useQuery,
+  useInfiniteQuery,
+  useMutation,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { clientsApi } from "@/services/api/clients";
 import { ClientCreate, ClientUpdate } from "@/types/client";
 
 export const CLIENT_KEYS = {
   all: ["clients"] as const,
   list: (params: any) => ["clients", "list", params] as const,
+  infinite: (search?: string) => ["clients", "infinite", search] as const,
   detail: (id: string) => ["clients", "detail", id] as const,
   stats: ["clients", "stats"] as const,
 };
+
+const PAGE_SIZE = 50;
 
 export function useClients(params?: { limit?: number; skip?: number }) {
   return useQuery({
     queryKey: CLIENT_KEYS.list(params),
     queryFn: () => clientsApi.list(params),
     staleTime: 2 * 60 * 1000, // 2 minutes
+  });
+}
+
+export function useInfiniteClients(search?: string) {
+  return useInfiniteQuery({
+    queryKey: CLIENT_KEYS.infinite(search),
+    queryFn: ({ pageParam = 0 }) =>
+      clientsApi.list({ limit: PAGE_SIZE, skip: pageParam, search }),
+    getNextPageParam: (lastPage, allPages) =>
+      lastPage.length === PAGE_SIZE ? allPages.length * PAGE_SIZE : undefined,
+    initialPageParam: 0,
+    staleTime: 2 * 60 * 1000,
+  });
+}
+
+export function useClientSearch(search: string) {
+  return useQuery({
+    queryKey: ["clients", "search", search],
+    queryFn: () =>
+      clientsApi.list({ limit: 20, skip: 0, search: search || undefined }),
+    staleTime: 30 * 1000,
   });
 }
 

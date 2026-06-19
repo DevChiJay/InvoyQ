@@ -36,6 +36,7 @@ export function useProducts(params?: {
       return lastPage.has_more ? nextSkip : undefined;
     },
     initialPageParam: 0,
+    staleTime: 2 * 60 * 1000,
   });
 }
 
