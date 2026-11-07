@@ -109,6 +109,9 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const umamiUrl = process.env.NEXT_PUBLIC_UMAMI_SCRIPT_URL;
+  const umamiId = process.env.NEXT_PUBLIC_UMAMI_WEBSITE_ID;
+
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
@@ -116,6 +119,15 @@ export default function RootLayout({
           rel="canonical"
           href={process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}
         />
+        {/* Only load script if environment variables exist */}
+        {umamiUrl && umamiId && (
+          <Script
+            async
+            src={umamiUrl}
+            data-website-id={umamiId}
+            strategy="afterInteractive"
+          />
+        )}
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
