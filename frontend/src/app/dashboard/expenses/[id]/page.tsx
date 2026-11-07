@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { ArrowLeft, Receipt, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
+import { Skeleton } from '@/components/ui/skeleton';
 import { formatCurrency } from '@/lib/format';
 
 export default function ExpenseDetailPage() {
@@ -40,8 +41,9 @@ export default function ExpenseDetailPage() {
 
   if (isLoading && !currentExpense) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <p className="text-muted-foreground">Loading expense...</p>
+      <div className="space-y-6" aria-busy="true">
+        <Skeleton className="h-9 w-56" />
+        <Skeleton className="h-96 w-full rounded-xl" />
       </div>
     );
   }
@@ -62,11 +64,11 @@ export default function ExpenseDetailPage() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" onClick={() => router.back()}>
+        <Button variant="ghost" size="icon" onClick={() => router.back()} aria-label="Go back">
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div className="flex-1">
-          <h1 className="text-3xl font-bold">Expense Details</h1>
+          <h1 className="font-display text-2xl font-semibold tracking-tight sm:text-3xl">Expense Details</h1>
           <p className="text-muted-foreground">{currentExpense.expense_date}</p>
         </div>
         <Badge variant="outline">
@@ -88,7 +90,7 @@ export default function ExpenseDetailPage() {
               <div>
                 <p className="text-sm text-muted-foreground">Amount</p>
                 <p className="text-lg font-semibold">
-                  {formatCurrency(currentExpense.amount)} {currentExpense.currency}
+                  {formatCurrency(currentExpense.amount, currentExpense.currency)}
                 </p>
               </div>
               <div>

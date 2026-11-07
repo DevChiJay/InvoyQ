@@ -126,8 +126,8 @@ export function SecuritySettingsForm() {
       )}
 
       {isOAuthUser && (
-        <div className="space-y-2 p-3 bg-blue-50 dark:bg-blue-950 rounded-md border border-blue-200 dark:border-blue-800">
-          <p className="text-sm text-blue-700 dark:text-blue-300">
+        <div className="space-y-2 p-3 bg-accent rounded-md border border-primary/20">
+          <p className="text-sm text-primary">
             You signed up with Google. Set a password to enable login with email
             and password on mobile.
           </p>

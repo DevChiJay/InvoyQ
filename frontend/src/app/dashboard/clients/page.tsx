@@ -7,6 +7,7 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { UserPlus } from "lucide-react";
 import { useState, useCallback } from "react";
 import { ClientFormModal } from "@/components/clients/client-form-modal";
+import { PageHeader } from "@/components/shared/page-header";
 import { toast } from "sonner";
 import { useDebounce } from "@/lib/hooks/use-debounce";
 
@@ -63,18 +64,16 @@ export default function ClientsPage() {
         onOpenChange={setIsClientModalOpen}
       />
 
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight">Clients</h2>
-          <p className="text-muted-foreground">
-            Manage your client information and contacts
-          </p>
-        </div>
-        <Button onClick={() => setIsClientModalOpen(true)}>
-          <UserPlus className="mr-2 h-4 w-4" />
-          Add Client
-        </Button>
-      </div>
+      <PageHeader
+        title="Clients"
+        description="Manage your client information and contacts"
+        actions={
+          <Button onClick={() => setIsClientModalOpen(true)}>
+            <UserPlus className="h-4 w-4" />
+            Add Client
+          </Button>
+        }
+      />
 
       <ClientList
         clients={clients}

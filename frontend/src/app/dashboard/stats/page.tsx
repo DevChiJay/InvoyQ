@@ -15,7 +15,7 @@ import {
   CheckCircle,
   XCircle,
 } from "lucide-react";
-import { parseDecimal } from "@/lib/format";
+import { formatCurrency as formatMoney, parseDecimal } from "@/lib/format";
 
 export default function MonthlyStatsPage() {
   const {
@@ -30,21 +30,15 @@ export default function MonthlyStatsPage() {
     isCurrentMonth,
   } = useMonthlyStats("NGN");
 
-  const formatCurrency = (value: string) => {
-    const num = parseDecimal(value);
-    return `${currency} ${num.toLocaleString(undefined, {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    })}`;
-  };
+  const formatCurrency = (value: string) => formatMoney(parseDecimal(value), currency);
 
   if (error) {
     return (
       <div className="space-y-6">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight">
+          <h1 className="font-display text-2xl font-semibold tracking-tight sm:text-3xl">
             Monthly Statistics
-          </h2>
+          </h1>
           <p className="text-muted-foreground">
             View detailed statistics for each month
           </p>
@@ -61,9 +55,9 @@ export default function MonthlyStatsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-3xl font-bold tracking-tight">
+        <h1 className="font-display text-2xl font-semibold tracking-tight sm:text-3xl">
           Monthly Statistics
-        </h2>
+        </h1>
         <p className="text-muted-foreground">
           View detailed statistics for each month
         </p>
@@ -104,54 +98,54 @@ export default function MonthlyStatsPage() {
         <>
           {/* Financial Overview */}
           <div>
-            <h3 className="text-lg font-semibold mb-4">Financial Overview</h3>
+            <h2 className="mb-4 text-lg font-semibold">Financial Overview</h2>
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              <Card className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950 dark:to-green-900 border-green-200 dark:border-green-800">
+              <Card>
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle className="text-sm font-medium text-green-700 dark:text-green-300">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">
                     Total Revenue
                   </CardTitle>
-                  <TrendingUp className="h-4 w-4 text-green-600 dark:text-green-400" />
+                  <TrendingUp className="h-4 w-4 text-success" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold text-green-900 dark:text-green-100">
+                  <div className="font-display text-2xl font-semibold tabular-nums text-success">
                     {formatCurrency(stats.total_revenue)}
                   </div>
-                  <p className="text-xs text-green-600 dark:text-green-400 mt-1">
+                  <p className="text-xs text-muted-foreground mt-1">
                     From paid invoices
                   </p>
                 </CardContent>
               </Card>
 
-              <Card className="bg-gradient-to-br from-red-50 to-red-100 dark:from-red-950 dark:to-red-900 border-red-200 dark:border-red-800">
+              <Card>
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle className="text-sm font-medium text-red-700 dark:text-red-300">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">
                     Total Expenses
                   </CardTitle>
-                  <TrendingDown className="h-4 w-4 text-red-600 dark:text-red-400" />
+                  <TrendingDown className="h-4 w-4 text-destructive" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold text-red-900 dark:text-red-100">
+                  <div className="font-display text-2xl font-semibold tabular-nums text-destructive">
                     {formatCurrency(stats.total_expenses)}
                   </div>
-                  <p className="text-xs text-red-600 dark:text-red-400 mt-1">
+                  <p className="text-xs text-muted-foreground mt-1">
                     All expenses
                   </p>
                 </CardContent>
               </Card>
 
-              <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950 dark:to-blue-900 border-blue-200 dark:border-blue-800">
+              <Card>
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle className="text-sm font-medium text-blue-700 dark:text-blue-300">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">
                     Net Income
                   </CardTitle>
-                  <DollarSign className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                  <DollarSign className="h-4 w-4 text-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold text-blue-900 dark:text-blue-100">
+                  <div className="font-display text-2xl font-semibold tabular-nums text-foreground">
                     {formatCurrency(stats.net_income)}
                   </div>
-                  <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                  <p className="text-xs text-muted-foreground mt-1">
                     Revenue - Expenses
                   </p>
                 </CardContent>
@@ -161,7 +155,7 @@ export default function MonthlyStatsPage() {
 
           {/* Invoices */}
           <div>
-            <h3 className="text-lg font-semibold mb-4">Invoices</h3>
+            <h2 className="mb-4 text-lg font-semibold">Invoices</h2>
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -171,7 +165,7 @@ export default function MonthlyStatsPage() {
                   <FileText className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">
+                  <div className="font-display text-2xl font-semibold tabular-nums">
                     {stats.total_invoices}
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">
@@ -185,10 +179,10 @@ export default function MonthlyStatsPage() {
                   <CardTitle className="text-sm font-medium">
                     Paid Invoices
                   </CardTitle>
-                  <CheckCircle className="h-4 w-4 text-green-600" />
+                  <CheckCircle className="h-4 w-4 text-success" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">
+                  <div className="font-display text-2xl font-semibold tabular-nums">
                     {stats.paid_invoices}
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">
@@ -202,10 +196,10 @@ export default function MonthlyStatsPage() {
                   <CardTitle className="text-sm font-medium">
                     Unpaid Invoices
                   </CardTitle>
-                  <XCircle className="h-4 w-4 text-orange-600" />
+                  <XCircle className="h-4 w-4 text-warning" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">
+                  <div className="font-display text-2xl font-semibold tabular-nums">
                     {stats.unpaid_invoices}
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">
@@ -226,7 +220,7 @@ export default function MonthlyStatsPage() {
                 <ShoppingBag className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">
+                <div className="font-display text-2xl font-semibold tabular-nums">
                   {stats.total_products_sold}
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
@@ -243,7 +237,7 @@ export default function MonthlyStatsPage() {
                 <Users className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{stats.new_clients}</div>
+                <div className="font-display text-2xl font-semibold tabular-nums">{stats.new_clients}</div>
                 <p className="text-xs text-muted-foreground mt-1">
                   Clients added this month
                 </p>
@@ -254,7 +248,7 @@ export default function MonthlyStatsPage() {
           {/* Top Products */}
           {stats.top_products && stats.top_products.length > 0 && (
             <div>
-              <h3 className="text-lg font-semibold mb-4">Top 5 Products</h3>
+              <h2 className="mb-4 text-lg font-semibold">Top 5 Products</h2>
               <Card>
                 <CardContent className="p-0">
                   <div className="divide-y">

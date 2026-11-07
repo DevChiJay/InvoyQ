@@ -124,7 +124,7 @@ export function ExpenseSummary({ filters }: ExpenseSummaryProps) {
                       </TableCell>
                       <TableCell className="text-right">{summary.count}</TableCell>
                       <TableCell className="text-right font-medium">
-                        {formatCurrency(summary.total_amount)} {summary.currency}
+                        {formatCurrency(summary.total_amount, summary.currency)}
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-2">

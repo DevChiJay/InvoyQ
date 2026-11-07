@@ -1,3 +1,4 @@
+import { DEFAULT_CURRENCY } from "@/lib/currency";
 import { useQuery } from "@tanstack/react-query";
 import { clientsAPI, invoicesAPI, productsAPI, expensesAPI } from "@/lib/api";
 import type { Invoice } from "@/types/api";
@@ -78,9 +79,9 @@ export const useDashboardStats = () => {
           0,
         ) || 0;
 
-      // Get currency from first invoice or default to USD
+      // Get currency from first invoice or default to the app default (NGN)
       const firstInvoice = firstInvoiceResponse.data.items?.[0];
-      const currency = firstInvoice?.currency || "USD";
+      const currency = firstInvoice?.currency || DEFAULT_CURRENCY;
 
       return {
         totalClients: clientStats.total_count,

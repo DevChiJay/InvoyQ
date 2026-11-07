@@ -41,14 +41,14 @@ export function SubscriptionCard({ onUpgrade }: SubscriptionCardProps) {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             {isPro ? (
-              <Crown className="h-5 w-5 text-yellow-500" />
+              <Crown className="h-5 w-5 text-warning" />
             ) : (
               <CreditCard className="h-5 w-5 text-muted-foreground" />
             )}
             <CardTitle>{isPro ? "Pro Plan" : "Free Plan"}</CardTitle>
           </div>
           {isPro && isActive && (
-            <Badge className="bg-green-500/10 text-green-700 dark:text-green-400">
+            <Badge variant="success">
               Active
             </Badge>
           )}
@@ -84,7 +84,7 @@ export function SubscriptionCard({ onUpgrade }: SubscriptionCardProps) {
               </div>
               {daysRemaining > 0 && (
                 <div className="flex items-center gap-2 text-sm">
-                  <CheckCircle2 className="h-4 w-4 text-green-500" />
+                  <CheckCircle2 className="h-4 w-4 text-success" />
                   <span className="text-muted-foreground">
                     {daysRemaining} days remaining
                   </span>
@@ -113,7 +113,7 @@ export function SubscriptionCard({ onUpgrade }: SubscriptionCardProps) {
                   "Advanced analytics",
                 ].map((feature) => (
                   <li key={feature} className="flex items-center gap-2 text-sm">
-                    <CheckCircle2 className="h-4 w-4 text-green-500 flex-shrink-0" />
+                    <CheckCircle2 className="h-4 w-4 text-success flex-shrink-0" />
                     <span>{feature}</span>
                   </li>
                 ))}
@@ -133,7 +133,7 @@ export function SubscriptionCard({ onUpgrade }: SubscriptionCardProps) {
                   "PDF generation",
                 ].map((feature) => (
                   <li key={feature} className="flex items-center gap-2 text-sm">
-                    <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" />
+                    <CheckCircle2 className="h-4 w-4 text-success shrink-0" />
                     <span>{feature}</span>
                   </li>
                 ))}
@@ -142,7 +142,7 @@ export function SubscriptionCard({ onUpgrade }: SubscriptionCardProps) {
 
             {/* Upgrade CTA */}
             <div className="pt-4 border-t">
-              <div className="bg-linear-to-r from-indigo-50 to-purple-50 dark:from-indigo-950/20 dark:to-purple-950/20 p-4 rounded-lg">
+              <div className="bg-primary p-4 rounded-lg">
                 <h4 className="font-semibold mb-2">Upgrade to Pro</h4>
                 <p className="text-sm text-muted-foreground mb-3">
                   Unlock unlimited extractions, payment links, and more

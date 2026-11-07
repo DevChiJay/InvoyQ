@@ -63,7 +63,7 @@ export function UpgradeModal({ open, onClose }: UpgradeModalProps) {
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <div className="flex items-center gap-2">
-            <Crown className="h-6 w-6 text-yellow-500" />
+            <Crown className="h-6 w-6 text-warning" />
             <DialogTitle>Upgrade to Pro</DialogTitle>
           </div>
           <DialogDescription>
@@ -73,7 +73,7 @@ export function UpgradeModal({ open, onClose }: UpgradeModalProps) {
 
         <div className="space-y-4">
           {/* Pricing */}
-          <div className="bg-linear-to-br from-indigo-50 to-purple-50 dark:from-indigo-950/20 dark:to-purple-950/20 p-4 rounded-lg">
+          <div className="bg-primary p-4 rounded-lg">
             <div className="text-center">
               <div className="text-3xl font-bold">
                 {currencyInfo.symbol}{currencyInfo.price.toLocaleString()}
@@ -88,7 +88,7 @@ export function UpgradeModal({ open, onClose }: UpgradeModalProps) {
             <ul className="space-y-2">
               {features.map((feature) => (
                 <li key={feature} className="flex items-center gap-2 text-sm">
-                  <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" />
+                  <CheckCircle2 className="h-4 w-4 text-success shrink-0" />
                   <span>{feature}</span>
                 </li>
               ))}

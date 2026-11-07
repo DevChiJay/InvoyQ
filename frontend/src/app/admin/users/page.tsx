@@ -7,6 +7,14 @@ import type { AdminUser, AdminUserListParams } from "@/types/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { useDebounce } from "@/lib/hooks/use-debounce";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import {
   Table,
@@ -66,7 +74,6 @@ export default function AdminUsersPage() {
   const [limit] = useState(20);
 
   // Dropdown state
-  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
 
   // Edit dialog
   const [editingUser, setEditingUser] = useState<AdminUser | null>(null);
@@ -76,6 +83,9 @@ export default function AdminUsersPage() {
   // Delete confirmation dialog
   const [deletingUser, setDeletingUser] = useState<AdminUser | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  // Search only after typing pauses, instead of on every keystroke.
+  const debouncedSearch = useDebounce(search, 300);
 
   const fetchUsers = useCallback(async () => {
     setIsLoading(true);
@@ -89,7 +99,7 @@ export default function AdminUsersPage() {
         sort_order: -1,
       };
 
-      if (search) params.search = search;
+      if (debouncedSearch) params.search = debouncedSearch;
       if (isActiveFilter !== "all")
         params.is_active = isActiveFilter === "true";
       if (isProFilter !== "all") params.is_pro = isProFilter === "true";
@@ -106,7 +116,7 @@ export default function AdminUsersPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [page, limit, search, isActiveFilter, isProFilter, sourceFilter]);
+  }, [page, limit, debouncedSearch, isActiveFilter, isProFilter, sourceFilter]);
 
   useEffect(() => {
     fetchUsers();
@@ -131,7 +141,6 @@ export default function AdminUsersPage() {
       const error = err as { response?: { data?: { detail?: string } } };
       toast.error(error.response?.data?.detail || "Failed to update user");
     }
-    setOpenDropdown(null);
   };
 
   const handleTogglePro = async (user: AdminUser) => {
@@ -145,7 +154,6 @@ export default function AdminUsersPage() {
       const error = err as { response?: { data?: { detail?: string } } };
       toast.error(error.response?.data?.detail || "Failed to update user");
     }
-    setOpenDropdown(null);
   };
 
   const handleEdit = (user: AdminUser) => {
@@ -154,7 +162,6 @@ export default function AdminUsersPage() {
       full_name: user.full_name || "",
       email: user.email,
     });
-    setOpenDropdown(null);
   };
 
   const handleSaveEdit = async () => {
@@ -196,7 +203,6 @@ export default function AdminUsersPage() {
 
   const handleViewInvoices = (user: AdminUser) => {
     router.push(`/admin/users/${user.id}/invoices`);
-    setOpenDropdown(null);
   };
 
   const totalPages = Math.ceil(total / limit);
@@ -218,21 +224,21 @@ export default function AdminUsersPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-            <Users className="h-7 w-7 text-purple-600" />
+          <h1 className="font-display text-2xl font-semibold tracking-tight sm:text-3xl flex items-center gap-2">
+            <Users className="h-7 w-7 text-primary" />
             Users
           </h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+          <p className="text-sm text-muted-foreground mt-1">
             Manage all registered users ({total} total)
           </p>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border p-4">
+      <div className="bg-card rounded-lg shadow-sm border p-4">
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search by name or email..."
               value={search}
@@ -277,15 +283,15 @@ export default function AdminUsersPage() {
       </div>
 
       {/* Table */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border overflow-hidden">
+      <div className="bg-card rounded-lg shadow-sm border overflow-hidden">
         {isLoading ? (
           <div className="flex items-center justify-center py-12">
-            <Loader2 className="h-8 w-8 animate-spin text-purple-600" />
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
         ) : error ? (
-          <div className="text-center py-12 text-red-500">{error}</div>
+          <div className="text-center py-12 text-destructive">{error}</div>
         ) : users.length === 0 ? (
-          <div className="text-center py-12 text-gray-500">
+          <div className="text-center py-12 text-muted-foreground">
             No users found matching your filters.
           </div>
         ) : (
@@ -313,21 +319,21 @@ export default function AdminUsersPage() {
                               alt={user.full_name || user.email}
                             />
                           ) : null}
-                          <AvatarFallback className="bg-gradient-to-br from-purple-600 to-indigo-600 text-white text-sm font-medium">
+                          <AvatarFallback className="bg-primary text-white text-sm font-medium">
                             {getInitials(user.full_name, user.email)}
                           </AvatarFallback>
                         </Avatar>
                         <div>
                           <div className="flex items-center gap-2">
-                            <p className="font-medium text-gray-900 dark:text-white">
+                            <p className="font-medium text-foreground">
                               {user.full_name || "No name"}
                             </p>
-                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300">
+                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs bg-muted text-muted-foreground">
                               <FileText className="h-3 w-3" />
                               {user.invoice_count}
                             </span>
                           </div>
-                          <p className="text-sm text-gray-500 dark:text-gray-400">
+                          <p className="text-sm text-muted-foreground">
                             {user.email}
                           </p>
                         </div>
@@ -338,7 +344,7 @@ export default function AdminUsersPage() {
                         variant={user.is_active ? "default" : "destructive"}
                         className={
                           user.is_active
-                            ? "bg-green-100 text-green-700 hover:bg-green-100"
+                            ? "bg-success/10 text-success hover:bg-success/10"
                             : ""
                         }
                       >
@@ -347,7 +353,7 @@ export default function AdminUsersPage() {
                     </TableCell>
                     <TableCell>
                       {user.is_pro ? (
-                        <Badge className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white hover:from-purple-600 hover:to-indigo-600">
+                        <Badge variant="info">
                           <Crown className="h-3 w-3 mr-1" />
                           Pro
                         </Badge>
@@ -361,85 +367,39 @@ export default function AdminUsersPage() {
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <span className="text-sm text-gray-500">
+                      <span className="text-sm text-muted-foreground">
                         {user.created_at
                           ? format(new Date(user.created_at), "MMM d, yyyy")
                           : "-"}
                       </span>
                     </TableCell>
                     <TableCell className="text-right">
-                      <div className="relative">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() =>
-                            setOpenDropdown(
-                              openDropdown === user.id ? null : user.id,
-                            )
-                          }
-                        >
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-
-                        {openDropdown === user.id && (
-                          <>
-                            <div
-                              className="fixed inset-0 z-40"
-                              onClick={() => setOpenDropdown(null)}
-                            />
-                            <div className="absolute right-0 top-full mt-1 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border z-50 py-1">
-                              <button
-                                onClick={() => handleEdit(user)}
-                                className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
-                              >
-                                <Edit className="h-4 w-4" />
-                                Edit User
-                              </button>
-                              <button
-                                onClick={() => handleToggleActive(user)}
-                                className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
-                              >
-                                {user.is_active ? (
-                                  <>
-                                    <UserX className="h-4 w-4" />
-                                    Deactivate
-                                  </>
-                                ) : (
-                                  <>
-                                    <UserCheck className="h-4 w-4" />
-                                    Activate
-                                  </>
-                                )}
-                              </button>
-                              <button
-                                onClick={() => handleTogglePro(user)}
-                                className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
-                              >
-                                <Crown className="h-4 w-4" />
-                                {user.is_pro ? "Remove Pro" : "Grant Pro"}
-                              </button>
-                              <button
-                                onClick={() => handleViewInvoices(user)}
-                                className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
-                              >
-                                <FileText className="h-4 w-4" />
-                                View Invoices
-                              </button>
-                              <hr className="my-1 border-gray-200 dark:border-gray-700" />
-                              <button
-                                onClick={() => {
-                                  setDeletingUser(user);
-                                  setOpenDropdown(null);
-                                }}
-                                className="w-full px-4 py-2 text-left text-sm hover:bg-red-50 dark:hover:bg-red-900/20 text-red-600 flex items-center gap-2"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                                Delete User
-                              </button>
-                            </div>
-                          </>
-                        )}
-                      </div>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon-sm" aria-label={`Actions for ${user.full_name || user.email}`}>
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-48">
+                          <DropdownMenuItem onSelect={() => handleEdit(user)}>
+                            <Edit /> Edit User
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onSelect={() => handleToggleActive(user)}>
+                            {user.is_active ? <UserX /> : <UserCheck />}
+                            {user.is_active ? "Deactivate" : "Activate"}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onSelect={() => handleTogglePro(user)}>
+                            <Crown /> {user.is_pro ? "Remove Pro" : "Grant Pro"}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onSelect={() => handleViewInvoices(user)}>
+                            <FileText /> View Invoices
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem variant="destructive" onSelect={() => setDeletingUser(user)}>
+                            <Trash2 /> Delete User
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -448,7 +408,7 @@ export default function AdminUsersPage() {
 
             {/* Pagination */}
             <div className="flex items-center justify-between px-4 py-3 border-t">
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-muted-foreground">
                 Showing {(page - 1) * limit + 1} to{" "}
                 {Math.min(page * limit, total)} of {total} users
               </p>
@@ -461,7 +421,7 @@ export default function AdminUsersPage() {
                 >
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
-                <span className="text-sm text-gray-600 dark:text-gray-400">
+                <span className="text-sm text-muted-foreground">
                   Page {page} of {totalPages}
                 </span>
                 <Button

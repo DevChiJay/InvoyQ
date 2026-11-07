@@ -34,11 +34,11 @@ import { format } from "date-fns";
 import { toast } from "sonner";
 
 const statusColors: Record<string, string> = {
-  draft: "bg-gray-100 text-gray-700",
-  sent: "bg-blue-100 text-blue-700",
-  paid: "bg-green-100 text-green-700",
-  overdue: "bg-red-100 text-red-700",
-  cancelled: "bg-orange-100 text-orange-700",
+  draft: "bg-muted text-foreground/80",
+  sent: "bg-accent text-primary",
+  paid: "bg-success/10 text-success",
+  overdue: "bg-destructive/10 text-destructive",
+  cancelled: "bg-warning/10 text-warning",
 };
 
 export default function AdminUserInvoicesPage() {
@@ -113,12 +113,12 @@ export default function AdminUserInvoicesPage() {
 
         <div className="flex items-start justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-              <FileText className="h-7 w-7 text-purple-600" />
+            <h1 className="font-display text-2xl font-semibold tracking-tight sm:text-3xl flex items-center gap-2">
+              <FileText className="h-7 w-7 text-primary" />
               User Invoices
             </h1>
             {data && (
-              <div className="mt-2 flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
+              <div className="mt-2 flex items-center gap-4 text-sm text-muted-foreground">
                 <span className="flex items-center gap-1">
                   <User className="h-4 w-4" />
                   {data.user_name || "No name"}
@@ -135,7 +135,7 @@ export default function AdminUserInvoicesPage() {
       </div>
 
       {/* Filters */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border p-4">
+      <div className="bg-card rounded-lg shadow-sm border p-4">
         <div className="flex items-center gap-4">
           <Select
             value={statusFilter}
@@ -160,15 +160,15 @@ export default function AdminUserInvoicesPage() {
       </div>
 
       {/* Table */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border overflow-hidden">
+      <div className="bg-card rounded-lg shadow-sm border overflow-hidden">
         {isLoading ? (
           <div className="flex items-center justify-center py-12">
-            <Loader2 className="h-8 w-8 animate-spin text-purple-600" />
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
         ) : error ? (
-          <div className="text-center py-12 text-red-500">{error}</div>
+          <div className="text-center py-12 text-destructive">{error}</div>
         ) : !data || data.items.length === 0 ? (
-          <div className="text-center py-12 text-gray-500">
+          <div className="text-center py-12 text-muted-foreground">
             No invoices found for this user.
           </div>
         ) : (
@@ -189,18 +189,18 @@ export default function AdminUserInvoicesPage() {
                 {data.items.map((invoice) => (
                   <TableRow key={invoice.id}>
                     <TableCell>
-                      <span className="font-medium text-gray-900 dark:text-white">
+                      <span className="font-medium text-foreground">
                         {invoice.number}
                       </span>
                     </TableCell>
                     <TableCell>
-                      <span className="text-sm text-gray-600 dark:text-gray-400">
+                      <span className="text-sm text-muted-foreground">
                         {invoice.client_name || "-"}
                       </span>
                     </TableCell>
                     <TableCell>
                       <Badge
-                        className={`capitalize ${statusColors[invoice.status] || "bg-gray-100 text-gray-700"}`}
+                        className={`capitalize ${statusColors[invoice.status] || "bg-muted text-foreground/80"}`}
                       >
                         {invoice.status}
                       </Badge>
@@ -211,21 +211,21 @@ export default function AdminUserInvoicesPage() {
                       </span>
                     </TableCell>
                     <TableCell>
-                      <span className="text-sm text-gray-500">
+                      <span className="text-sm text-muted-foreground">
                         {invoice.issued_date
                           ? format(new Date(invoice.issued_date), "MMM d, yyyy")
                           : "-"}
                       </span>
                     </TableCell>
                     <TableCell>
-                      <span className="text-sm text-gray-500">
+                      <span className="text-sm text-muted-foreground">
                         {invoice.due_date
                           ? format(new Date(invoice.due_date), "MMM d, yyyy")
                           : "-"}
                       </span>
                     </TableCell>
                     <TableCell>
-                      <span className="text-sm text-gray-500">
+                      <span className="text-sm text-muted-foreground">
                         {invoice.created_at
                           ? format(new Date(invoice.created_at), "MMM d, yyyy")
                           : "-"}
@@ -238,7 +238,7 @@ export default function AdminUserInvoicesPage() {
 
             {/* Pagination */}
             <div className="flex items-center justify-between px-4 py-3 border-t">
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-muted-foreground">
                 Showing {(page - 1) * limit + 1} to{" "}
                 {Math.min(page * limit, data.total)} of {data.total} invoices
               </p>
@@ -251,7 +251,7 @@ export default function AdminUserInvoicesPage() {
                 >
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
-                <span className="text-sm text-gray-600 dark:text-gray-400">
+                <span className="text-sm text-muted-foreground">
                   Page {page} of {totalPages}
                 </span>
                 <Button

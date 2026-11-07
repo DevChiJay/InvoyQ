@@ -48,9 +48,9 @@ export default function SettingsPage() {
   }, [prompt]);
 
   return (
-    <div className="container max-w-4xl py-8">
+    <div className="mx-auto max-w-4xl">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
+        <h1 className="font-display text-2xl font-semibold tracking-tight sm:text-3xl">Settings</h1>
         <p className="text-muted-foreground mt-2">
           Manage your account settings and business information
         </p>

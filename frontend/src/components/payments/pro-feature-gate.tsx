@@ -57,7 +57,7 @@ export function ProFeatureGate({
           <div className="text-center space-y-3 p-4">
             <div className="flex items-center justify-center gap-2">
               <Lock className="h-5 w-5 text-muted-foreground" />
-              <Crown className="h-5 w-5 text-yellow-500" />
+              <Crown className="h-5 w-5 text-warning" />
             </div>
             <div>
               <h3 className="font-semibold">Pro Feature</h3>

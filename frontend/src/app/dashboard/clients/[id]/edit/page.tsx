@@ -60,7 +60,7 @@ export default function EditClientPage() {
             Back to Client
           </Link>
         </Button>
-        <h2 className="text-3xl font-bold tracking-tight">Edit Client</h2>
+        <h1 className="font-display text-2xl font-semibold tracking-tight sm:text-3xl">Edit Client</h1>
         <p className="text-muted-foreground">
           Update {client.name}&apos;s information
         </p>

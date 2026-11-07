@@ -1,10 +1,13 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import Link from "next/link";
+import { FileText, Loader2, Pencil, Search, SearchX, Sparkles, Trash2 } from "lucide-react";
+import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {
   Table,
   TableBody,
@@ -13,14 +16,11 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Search, Eye, Pencil, Trash2, FileText, Loader2 } from "lucide-react";
-import Link from "next/link";
-import {
-  formatRelativeDate,
-  formatSimpleDate,
-  formatCurrency,
-  invoiceClientName,
-} from "@/lib/format";
+import { EmptyState } from "@/components/shared/empty-state";
+import { Money } from "@/components/shared/money";
+import { SortableHead } from "@/components/shared/sortable-head";
+import { StatusBadge } from "@/components/shared/status-badge";
+import { formatDate, invoiceClientName } from "@/lib/format";
 import type { Invoice, InvoiceListParams } from "@/types/api";
 
 interface InvoiceListProps {
@@ -33,6 +33,14 @@ interface InvoiceListProps {
   isLoadingMore?: boolean;
   onLoadMore?: () => void;
 }
+
+const STATUS_FILTERS = [
+  { value: "all", label: "All" },
+  { value: "draft", label: "Draft" },
+  { value: "sent", label: "Sent" },
+  { value: "paid", label: "Paid" },
+  { value: "overdue", label: "Overdue" },
+];
 
 export function InvoiceList({
   invoices,
@@ -88,60 +96,31 @@ export function InvoiceList({
 
   const activeStatus = filters?.status ?? "all";
 
-  const getStatusBadgeVariant = (status: Invoice["status"]) => {
-    switch (status) {
-      case "paid":
-        return "default";
-      case "sent":
-        return "secondary";
-      case "overdue":
-        return "destructive";
-      case "draft":
-        return "outline";
-      default:
-        return "secondary";
-    }
-  };
-
-  if (isLoading) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Invoices</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="h-16 bg-muted animate-pulse rounded" />
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
   const hasActiveFilter = Boolean(filters?.search || filters?.status);
+  const sortDirection = (field: InvoiceListParams["sort_by"]) =>
+    filters?.sort_by === field ? (filters?.sort_order === -1 ? "desc" : "asc") : null;
 
-  if (invoices.length === 0 && !hasActiveFilter) {
+  if (!isLoading && invoices.length === 0 && !hasActiveFilter) {
     return (
       <Card>
-        <CardHeader>
-          <CardTitle>Invoices</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-col items-center justify-center py-12 text-center">
-            <div className="rounded-full bg-muted p-6 mb-4">
-              <FileText className="h-12 w-12 text-muted-foreground" />
+        <EmptyState
+          icon={FileText}
+          title="No invoices yet"
+          description="Paste a chat with a client and InvoyQ will draft the invoice, or create one from scratch."
+          action={
+            <div className="flex flex-wrap justify-center gap-2">
+              <Button asChild>
+                <Link href="/dashboard/extract">
+                  <Sparkles className="h-4 w-4" />
+                  Extract from chat
+                </Link>
+              </Button>
+              <Button variant="outline" asChild>
+                <Link href="/dashboard/invoices/new">Create manually</Link>
+              </Button>
             </div>
-            <h3 className="font-semibold text-lg mb-2">No invoices yet</h3>
-            <p className="text-sm text-muted-foreground mb-6">
-              Create your first invoice to get started.
-            </p>
-            <Button asChild>
-              <Link href="/dashboard/invoices/new">Create Invoice</Link>
-            </Button>
-          </div>
-        </CardContent>
+          }
+        />
       </Card>
     );
   }
@@ -149,277 +128,164 @@ export function InvoiceList({
   return (
     <div className="space-y-4">
       {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-4">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
           <Input
-            placeholder="Search by invoice number or client name..."
+            type="search"
+            aria-label="Search invoices"
+            placeholder="Search by invoice number or client name"
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
             className="pl-10"
           />
         </div>
-        <div className="flex gap-2">
-          <Button
-            variant={activeStatus === "all" ? "default" : "outline"}
-            size="sm"
-            onClick={() => handleStatusFilter("all")}
-          >
-            All
-          </Button>
-          <Button
-            variant={activeStatus === "draft" ? "default" : "outline"}
-            size="sm"
-            onClick={() => handleStatusFilter("draft")}
-          >
-            Draft
-          </Button>
-          <Button
-            variant={activeStatus === "sent" ? "default" : "outline"}
-            size="sm"
-            onClick={() => handleStatusFilter("sent")}
-          >
-            Sent
-          </Button>
-          <Button
-            variant={activeStatus === "paid" ? "default" : "outline"}
-            size="sm"
-            onClick={() => handleStatusFilter("paid")}
-          >
-            Paid
-          </Button>
-          <Button
-            variant={activeStatus === "overdue" ? "default" : "outline"}
-            size="sm"
-            onClick={() => handleStatusFilter("overdue")}
-          >
-            Overdue
-          </Button>
-        </div>
+        <ToggleGroup
+          type="single"
+          variant="outline"
+          size="sm"
+          value={activeStatus}
+          onValueChange={(value) => value && handleStatusFilter(value)}
+          aria-label="Filter by status"
+          className="flex w-full flex-wrap lg:w-auto"
+        >
+          {STATUS_FILTERS.map((f) => (
+            <ToggleGroupItem key={f.value} value={f.value} className="flex-1 px-3 lg:flex-none">
+              {f.label}
+            </ToggleGroupItem>
+          ))}
+        </ToggleGroup>
       </div>
 
-      {/* Desktop Table View */}
-      <Card className="hidden md:block">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead
-                className="cursor-pointer hover:bg-muted/50"
-                onClick={() => handleSort("number")}
-              >
-                Invoice #{" "}
-                {filters?.sort_by === "number" &&
-                  (filters?.sort_order === -1 ? "↓" : "↑")}
-              </TableHead>
-              <TableHead>Client</TableHead>
-              <TableHead
-                className="cursor-pointer hover:bg-muted/50"
-                onClick={() => handleSort("issued_date")}
-              >
-                Issued{" "}
-                {filters?.sort_by === "issued_date" &&
-                  (filters?.sort_order === -1 ? "↓" : "↑")}
-              </TableHead>
-              <TableHead
-                className="cursor-pointer hover:bg-muted/50"
-                onClick={() => handleSort("due_date")}
-              >
-                Due Date{" "}
-                {filters?.sort_by === "due_date" &&
-                  (filters?.sort_order === -1 ? "↓" : "↑")}
-              </TableHead>
-              <TableHead
-                className="cursor-pointer hover:bg-muted/50"
-                onClick={() => handleSort("status")}
-              >
-                Status{" "}
-                {filters?.sort_by === "status" &&
-                  (filters?.sort_order === -1 ? "↓" : "↑")}
-              </TableHead>
-              <TableHead
-                className="text-right cursor-pointer hover:bg-muted/50"
-                onClick={() => handleSort("total")}
-              >
-                Amount{" "}
-                {filters?.sort_by === "total" &&
-                  (filters?.sort_order === -1 ? "↓" : "↑")}
-              </TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {invoices.map((invoice) => (
-              <TableRow key={invoice.id} className="cursor-pointer">
-                <TableCell className="font-medium">
-                  <Link
-                    href={`/dashboard/invoices/${invoice.id}`}
-                    className="block"
-                  >
-                    {invoice.number}
-                  </Link>
-                </TableCell>
-                <TableCell>
-                  <Link
-                    href={`/dashboard/invoices/${invoice.id}`}
-                    className="block"
-                  >
-                    {invoiceClientName(invoice)}
-                  </Link>
-                </TableCell>
-                <TableCell>
-                  <Link
-                    href={`/dashboard/invoices/${invoice.id}`}
-                    className="block"
-                  >
-                    {formatRelativeDate(invoice.issued_date)}
-                  </Link>
-                </TableCell>
-                <TableCell>
-                  <Link
-                    href={`/dashboard/invoices/${invoice.id}`}
-                    className="block"
-                  >
-                    {formatSimpleDate(invoice.due_date)}
-                  </Link>
-                </TableCell>
-                <TableCell>
-                  <Link
-                    href={`/dashboard/invoices/${invoice.id}`}
-                    className="block"
-                  >
-                    <Badge variant={getStatusBadgeVariant(invoice.status)}>
-                      {invoice.status}
-                    </Badge>
-                  </Link>
-                </TableCell>
-                <TableCell className="text-right font-semibold">
-                  <Link
-                    href={`/dashboard/invoices/${invoice.id}`}
-                    className="block"
-                  >
-                    {formatCurrency(
-                      invoice.total ?? 0,
-                      invoice.currency ?? "NGN",
-                    )}
-                  </Link>
-                </TableCell>
-                <TableCell className="text-right">
-                  <div className="flex items-center justify-end gap-2">
-                    <Button variant="ghost" size="sm" asChild>
-                      <Link href={`/dashboard/invoices/${invoice.id}`}>
-                        <Eye className="h-4 w-4" />
-                      </Link>
-                    </Button>
-                    <Button variant="ghost" size="sm" asChild>
-                      <Link href={`/dashboard/invoices/${invoice.id}/edit`}>
-                        <Pencil className="h-4 w-4" />
-                      </Link>
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() =>
-                        onDelete?.(invoice.id, invoice.number ?? "")
-                      }
-                    >
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
-                  </div>
-                </TableCell>
-              </TableRow>
+      {isLoading ? (
+        <Card className="gap-0 p-4" aria-busy="true">
+          <div className="space-y-3">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <Skeleton key={i} className="h-12 w-full" />
             ))}
-          </TableBody>
-        </Table>
-      </Card>
+          </div>
+        </Card>
+      ) : invoices.length === 0 ? (
+        <Card>
+          <EmptyState
+            icon={SearchX}
+            title="No invoices match"
+            description="Try a different search or status."
+            action={
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setSearchInput("");
+                  onFilterChange?.({ search: "", status: undefined });
+                }}
+              >
+                Clear filters
+              </Button>
+            }
+          />
+        </Card>
+      ) : (
+        <>
+          {/* Desktop table */}
+          <Card className="hidden gap-0 py-0 md:block">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <SortableHead label="Invoice" direction={sortDirection("number")} onSort={() => handleSort("number")} />
+                  <TableHead>Client</TableHead>
+                  <SortableHead label="Issued" direction={sortDirection("issued_date")} onSort={() => handleSort("issued_date")} />
+                  <SortableHead label="Due" direction={sortDirection("due_date")} onSort={() => handleSort("due_date")} />
+                  <SortableHead label="Status" direction={sortDirection("status")} onSort={() => handleSort("status")} />
+                  <SortableHead label="Amount" align="right" direction={sortDirection("total")} onSort={() => handleSort("total")} />
+                  <TableHead className="w-24 text-right">
+                    <span className="sr-only">Actions</span>
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {invoices.map((invoice) => (
+                  <TableRow key={invoice.id}>
+                    <TableCell className="font-medium">
+                      <Link
+                        href={`/dashboard/invoices/${invoice.id}`}
+                        className="rounded-sm hover:underline focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                      >
+                        {invoice.number}
+                      </Link>
+                    </TableCell>
+                    <TableCell className="max-w-56 truncate">{invoiceClientName(invoice)}</TableCell>
+                    <TableCell className="text-muted-foreground">{formatDate(invoice.issued_date)}</TableCell>
+                    <TableCell className="text-muted-foreground">{formatDate(invoice.due_date)}</TableCell>
+                    <TableCell>
+                      <StatusBadge status={invoice.status} />
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Money amount={invoice.total} currency={invoice.currency} className="font-medium" />
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        <Button variant="ghost" size="icon-sm" asChild>
+                          <Link href={`/dashboard/invoices/${invoice.id}/edit`} aria-label={`Edit ${invoice.number}`}>
+                            <Pencil />
+                          </Link>
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          aria-label={`Delete ${invoice.number}`}
+                          onClick={() => onDelete?.(invoice.id, invoice.number ?? "")}
+                        >
+                          <Trash2 className="text-destructive" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </Card>
 
-      {/* Mobile Card View */}
-      <div className="md:hidden space-y-4">
-        {invoices.map((invoice) => (
-          <Card key={invoice.id}>
-            <CardContent className="pt-6">
-              <div className="space-y-3">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <p className="font-semibold">{invoice.number}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {invoiceClientName(invoice)}
-                    </p>
-                  </div>
-                  <Badge variant={getStatusBadgeVariant(invoice.status)}>
-                    {invoice.status}
-                  </Badge>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Created:</span>
-                  <span>{formatRelativeDate(invoice.created_at)}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Due:</span>
-                  <span>{formatSimpleDate(invoice.due_date)}</span>
-                </div>
-                <div className="flex justify-between text-sm font-semibold">
-                  <span>Total:</span>
-                  <span>
-                    {formatCurrency(
-                      invoice.total ?? 0,
-                      invoice.currency ?? "NGN",
-                    )}
-                  </span>
-                </div>
-                <div className="flex gap-2 pt-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="flex-1"
-                    asChild
+          {/* Mobile list */}
+          <ul className="space-y-2 md:hidden">
+            {invoices.map((invoice) => (
+              <li key={invoice.id}>
+                <Card className="flex-row items-center gap-3 p-4">
+                  <Link
+                    href={`/dashboard/invoices/${invoice.id}`}
+                    className="min-w-0 flex-1 rounded-sm focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
                   >
-                    <Link href={`/dashboard/invoices/${invoice.id}`}>
-                      <Eye className="mr-2 h-4 w-4" />
-                      View
-                    </Link>
-                  </Button>
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="font-medium">{invoice.number}</p>
+                      <Money amount={invoice.total} currency={invoice.currency} className="font-semibold" />
+                    </div>
+                    <p className="truncate text-sm text-muted-foreground">{invoiceClientName(invoice)}</p>
+                    <div className="mt-2 flex items-center justify-between gap-2">
+                      <StatusBadge status={invoice.status} />
+                      <span className="text-xs text-muted-foreground">Due {formatDate(invoice.due_date)}</span>
+                    </div>
+                  </Link>
                   <Button
-                    variant="outline"
-                    size="sm"
-                    className="flex-1"
-                    asChild
-                  >
-                    <Link href={`/dashboard/invoices/${invoice.id}/edit`}>
-                      <Pencil className="mr-2 h-4 w-4" />
-                      Edit
-                    </Link>
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
+                    variant="ghost"
+                    size="icon-sm"
+                    aria-label={`Delete ${invoice.number}`}
                     onClick={() => onDelete?.(invoice.id, invoice.number ?? "")}
                   >
-                    <Trash2 className="h-4 w-4 text-destructive" />
+                    <Trash2 className="text-destructive" />
                   </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      {invoices.length === 0 && !isLoading && (
-        <Card>
-          <CardContent className="py-12 text-center">
-            <p className="text-muted-foreground">
-              No invoices match your search criteria.
-            </p>
-          </CardContent>
-        </Card>
+                </Card>
+              </li>
+            ))}
+          </ul>
+        </>
       )}
 
       {/* Infinite scroll sentinel */}
       <div ref={sentinelRef} className="h-4" />
 
-      {/* Loading more indicator */}
       {isLoadingMore && (
-        <div className="flex justify-center py-4">
-          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+        <div className="flex justify-center py-4" role="status">
+          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" aria-hidden="true" />
+          <span className="sr-only">Loading more invoices</span>
         </div>
       )}
     </div>

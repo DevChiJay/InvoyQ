@@ -1,7 +1,7 @@
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { StatusBadge } from '@/components/shared/status-badge';
 import { usePaymentHistory } from '@/lib/hooks/use-payments';
 import { formatCurrency, formatSimpleDate } from '@/lib/format';
 import { CreditCard, Loader2, Receipt } from 'lucide-react';
@@ -10,27 +10,7 @@ import type { Payment } from '@/types/api';
 export default function PaymentsPage() {
   const { data: payments, isLoading } = usePaymentHistory(50, 0);
 
-  const getStatusBadge = (status: string) => {
-    const variants: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
-      paid: 'default',
-      pending: 'secondary',
-      failed: 'destructive',
-      cancelled: 'outline',
-    };
-
-    const colors: Record<string, string> = {
-      paid: 'bg-green-500/10 text-green-700 border-green-200',
-      pending: 'bg-yellow-500/10 text-yellow-700 border-yellow-200',
-      failed: 'bg-red-500/10 text-red-700 border-red-200',
-      cancelled: 'bg-gray-500/10 text-gray-700 border-gray-200',
-    };
-
-    return (
-      <Badge variant={variants[status] || 'secondary'} className={colors[status]}>
-        {status.toUpperCase()}
-      </Badge>
-    );
-  };
+  const getStatusBadge = (status: string) => <StatusBadge status={status} />;
 
   const getProviderIcon = () => {
     return <CreditCard className="h-4 w-4 text-muted-foreground" />;
@@ -40,7 +20,7 @@ export default function PaymentsPage() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Payment History</h1>
+        <h1 className="font-display text-2xl font-semibold tracking-tight sm:text-3xl">Payment History</h1>
         <p className="text-muted-foreground">
           View all your subscription payments and transactions
         </p>
@@ -126,10 +106,9 @@ export default function PaymentsPage() {
                         </code>
                       </td>
                       <td className="py-4 px-4 text-right">
-                        <p className="text-sm font-semibold">
-                          {formatCurrency(payment.amount)}
+                        <p className="text-sm font-semibold tabular-nums">
+                          {formatCurrency(payment.amount, payment.currency)}
                         </p>
-                        <p className="text-xs text-muted-foreground">{payment.currency}</p>
                       </td>
                       <td className="py-4 px-4 text-center">
                         {getStatusBadge(payment.status)}
@@ -170,7 +149,7 @@ export default function PaymentsPage() {
                   <div className="text-sm">
                     <p className="text-muted-foreground">Amount</p>
                     <p className="font-semibold">
-                      {formatCurrency(payment.amount)} {payment.currency}
+                      {formatCurrency(payment.amount, payment.currency)}
                     </p>
                   </div>
                   <div className="text-sm text-right">
