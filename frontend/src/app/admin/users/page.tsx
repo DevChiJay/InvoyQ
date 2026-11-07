@@ -7,6 +7,7 @@ import type { AdminUser, AdminUserListParams } from "@/types/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useDebounce } from "@/lib/hooks/use-debounce";
 import {
   DropdownMenu,
@@ -56,6 +57,45 @@ import {
 import { toast } from "sonner";
 import { format } from "date-fns";
 
+const DURATIONS = [
+  { value: "30", label: "30 days" },
+  { value: "90", label: "90 days" },
+  { value: "365", label: "1 year" },
+  { value: "none", label: "No end date" },
+];
+
+type ProDialogState = { kind: "grant" | "revoke"; users: AdminUser[] } | null;
+
+/** Plan column: Free / Pro with its end date, and this month's usage. */
+function PlanCell({ user }: { user: AdminUser }) {
+  return (
+    <div className="space-y-1">
+      {user.pro_active ? (
+        <Badge variant="info">
+          <Crown className="h-3 w-3 mr-1" />
+          Pro
+        </Badge>
+      ) : user.is_pro ? (
+        <Badge variant="warning">Pro expired</Badge>
+      ) : (
+        <Badge variant="secondary">Free</Badge>
+      )}
+      {user.is_pro && (
+        <p className="text-xs text-muted-foreground">
+          {user.subscription_end_date
+            ? `${user.pro_active ? "Until" : "Ended"} ${format(new Date(user.subscription_end_date), "d MMM yyyy")}`
+            : "No end date"}
+          {user.subscription_provider === "admin" && " · granted"}
+        </p>
+      )}
+      <p className="text-xs text-muted-foreground tabular-nums">
+        {user.usage_invoices} {user.usage_invoices === 1 ? "invoice" : "invoices"} · {user.usage_extractions}{" "}
+        {user.usage_extractions === 1 ? "extraction" : "extractions"} this month
+      </p>
+    </div>
+  );
+}
+
 export default function AdminUsersPage() {
   const router = useRouter();
   const [users, setUsers] = useState<AdminUser[]>([]);
@@ -80,6 +120,12 @@ export default function AdminUsersPage() {
   const [editForm, setEditForm] = useState({ full_name: "", email: "" });
   const [isEditing, setIsEditing] = useState(false);
 
+  // Grant / remove Pro (one user from the row menu, or everyone selected)
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [proDialog, setProDialog] = useState<ProDialogState>(null);
+  const [duration, setDuration] = useState<string>("365");
+  const [isSavingPro, setIsSavingPro] = useState(false);
+
   // Delete confirmation dialog
   const [deletingUser, setDeletingUser] = useState<AdminUser | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -90,6 +136,7 @@ export default function AdminUsersPage() {
   const fetchUsers = useCallback(async () => {
     setIsLoading(true);
     setError(null);
+    setSelected(new Set());
 
     try {
       const params: AdminUserListParams = {
@@ -143,18 +190,48 @@ export default function AdminUsersPage() {
     }
   };
 
-  const handleTogglePro = async (user: AdminUser) => {
+  const openProDialog = (kind: "grant" | "revoke", targets: AdminUser[]) => {
+    setDuration("365");
+    setProDialog({ kind, users: targets });
+  };
+
+  const handleProConfirm = async () => {
+    if (!proDialog) return;
+    const grant = proDialog.kind === "grant";
+    const targets = proDialog.users;
+    const days = grant && duration !== "none" ? Number(duration) : undefined;
+
+    setIsSavingPro(true);
     try {
-      await adminAPI.updateUser(user.id, { is_pro: !user.is_pro });
-      toast.success(
-        `Pro status ${user.is_pro ? "removed" : "granted"} successfully`,
-      );
+      if (targets.length === 1) {
+        await adminAPI.updateUser(targets[0].id, { is_pro: grant, ...(days ? { pro_days: days } : {}) });
+        toast.success(grant ? "Pro granted" : "Pro removed");
+      } else {
+        const { data } = await adminAPI.bulkSetPro({ user_ids: targets.map((u) => u.id), is_pro: grant, days });
+        toast.success(`Pro ${grant ? "granted to" : "removed from"} ${data.updated} users`);
+        if (data.not_found.length > 0) toast.warning(`Not found: ${data.not_found.join(", ")}`);
+      }
+      setProDialog(null);
       fetchUsers();
     } catch (err: unknown) {
       const error = err as { response?: { data?: { detail?: string } } };
-      toast.error(error.response?.data?.detail || "Failed to update user");
+      toast.error(error.response?.data?.detail || "Failed to update Pro status");
+    } finally {
+      setIsSavingPro(false);
     }
   };
+
+  const allOnPageSelected = users.length > 0 && users.every((u) => selected.has(u.id));
+  const someSelected = selected.size > 0;
+  const toggleAll = (checked: boolean) => setSelected(checked ? new Set(users.map((u) => u.id)) : new Set());
+  const toggleOne = (id: string, checked: boolean) =>
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (checked) next.add(id);
+      else next.delete(id);
+      return next;
+    });
+  const selectedUsers = users.filter((u) => selected.has(u.id));
 
   const handleEdit = (user: AdminUser) => {
     setEditingUser(user);
@@ -282,6 +359,22 @@ export default function AdminUsersPage() {
         </div>
       </div>
 
+      {/* Bulk actions */}
+      {someSelected && (
+        <div role="status" className="flex flex-wrap items-center gap-3 rounded-lg border bg-accent px-4 py-3">
+          <p className="text-sm font-medium text-accent-foreground">{selected.size} selected</p>
+          <Button size="sm" onClick={() => openProDialog("grant", selectedUsers)}>
+            <Crown /> Grant Pro
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => openProDialog("revoke", selectedUsers)}>
+            Remove Pro
+          </Button>
+          <Button size="sm" variant="ghost" onClick={() => setSelected(new Set())}>
+            Clear selection
+          </Button>
+        </div>
+      )}
+
       {/* Table */}
       <div className="bg-card rounded-lg shadow-sm border overflow-hidden">
         {isLoading ? (
@@ -299,6 +392,13 @@ export default function AdminUsersPage() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-10">
+                    <Checkbox
+                      aria-label="Select all users on this page"
+                      checked={allOnPageSelected ? true : someSelected ? "indeterminate" : false}
+                      onCheckedChange={(checked) => toggleAll(checked === true)}
+                    />
+                  </TableHead>
                   <TableHead>User</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Plan</TableHead>
@@ -309,7 +409,14 @@ export default function AdminUsersPage() {
               </TableHeader>
               <TableBody>
                 {users.map((user) => (
-                  <TableRow key={user.id}>
+                  <TableRow key={user.id} data-state={selected.has(user.id) ? "selected" : undefined}>
+                    <TableCell>
+                      <Checkbox
+                        aria-label={`Select ${user.full_name || user.email}`}
+                        checked={selected.has(user.id)}
+                        onCheckedChange={(checked) => toggleOne(user.id, checked === true)}
+                      />
+                    </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-3">
                         <Avatar className="h-10 w-10">
@@ -352,14 +459,7 @@ export default function AdminUsersPage() {
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      {user.is_pro ? (
-                        <Badge variant="info">
-                          <Crown className="h-3 w-3 mr-1" />
-                          Pro
-                        </Badge>
-                      ) : (
-                        <Badge variant="secondary">Free</Badge>
-                      )}
+                      <PlanCell user={user} />
                     </TableCell>
                     <TableCell>
                       <Badge variant="outline" className="capitalize">
@@ -388,8 +488,10 @@ export default function AdminUsersPage() {
                             {user.is_active ? <UserX /> : <UserCheck />}
                             {user.is_active ? "Deactivate" : "Activate"}
                           </DropdownMenuItem>
-                          <DropdownMenuItem onSelect={() => handleTogglePro(user)}>
-                            <Crown /> {user.is_pro ? "Remove Pro" : "Grant Pro"}
+                          <DropdownMenuItem
+                            onSelect={() => openProDialog(user.pro_active ? "revoke" : "grant", [user])}
+                          >
+                            <Crown /> {user.pro_active ? "Remove Pro" : "Grant Pro…"}
                           </DropdownMenuItem>
                           <DropdownMenuItem onSelect={() => handleViewInvoices(user)}>
                             <FileText /> View Invoices
@@ -493,6 +595,73 @@ export default function AdminUsersPage() {
                 </>
               ) : (
                 "Save Changes"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Grant / remove Pro */}
+      <Dialog open={!!proDialog} onOpenChange={(open) => !open && !isSavingPro && setProDialog(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {proDialog?.kind === "grant" ? "Grant Pro" : "Remove Pro"}
+              {proDialog && proDialog.users.length > 1 ? ` for ${proDialog.users.length} users` : ""}
+            </DialogTitle>
+            <DialogDescription>
+              {proDialog?.users.length === 1
+                ? proDialog.users[0].full_name || proDialog.users[0].email
+                : `${proDialog?.users.length ?? 0} selected users`}
+              {proDialog?.kind === "grant"
+                ? " will get unlimited invoices and AI extractions."
+                : " will go back to the Free plan limits straight away."}
+            </DialogDescription>
+          </DialogHeader>
+
+          {proDialog?.kind === "grant" && (
+            <div className="space-y-2 py-2">
+              <label htmlFor="pro-duration" className="text-sm font-medium">
+                How long
+              </label>
+              <Select value={duration} onValueChange={setDuration}>
+                <SelectTrigger id="pro-duration" className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {DURATIONS.map((d) => (
+                    <SelectItem key={d.value} value={d.value}>
+                      {d.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                {duration === "none"
+                  ? "Pro stays active until you remove it."
+                  : "Pro switches off on its own when the time is up."}
+              </p>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setProDialog(null)} disabled={isSavingPro}>
+              Cancel
+            </Button>
+            <Button
+              variant={proDialog?.kind === "revoke" ? "destructive" : "default"}
+              onClick={handleProConfirm}
+              disabled={isSavingPro}
+            >
+              {isSavingPro ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Saving...
+                </>
+              ) : proDialog?.kind === "grant" ? (
+                "Grant Pro"
+              ) : (
+                "Remove Pro"
               )}
             </Button>
           </DialogFooter>

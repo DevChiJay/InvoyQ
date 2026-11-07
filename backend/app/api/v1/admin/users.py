@@ -5,10 +5,11 @@ Provides functionality for admins to list, view, update,
 and deactivate users.
 """
 
+from datetime import datetime
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from motor.motor_asyncio import AsyncIOMotorDatabase
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 
 from app.dependencies.auth import get_current_admin_user
 from app.db.mongo import get_database
@@ -16,6 +17,7 @@ from app.repositories.user_repository import UserRepository, UserInDB
 from app.repositories.invoice_repository import InvoiceRepository
 from app.repositories.client_repository import ClientRepository
 from app.schemas.invoice_mongo import InvoiceOut
+from app.services.plans import INVOICES, EXTRACTIONS, is_pro_active, period_bounds, period_for
 
 router = APIRouter()
 
@@ -38,6 +40,9 @@ class AdminUserOut(BaseModel):
     # Subscription info
     subscription_status: Optional[str] = None
     subscription_provider: Optional[str] = None
+    subscription_end_date: Optional[str] = None
+    # True when is_pro is set and the subscription has not run out (what the limits use)
+    pro_active: bool = False
     
     # Business info
     company_name: Optional[str] = None
@@ -45,6 +50,9 @@ class AdminUserOut(BaseModel):
     
     # Stats
     invoice_count: int = 0
+    # This month's plan usage
+    usage_invoices: int = 0
+    usage_extractions: int = 0
 
     class Config:
         from_attributes = True
@@ -65,6 +73,24 @@ class AdminUserUpdate(BaseModel):
     email: Optional[EmailStr] = None
     is_active: Optional[bool] = None
     is_pro: Optional[bool] = None
+    # With is_pro=true: how long the grant lasts. Omit for no end date.
+    pro_days: Optional[int] = Field(None, ge=1, le=3650)
+
+
+class BulkProRequest(BaseModel):
+    """Grant or revoke Pro for several users at once, by id or by email."""
+    user_ids: List[str] = Field(default_factory=list)
+    emails: List[str] = Field(default_factory=list)
+    is_pro: bool = True
+    days: Optional[int] = Field(None, ge=1, le=3650, description="Grant length in days; omit for no end date")
+
+
+class BulkProResponse(BaseModel):
+    updated: int
+    not_found: List[str]
+
+
+BULK_PRO_MAX = 200
 
 
 class AdminUserInvoiceOut(BaseModel):
@@ -94,7 +120,30 @@ class AdminUserInvoicesResponse(BaseModel):
     has_more: bool
 
 
-def _user_to_admin_out(user: UserInDB, invoice_count: int = 0) -> AdminUserOut:
+async def _usage_this_month(db: AsyncIOMotorDatabase, user_ids: List[str]) -> dict:
+    """{user_id: (invoices, extractions)} for the current month, without creating usage documents.
+
+    Users with no counter yet (nothing created since limits were turned on) are counted from
+    their real invoices and extractions, matching how the counter would be seeded.
+    """
+    period = period_for()
+    start, end = period_bounds()
+    counted = {}
+    async for doc in db.usage.find({"user_id": {"$in": user_ids}, "period": period}):
+        counted[doc["user_id"]] = (int(doc.get(INVOICES, 0)), int(doc.get(EXTRACTIONS, 0)))
+    for uid in user_ids:
+        if uid not in counted:
+            window = {"$gte": start, "$lt": end}
+            counted[uid] = (
+                await db.invoices.count_documents({"user_id": uid, "created_at": window}),
+                await db.extractions.count_documents({"user_id": uid, "created_at": window}),
+            )
+    return counted
+
+
+def _user_to_admin_out(
+    user: UserInDB, invoice_count: int = 0, usage: tuple = (0, 0)
+) -> AdminUserOut:
     """Convert UserInDB to AdminUserOut."""
     return AdminUserOut(
         id=user.id,
@@ -110,9 +159,13 @@ def _user_to_admin_out(user: UserInDB, invoice_count: int = 0) -> AdminUserOut:
         updated_at=user.updated_at.isoformat() if user.updated_at else "",
         subscription_status=user.subscription_status,
         subscription_provider=user.subscription_provider,
+        subscription_end_date=user.subscription_end_date.isoformat() if user.subscription_end_date else None,
+        pro_active=is_pro_active(user),
         company_name=user.company_name,
         phone=user.phone,
-        invoice_count=invoice_count
+        invoice_count=invoice_count,
+        usage_invoices=usage[0],
+        usage_extractions=usage[1],
     )
 
 
@@ -148,11 +201,12 @@ async def list_users(
         sort_order=sort_order
     )
     
-    # Get invoice counts for each user
+    # Get invoice counts and this month's plan usage for each user
+    usage = await _usage_this_month(db, [u.id for u in users])
     user_items = []
     for u in users:
         invoice_count = await invoice_repo.count_by_user(user_id=u.id)
-        user_items.append(_user_to_admin_out(u, invoice_count=invoice_count))
+        user_items.append(_user_to_admin_out(u, invoice_count=invoice_count, usage=usage[u.id]))
     
     return AdminUserListResponse(
         items=user_items,
@@ -225,7 +279,6 @@ async def update_user(
     updated_user = await user_repo.admin_update_user(
         user_id=user_id,
         is_active=update_data.is_active,
-        is_pro=update_data.is_pro,
         full_name=update_data.full_name,
         email=update_data.email
     )
@@ -235,8 +288,63 @@ async def update_user(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to update user"
         )
+
+    # Granting or revoking Pro goes through set_pro so the subscription fields stay consistent
+    if update_data.is_pro is not None:
+        updated_user = await user_repo.set_pro(
+            user_id, update_data.is_pro, days=update_data.pro_days if update_data.is_pro else None
+        )
+        if not updated_user:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to update user"
+            )
     
-    return _user_to_admin_out(updated_user)
+    usage = await _usage_this_month(db, [updated_user.id])
+    return _user_to_admin_out(updated_user, usage=usage[updated_user.id])
+
+
+@router.post("/bulk-pro", response_model=BulkProResponse)
+async def bulk_set_pro(
+    body: BulkProRequest,
+    db: AsyncIOMotorDatabase = Depends(get_database),
+    admin_user: UserInDB = Depends(get_current_admin_user),
+):
+    """
+    Grant or revoke Pro for up to 200 users at once, by id and/or email.
+
+    Admin only. Unknown ids and emails are returned in `not_found` instead of failing the
+    whole request.
+    """
+    if len(body.user_ids) + len(body.emails) == 0:
+        raise HTTPException(status_code=400, detail="Provide at least one user id or email")
+    if len(body.user_ids) + len(body.emails) > BULK_PRO_MAX:
+        raise HTTPException(status_code=400, detail=f"At most {BULK_PRO_MAX} users per request")
+
+    user_repo = UserRepository(db)
+    target_ids: set[str] = set()
+    not_found: List[str] = []
+
+    for uid in body.user_ids:
+        try:
+            exists = await user_repo.get_by_id(uid)
+        except Exception:
+            exists = None
+        if exists:
+            target_ids.add(exists.id)
+        else:
+            not_found.append(uid)
+
+    found_by_email = {u.email.lower(): u for u in await user_repo.find_by_emails(body.emails)}
+    for email in body.emails:
+        user = found_by_email.get(email.strip().lower())
+        if user:
+            target_ids.add(user.id)
+        else:
+            not_found.append(email)
+
+    updated = await user_repo.set_pro_many(sorted(target_ids), body.is_pro, days=body.days if body.is_pro else None)
+    return BulkProResponse(updated=updated, not_found=not_found)
 
 
 @router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)

@@ -37,6 +37,8 @@ import type {
   AdminUserListResponse,
   AdminUserListParams,
   AdminUserUpdate,
+  BulkProRequest,
+  BulkProResponse,
   AdminUserInvoicesResponse,
 } from "@/types/api";
 
@@ -512,6 +514,10 @@ export const adminAPI = {
     api.patch<AdminUser>(`/v1/admin/users/${userId}`, data),
 
   deleteUser: (userId: string) => api.delete(`/v1/admin/users/${userId}`),
+
+  // Grant or revoke Pro for several users (up to 200) by id or email
+  bulkSetPro: (data: BulkProRequest) =>
+    api.post<BulkProResponse>("/v1/admin/users/bulk-pro", data),
 
   // User Invoices
   getUserInvoices: (

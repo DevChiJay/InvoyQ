@@ -540,9 +540,16 @@ export interface AdminUser {
   updated_at: string;
   subscription_status: string | null;
   subscription_provider: string | null;
+  /** Null for a grant with no end date */
+  subscription_end_date: string | null;
+  /** is_pro and not expired: what the plan limits use */
+  pro_active: boolean;
   company_name: string | null;
   phone: string | null;
   invoice_count: number;
+  /** This month's plan usage */
+  usage_invoices: number;
+  usage_extractions: number;
 }
 
 export interface AdminUserListResponse {
@@ -569,6 +576,20 @@ export interface AdminUserUpdate {
   email?: string;
   is_active?: boolean;
   is_pro?: boolean;
+  /** With is_pro: true, how long the grant lasts. Omit for no end date. */
+  pro_days?: number;
+}
+
+export interface BulkProRequest {
+  user_ids?: string[];
+  emails?: string[];
+  is_pro: boolean;
+  days?: number;
+}
+
+export interface BulkProResponse {
+  updated: number;
+  not_found: string[];
 }
 
 export interface AdminUserInvoice {
