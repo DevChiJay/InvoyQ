@@ -6,9 +6,14 @@ import httpx
 OPENAI_API_URL = "https://api.openai.com/v1/chat/completions"
 
 PROMPT_SYSTEM = (
-    "You extract structured invoice/job details from chat text or images. "
-    "Return only JSON with keys: jobs (list of strings), deadlines (list of ISO dates or strings), "
-    "payment_terms (string|null), amount (number|null), currency (string|null), "
+    "You extract structured invoice/job details from chat text or images. Today's date is {today}. "
+    "Return only JSON with keys: jobs (list of strings), "
+    "items (list of objects {{description: string, quantity: number, unit_price: number|null}} — one entry per "
+    "billable line; quantity defaults to 1; unit_price is the price of ONE unit, null if the chat doesn't state it), "
+    "deadlines (list of dates as YYYY-MM-DD; resolve relative dates such as 'Friday' or 'next week' against today's "
+    "date; omit anything you cannot resolve), "
+    "payment_terms (string|null), amount (number|null — the total to be paid), "
+    "currency (ISO 4217 code such as NGN, USD, GBP, EUR, GHS, KES, ZAR; '₦' or 'naira' is NGN; null if unknown), "
     "client_name (string|null), client_email (string|null), client_address (string|null), "
     "sender_name (string|null — the business or person issuing the invoice), "
     "sender_email (string|null — the email of the invoice sender), "
@@ -16,6 +21,14 @@ PROMPT_SYSTEM = (
     "status (one of: draft, sent, paid, overdue, cancelled — infer from context; null if not clear), "
     "confidence (0-100)."
 )
+
+
+def system_prompt() -> str:
+    """System prompt with today's date, so relative deadlines resolve to the right year."""
+    from datetime import date
+
+    return PROMPT_SYSTEM.format(today=date.today().isoformat())
+
 
 PROMPT_USER_TEMPLATE = (
     "Given the following chat text, extract the requested fields. If not found, use nulls or empty arrays.\n\n" 
@@ -40,7 +53,7 @@ class OpenAIExtractor:
             "temperature": 0,
             "response_format": {"type": "json_object"},
             "messages": [
-                {"role": "system", "content": PROMPT_SYSTEM},
+                {"role": "system", "content": system_prompt()},
                 {"role": "user", "content": PROMPT_USER_TEMPLATE.format(content=text)},
             ],
         }
@@ -102,7 +115,7 @@ class OpenAIExtractor:
             "temperature": 0,
             "response_format": {"type": "json_object"},
             "messages": [
-                {"role": "system", "content": PROMPT_SYSTEM},
+                {"role": "system", "content": system_prompt()},
                 {"role": "user", "content": user_content or [{"type": "text", "text": PROMPT_USER_TEMPLATE.format(content="")} ]},
             ],
         }
@@ -132,6 +145,15 @@ class OpenAIExtractor:
                     "status": None,
                     "confidence": 50,
                 }
+
+    async def aextract(
+        self, text: Optional[str], image_bytes: Optional[bytes] = None, image_mime: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """Async extractor for text and/or image. Use this from async code (FastAPI endpoints):
+        the sync wrappers below call anyio.run(), which fails inside a running event loop."""
+        if image_bytes:
+            return await self._call_openai_vision(text, image_bytes, image_mime)
+        return await self._call_openai_text(text or "")
 
     def extract(self, text: Optional[str], image_bytes: Optional[bytes], image_mime: Optional[str] = None) -> Dict[str, Any]:
         """Unified extractor for text + image using GPT-Vision.

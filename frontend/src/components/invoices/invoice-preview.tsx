@@ -50,10 +50,10 @@ export function InvoicePreview({ invoice, client }: InvoicePreviewProps) {
       : subtotalAfterDiscount + taxAmount;
 
   return (
-    <Card className="shadow-lg border-[3px] border-black">
-      <CardContent className="p-6 sm:p-8">
+    <Card className="@container shadow-lg border-[3px] border-black">
+      <CardContent className="p-6 @xl:p-8">
         {/* Invoice Header */}
-        <div className="flex flex-col sm:flex-row justify-between items-start gap-6 mb-6 pb-5 border-b-[3px] border-black">
+        <div className="flex flex-col @xl:flex-row justify-between items-start gap-6 mb-6 pb-5 border-b-[3px] border-black">
           {/* Company Info with Logo */}
           <div className="flex items-start gap-4 flex-1">
             {companyLogoUrl && (
@@ -81,7 +81,7 @@ export function InvoicePreview({ invoice, client }: InvoicePreviewProps) {
           </div>
 
           {/* Invoice Title & Status */}
-          <div className="text-left sm:text-right shrink-0">
+          <div className="text-left @xl:text-right shrink-0">
             <h2 className="text-[22px] font-bold text-black mb-2">
               INVOICE {invoice.number ?? "DRAFT"}
             </h2>
@@ -90,7 +90,7 @@ export function InvoicePreview({ invoice, client }: InvoicePreviewProps) {
         </div>
 
         {/* Bill To & Dates - Side by Side */}
-        <div className="flex flex-col sm:flex-row justify-between items-start gap-8 mb-6 py-5 border-y-2 border-black">
+        <div className="flex flex-col @xl:flex-row justify-between items-start gap-8 mb-6 py-5 border-y-2 border-black">
           {/* Bill To */}
           {client && (
             <div className="flex-1">
@@ -201,7 +201,7 @@ export function InvoicePreview({ invoice, client }: InvoicePreviewProps) {
 
         {/* Totals */}
         <div className="flex justify-end mb-5">
-          <div className="w-full sm:w-80 space-y-2">
+          <div className="w-full @xl:w-80 space-y-2">
             <div className="flex justify-between py-2">
               <span className="text-base font-bold text-black">Subtotal</span>
               <span className="text-base font-semibold text-black">

@@ -285,9 +285,9 @@ export function InvoicePDFViewer({
         <div className="space-y-4">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
-              <h3 className="text-lg font-semibold">
+              <h2 className="text-lg font-semibold">
                 Download & Print Invoice
-              </h3>
+              </h2>
               <p className="text-sm text-muted-foreground">
                 Save as PDF, image, or print directly
               </p>
@@ -358,59 +358,26 @@ export function InvoicePDFViewer({
             !isPrinting && (
               <div className="space-y-2">
                 {lastDownloaded && (
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground bg-green-50 dark:bg-green-950 p-3 rounded-md">
-                    <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted p-3 rounded-md">
+                    <CheckCircle2 className="h-4 w-4 text-success" />
                     <span>PDF downloaded at {lastDownloaded}</span>
                   </div>
                 )}
                 {lastImageSaved && (
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground bg-blue-50 dark:bg-blue-950 p-3 rounded-md">
-                    <CheckCircle2 className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted p-3 rounded-md">
+                    <CheckCircle2 className="h-4 w-4 text-success" />
                     <span>Image saved at {lastImageSaved}</span>
                   </div>
                 )}
                 {lastPrinted && (
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground bg-purple-50 dark:bg-purple-950 p-3 rounded-md">
-                    <CheckCircle2 className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted p-3 rounded-md">
+                    <CheckCircle2 className="h-4 w-4 text-success" />
                     <span>Print dialog opened at {lastPrinted}</span>
                   </div>
                 )}
               </div>
             )}
 
-          <div className="border rounded-lg p-6 bg-muted/30">
-            <div className="space-y-2 text-sm text-muted-foreground">
-              <p className="flex items-center gap-2">
-                <span className="font-medium text-foreground">
-                  Invoice #{invoice.number}
-                </span>
-              </p>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-3">
-                <div>
-                  <p className="font-medium text-foreground mb-1">
-                    📄 PDF Format:
-                  </p>
-                  <p>• Professional A4 layout</p>
-                  <p>• Multi-page support</p>
-                  <p>• Print-ready quality</p>
-                </div>
-                <div>
-                  <p className="font-medium text-foreground mb-1">🖨️ Print:</p>
-                  <p>• Direct to printer</p>
-                  <p>• Same PDF quality</p>
-                  <p>• Bold borders & text</p>
-                </div>
-                <div>
-                  <p className="font-medium text-foreground mb-1">
-                    🖼️ Image Format:
-                  </p>
-                  <p>• PNG format</p>
-                  <p>• Current view</p>
-                  <p>• Easy to share</p>
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
       </CardContent>
     </Card>

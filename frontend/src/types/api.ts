@@ -235,6 +235,8 @@ export interface InvoiceStatsParams {
 // Extraction Types - Backend Response Format
 export interface BackendExtractionData {
   jobs?: string[];
+  /** Per-line items (newer extractor responses). Preferred over `jobs` + `amount` when present. */
+  items?: Array<{ description: string; quantity?: number | null; unit_price?: number | null }>;
   deadlines?: string[];
   payment_terms?: string | null;
   amount?: number | null;

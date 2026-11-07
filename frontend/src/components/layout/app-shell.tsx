@@ -9,6 +9,7 @@ import { useUIStore } from "@/stores/ui-store";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/ui/sheet";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { Logo } from "@/components/shared/logo";
 import { APP_STORE_URL, PLAY_STORE_URL } from "@/lib/seo";
 import { cn } from "@/lib/utils";
@@ -169,6 +170,7 @@ export default function AppShell({
 
   return (
     <ErrorBoundary>
+      <TooltipProvider delayDuration={200}>
       <div className="min-h-screen bg-background">
         <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col border-r bg-sidebar px-4 pb-4 lg:flex">
           <div className="flex h-16 shrink-0 items-center px-1">
@@ -217,6 +219,7 @@ export default function AppShell({
           </main>
         </div>
       </div>
+      </TooltipProvider>
     </ErrorBoundary>
   );
 }

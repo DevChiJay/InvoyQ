@@ -22,15 +22,17 @@ interface ClientFormModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onClientCreated?: (client: Client) => void;
+  /** Prefill values, e.g. client details found by AI extraction. Remount (via `key`) to apply new ones. */
+  initialValues?: Partial<ClientCreate>;
 }
 
-export function ClientFormModal({ open, onOpenChange, onClientCreated }: ClientFormModalProps) {
+export function ClientFormModal({ open, onOpenChange, onClientCreated, initialValues }: ClientFormModalProps) {
   const queryClient = useQueryClient();
   const [formData, setFormData] = useState<ClientCreate>({
-    name: '',
-    email: '',
-    phone: '',
-    address: '',
+    name: initialValues?.name ?? '',
+    email: initialValues?.email ?? '',
+    phone: initialValues?.phone ?? '',
+    address: initialValues?.address ?? '',
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});

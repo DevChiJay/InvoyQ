@@ -32,12 +32,13 @@ async def extract_job_details(
         file_bytes = file.file.read()
         file_mime = getattr(file, "content_type", None)
 
+    if not raw_text and not file_bytes:
+        raise HTTPException(status_code=400, detail="Add some text or an image to extract from.")
+
     extractor = get_extractor(provider)
     try:
-        if file_bytes and hasattr(extractor, "extract"):
-            parsed: Dict[str, Any] = extractor.extract(raw_text or None, file_bytes, file_mime)
-        else:
-            parsed = extractor.extract_from_text(raw_text)
+        # Await the async API: the sync wrappers use anyio.run(), which fails inside the server's event loop.
+        parsed: Dict[str, Any] = await extractor.aextract(raw_text or None, file_bytes, file_mime)
     except HTTPException:
         raise
     except Exception as e:
@@ -49,9 +50,8 @@ async def extract_job_details(
         user_id=None,  # Anonymous extraction
         source_type="screenshot" if file is not None else "text",
         raw_text=raw_text,
-        parsed=parsed,
-        confidence=int(parsed.get("confidence") or 0),
-        source_url=None
+        parsed_data=parsed,
+        confidence_score=float(parsed.get("confidence") or 0),
     )
 
     return {"extraction_id": extraction.id, "parsed": parsed}

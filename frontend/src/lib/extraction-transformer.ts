@@ -57,13 +57,47 @@ function buildLineItems(jobs: string[], total: number): { items: LineItem[]; nee
   return { items, needsReview };
 }
 
+const CURRENCY_ALIASES: Record<string, string> = {
+  '₦': 'NGN', NAIRA: 'NGN', NAIRAS: 'NGN', '$': 'USD', DOLLAR: 'USD', DOLLARS: 'USD',
+  '£': 'GBP', POUND: 'GBP', POUNDS: 'GBP', '€': 'EUR', EURO: 'EUR', EUROS: 'EUR',
+  CEDI: 'GHS', CEDIS: 'GHS', RAND: 'ZAR', SHILLING: 'KES', SHILLINGS: 'KES',
+};
+
+/** Normalises "naira", "₦" or "ngn" to an ISO code; returns undefined if it can't. */
+function normaliseCurrency(value: string | null | undefined): string | undefined {
+  if (!value) return undefined;
+  const key = value.trim().toUpperCase();
+  if (/^[A-Z]{3}$/.test(key)) return key;
+  return CURRENCY_ALIASES[key] ?? CURRENCY_ALIASES[value.trim()];
+}
+
+/** Uses the extractor's per-line `items` when present; prices it couldn't read are flagged for review. */
+function itemsFromExtraction(
+  rawItems: NonNullable<BackendExtractionResponse['parsed']['items']>,
+): { items: LineItem[]; needsReview: string[] } {
+  const needsReview: string[] = [];
+  const items = rawItems
+    .filter((item) => item.description?.trim())
+    .map((item) => {
+      const quantity = Number(item.quantity) > 0 ? Number(item.quantity) : 1;
+      const unit = Number(item.unit_price);
+      const hasPrice = Number.isFinite(unit) && unit > 0;
+      if (!hasPrice) needsReview.push(item.description.trim());
+      const unit_price = hasPrice ? unit : 0;
+      return { description: item.description.trim(), quantity, unit_price, amount: quantity * unit_price };
+    });
+  return { items, needsReview };
+}
+
 /**
  * Transforms the backend extraction response to frontend display format
  */
 export function transformExtractionResponse(backendResponse: BackendExtractionResponse): ExtractionResponse {
   const { extraction_id, parsed } = backendResponse;
   const total = parsed.amount || 0;
-  const { items, needsReview } = buildLineItems(parsed.jobs ?? [], total);
+  const { items, needsReview } = parsed.items?.length
+    ? itemsFromExtraction(parsed.items)
+    : buildLineItems(parsed.jobs ?? [], total);
   const subtotal = items.reduce((sum, item) => sum + item.unit_price * item.quantity, 0);
 
   const transformedData: ExtractedData = {
@@ -74,7 +108,7 @@ export function transformExtractionResponse(backendResponse: BackendExtractionRe
     },
     invoice_details: {
       due_date: toDateInputValue(parsed.deadlines?.[0]),
-      currency: parsed.currency?.toUpperCase() || undefined,
+      currency: normaliseCurrency(parsed.currency),
     },
     line_items: items,
     financial: {
