@@ -52,7 +52,7 @@ export default function ExpenseDetailPage() {
     return (
       <div className="flex flex-col items-center justify-center h-64">
         <Receipt className="h-12 w-12 text-muted-foreground mb-4" />
-        <p className="text-muted-foreground mb-4">Expense not found</p>
+        <h1 className="mb-4 text-lg font-semibold">Expense not found</h1>
         <Button onClick={() => router.push('/dashboard/expenses')}>
           Back to Expenses
         </Button>

@@ -28,6 +28,9 @@
   --color-border: var(--border);
   --color-destructive: var(--destructive);
   --color-success: var(--success);
+  --color-success-strong: var(--success-strong);
+  --color-warning-strong: var(--warning-strong);
+  --color-destructive-strong: var(--destructive-strong);
   --color-warning: var(--warning);
   --color-brand: var(--brand);
   --color-accent-foreground: var(--accent-foreground);
@@ -81,6 +84,10 @@
   --success: #15803d;
   --warning: #a16207;
   --destructive: #dc2626;
+  /* Darker text for soft (10% tint) status backgrounds, so small badge text passes AA. */
+  --success-strong: #166534;
+  --warning-strong: #854d0e;
+  --destructive-strong: #b91c1c;
 
   --border: #e2e8f0;
   --input: #cbd5e1;

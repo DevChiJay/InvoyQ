@@ -18,9 +18,9 @@ const badgeVariants = cva(
         outline:
           "text-foreground [a&]:hover:bg-accent [a&]:hover:text-accent-foreground",
         // Soft status variants (used by <StatusBadge>)
-        success: "border-transparent bg-success/10 text-success",
+        success: "border-transparent bg-success/10 text-success-strong",
         info: "border-transparent bg-accent text-accent-foreground",
-        warning: "border-transparent bg-warning/10 text-warning",
+        warning: "border-transparent bg-warning/10 text-warning-strong",
         muted: "border-transparent bg-muted text-muted-foreground",
       },
     },

@@ -157,7 +157,7 @@ export default function HowToUseContent() {
               >
                 <Card className="hover:border-primary/50 hover:shadow-lg transition-all duration-300">
                   <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-2xl">
+                    <CardTitle as="h2" className="flex items-center gap-2 text-2xl">
                       <Zap className="h-6 w-6 text-primary" />
                       Welcome to InvoyQ
                     </CardTitle>
@@ -373,7 +373,7 @@ export default function HowToUseContent() {
                   className="hover:border-primary/50 hover:shadow-lg transition-all duration-300"
                 >
                   <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-2xl">
+                    <CardTitle as="h2" className="flex items-center gap-2 text-2xl">
                       <PlayCircle className="h-6 w-6 text-primary" />
                       Video Walkthrough
                     </CardTitle>
@@ -400,7 +400,7 @@ export default function HowToUseContent() {
               >
                 <Card className="hover:border-primary/50 hover:shadow-lg transition-all duration-300">
                   <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-2xl">
+                    <CardTitle as="h2" className="flex items-center gap-2 text-2xl">
                       <LayoutDashboard className="h-6 w-6 text-primary" />
                       Understanding Your Dashboard
                     </CardTitle>
@@ -648,7 +648,7 @@ export default function HowToUseContent() {
               >
                 <Card className="hover:border-primary/50 hover:shadow-lg transition-all duration-300">
                   <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-2xl">
+                    <CardTitle as="h2" className="flex items-center gap-2 text-2xl">
                       <FileText className="h-6 w-6 text-primary" />
                       Creating and Managing Invoices
                     </CardTitle>
@@ -948,7 +948,7 @@ export default function HowToUseContent() {
               >
                 <Card className="hover:border-primary/50 hover:shadow-lg transition-all duration-300">
                   <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-2xl">
+                    <CardTitle as="h2" className="flex items-center gap-2 text-2xl">
                       <Package className="h-6 w-6 text-primary" />
                       Managing Products & Inventory
                     </CardTitle>
@@ -1311,7 +1311,7 @@ export default function HowToUseContent() {
               >
                 <Card className="hover:border-primary/50 hover:shadow-lg transition-all duration-300">
                   <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-2xl">
+                    <CardTitle as="h2" className="flex items-center gap-2 text-2xl">
                       <Users className="h-6 w-6 text-primary" />
                       Managing Clients
                     </CardTitle>
@@ -1566,7 +1566,7 @@ export default function HowToUseContent() {
               >
                 <Card className="hover:border-primary/50 hover:shadow-lg transition-all duration-300">
                   <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-2xl">
+                    <CardTitle as="h2" className="flex items-center gap-2 text-2xl">
                       <Receipt className="h-6 w-6 text-primary" />
                       Tracking Business Expenses
                     </CardTitle>

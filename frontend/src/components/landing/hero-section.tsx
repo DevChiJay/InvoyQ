@@ -17,7 +17,7 @@ function ChatToInvoice() {
         <p>
           Hi Tolu, thanks for the order 🙏 2 logo concepts at ₦25,000 each, delivery ₦5,000. Payment due Friday.
         </p>
-        <p className="mt-1 text-right text-[11px] text-foreground/60">10:42</p>
+        <p className="mt-1 text-right text-[11px] text-foreground/75">10:42</p>
       </div>
 
       <div className="my-3 flex items-center justify-center gap-2 text-xs font-medium text-muted-foreground">

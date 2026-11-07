@@ -66,9 +66,9 @@ export function InvoicePreview({ invoice, client }: InvoicePreviewProps) {
               </div>
             )}
             <div>
-              <h1 className="text-xl font-bold text-black mb-2">
+              <h2 className="text-xl font-bold text-black mb-2">
                 {companyName}
-              </h1>
+              </h2>
               <div className="text-[15px] text-black space-y-0.5 font-normal">
                 {companyAddress && (
                   <p className="whitespace-pre-line">{companyAddress}</p>

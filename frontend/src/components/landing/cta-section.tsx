@@ -12,7 +12,7 @@ export default function CTASection() {
             <p className="mt-3 text-lg text-primary-foreground/85">
               Join thousands of businesses managing invoices, expenses, and payments all in one powerful platform.
             </p>
-            <p className="mt-4 text-sm text-primary-foreground/75">
+            <p className="mt-4 text-sm text-primary-foreground/90">
               No credit card required · 10 free invoices · Upgrade anytime
             </p>
           </div>

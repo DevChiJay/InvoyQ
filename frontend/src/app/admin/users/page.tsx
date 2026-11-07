@@ -248,7 +248,7 @@ export default function AdminUsersPage() {
           </div>
 
           <Select value={isActiveFilter} onValueChange={setIsActiveFilter}>
-            <SelectTrigger className="w-[140px]">
+            <SelectTrigger className="w-36" aria-label="Filter by status">
               <SelectValue placeholder="Status" />
             </SelectTrigger>
             <SelectContent>
@@ -259,7 +259,7 @@ export default function AdminUsersPage() {
           </Select>
 
           <Select value={isProFilter} onValueChange={setIsProFilter}>
-            <SelectTrigger className="w-[140px]">
+            <SelectTrigger className="w-36" aria-label="Filter by plan">
               <SelectValue placeholder="Plan" />
             </SelectTrigger>
             <SelectContent>
@@ -270,7 +270,7 @@ export default function AdminUsersPage() {
           </Select>
 
           <Select value={sourceFilter} onValueChange={setSourceFilter}>
-            <SelectTrigger className="w-[140px]">
+            <SelectTrigger className="w-36" aria-label="Filter by source">
               <SelectValue placeholder="Source" />
             </SelectTrigger>
             <SelectContent>
@@ -344,7 +344,7 @@ export default function AdminUsersPage() {
                         variant={user.is_active ? "default" : "destructive"}
                         className={
                           user.is_active
-                            ? "bg-success/10 text-success hover:bg-success/10"
+                            ? "bg-success/10 text-success-strong hover:bg-success/10"
                             : ""
                         }
                       >
@@ -416,6 +416,7 @@ export default function AdminUsersPage() {
                 <Button
                   variant="outline"
                   size="sm"
+                  aria-label="Previous page"
                   onClick={() => setPage((p) => p - 1)}
                   disabled={page === 1}
                 >
@@ -427,6 +428,7 @@ export default function AdminUsersPage() {
                 <Button
                   variant="outline"
                   size="sm"
+                  aria-label="Next page"
                   onClick={() => setPage((p) => p + 1)}
                   disabled={page >= totalPages}
                 >

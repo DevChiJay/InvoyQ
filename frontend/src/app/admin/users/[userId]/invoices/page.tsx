@@ -36,9 +36,9 @@ import { toast } from "sonner";
 const statusColors: Record<string, string> = {
   draft: "bg-muted text-foreground/80",
   sent: "bg-accent text-primary",
-  paid: "bg-success/10 text-success",
-  overdue: "bg-destructive/10 text-destructive",
-  cancelled: "bg-warning/10 text-warning",
+  paid: "bg-success/10 text-success-strong",
+  overdue: "bg-destructive/10 text-destructive-strong",
+  cancelled: "bg-warning/10 text-warning-strong",
 };
 
 export default function AdminUserInvoicesPage() {
@@ -144,7 +144,7 @@ export default function AdminUserInvoicesPage() {
               setPage(1);
             }}
           >
-            <SelectTrigger className="w-[160px]">
+            <SelectTrigger className="w-40" aria-label="Filter by status">
               <SelectValue placeholder="Status" />
             </SelectTrigger>
             <SelectContent>
@@ -248,6 +248,7 @@ export default function AdminUserInvoicesPage() {
                   size="sm"
                   onClick={() => setPage((p) => p - 1)}
                   disabled={page === 1}
+                  aria-label="Previous page"
                 >
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
@@ -259,6 +260,7 @@ export default function AdminUserInvoicesPage() {
                   size="sm"
                   onClick={() => setPage((p) => p + 1)}
                   disabled={page >= totalPages}
+                  aria-label="Next page"
                 >
                   <ChevronRight className="h-4 w-4" />
                 </Button>
