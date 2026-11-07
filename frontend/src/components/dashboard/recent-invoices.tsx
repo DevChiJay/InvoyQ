@@ -3,7 +3,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { formatRelativeDate, formatSimpleDate, formatCurrency } from '@/lib/format';
+import { formatRelativeDate, formatSimpleDate, formatCurrency, invoiceClientName } from '@/lib/format';
 import { FileText, ExternalLink } from 'lucide-react';
 import Link from 'next/link';
 import type { Invoice } from '@/types/api';
@@ -105,7 +105,7 @@ export function RecentInvoices({ invoices, isLoading }: RecentInvoicesProps) {
                   </Badge>
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  {`Client #${invoice.client_id}`} •{' '}
+                  {invoiceClientName(invoice)} •{' '}
                   {formatRelativeDate(invoice.created_at)}
                 </p>
               </div>

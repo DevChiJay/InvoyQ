@@ -25,7 +25,7 @@ const features = [
     isPro: false,
   },
   {
-    icon: Badge,
+    icon: BadgeIcon,
     title: 'Product Catalog',
     description: 'Build your product catalog with categories. Add products to invoices with a single click.',
     isPro: false,

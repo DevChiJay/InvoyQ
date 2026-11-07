@@ -63,7 +63,7 @@ export default function PaymentsPage() {
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
             </div>
           ) : payments && payments.length > 0 ? (
-            <div className="overflow-x-auto">
+            <div className="hidden lg:block overflow-x-auto">
               <table className="w-full">
                 <thead>
                   <tr className="border-b">

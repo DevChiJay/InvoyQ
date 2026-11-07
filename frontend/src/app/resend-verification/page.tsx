@@ -8,6 +8,9 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Mail, Loader2, CheckCircle2, ArrowLeft } from 'lucide-react'
+import { isAxiosError } from 'axios'
+import { authAPI } from '@/lib/api'
+import { formatErrorMessage } from '@/lib/utils'
 
 export default function ResendVerificationPage() {
   const router = useRouter()
@@ -23,26 +26,21 @@ export default function ResendVerificationPage() {
     setMessage('')
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/v1/auth/resend-verification`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email }),
-      })
-
-      const data = await response.json()
-
-      if (response.ok) {
-        setStatus('success')
-        setMessage(data.message || 'Verification email sent successfully!')
-      } else {
-        setStatus('error')
-        setMessage(data.detail || 'Failed to send verification email. Please try again.')
-      }
-    } catch {
+      const { data } = await authAPI.resendVerification(email)
+      setStatus('success')
+      setMessage(data.message || 'Verification email sent successfully!')
+    } catch (error) {
       setStatus('error')
-      setMessage('Network error. Please check your connection and try again.')
+      if (isAxiosError(error) && error.response) {
+        setMessage(
+          formatErrorMessage(
+            error.response.data?.detail,
+            'Failed to send verification email. Please try again.',
+          ),
+        )
+      } else {
+        setMessage('Network error. Please check your connection and try again.')
+      }
     } finally {
       setIsLoading(false)
     }
@@ -62,6 +60,7 @@ export default function ResendVerificationPage() {
               size="icon"
               onClick={handleGoBack}
               className="h-8 w-8"
+              aria-label="Back to login"
             >
               <ArrowLeft className="h-4 w-4" />
             </Button>

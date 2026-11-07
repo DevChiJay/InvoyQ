@@ -59,6 +59,7 @@ export interface Client {
   email: string | null;
   phone: string | null;
   address: string | null;
+  created_at?: string | null; // ISO datetime
 }
 
 export interface ClientCreate {
@@ -130,6 +131,8 @@ export interface Invoice {
   items: InvoiceItem[];
   events: InvoiceEvent[]; // NEW - audit trail
   user_business_info: UserBusinessInfo | null; // NEW
+  /** Populated by the API from client_id on list and detail responses. */
+  client?: Pick<Client, "id" | "name" | "email"> | null;
   created_at: string; // ISO datetime
   updated_at: string; // ISO datetime
 }
@@ -263,6 +266,7 @@ export interface ExtractedData {
     number?: string;
     issued_date?: string;
     due_date?: string;
+    currency?: string;
   };
   line_items?: Array<{
     description: string;
@@ -277,6 +281,8 @@ export interface ExtractedData {
   };
   notes?: string;
   confidence?: number;
+  /** Line-item descriptions whose price the AI could not determine. */
+  needs_review?: string[];
 }
 
 export interface ExtractionResponse {

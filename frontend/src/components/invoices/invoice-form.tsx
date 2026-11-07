@@ -142,14 +142,25 @@ export function InvoiceForm({
         new Date().toISOString().split("T")[0],
     due_date: invoice?.due_date
       ? new Date(invoice.due_date).toISOString().split("T")[0]
-      : extractedData?.invoice_details?.due_date ||
-        new Date().toISOString().split("T")[0],
-    currency: invoice?.currency || DEFAULT_CURRENCY,
+      : extractedData?.invoice_details?.due_date || getDefaultDueDate(),
+    currency:
+      invoice?.currency ||
+      CURRENCIES.find(
+        (c) => c.code === extractedData?.invoice_details?.currency,
+      )?.code ||
+      DEFAULT_CURRENCY,
     discount: invoice?.discount ? parseFloat(invoice.discount) : 0,
     tax: invoice?.tax ?? extractedData?.financial?.tax ?? 0,
-    status: invoice?.status || ("paid" as const),
+    status: invoice?.status || ("draft" as const),
     notes: invoice?.notes || extractedData?.notes || "",
   });
+
+  // Clients usually load after the first render, so apply the extracted-client match once they arrive.
+  useEffect(() => {
+    if (matchedClient && !formData.client_id) {
+      setFormData((prev) => ({ ...prev, client_id: matchedClient.id }));
+    }
+  }, [matchedClient, formData.client_id]);
 
   const [items, setItems] = useState<InvoiceItemForm[]>(
     invoice?.items.map((item) => ({

@@ -40,14 +40,6 @@ export default function CTASection() {
                 <ArrowRight className="h-5 w-5" />
               </Link>
             </Button>
-            <Button
-              size="lg"
-              variant="outline"
-              asChild
-              className="text-lg px-8 py-6 bg-white/10 border-2 border-white text-white hover:bg-white hover:text-[#6366F1]"
-            >
-              <Link href="#pricing">View Pricing</Link>
-            </Button>
           </div>
 
           <p className="text-sm text-teal-100 mt-6">

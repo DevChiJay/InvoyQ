@@ -85,6 +85,7 @@ export default function ClientsPage() {
         hasMore={!!hasNextPage}
         isLoadingMore={isFetchingNextPage}
         onLoadMore={handleLoadMore}
+        onAddClient={() => setIsClientModalOpen(true)}
       />
 
       {/* Delete Confirmation Dialog */}

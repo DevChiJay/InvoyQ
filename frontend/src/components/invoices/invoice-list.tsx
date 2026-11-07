@@ -19,6 +19,7 @@ import {
   formatRelativeDate,
   formatSimpleDate,
   formatCurrency,
+  invoiceClientName,
 } from "@/lib/format";
 import type { Invoice, InvoiceListParams } from "@/types/api";
 
@@ -119,7 +120,9 @@ export function InvoiceList({
     );
   }
 
-  if (invoices.length === 0) {
+  const hasActiveFilter = Boolean(filters?.search || filters?.status);
+
+  if (invoices.length === 0 && !hasActiveFilter) {
     return (
       <Card>
         <CardHeader>
@@ -260,7 +263,7 @@ export function InvoiceList({
                     href={`/dashboard/invoices/${invoice.id}`}
                     className="block"
                   >
-                    {`Client #${invoice.client_id}`}
+                    {invoiceClientName(invoice)}
                   </Link>
                 </TableCell>
                 <TableCell>
@@ -339,7 +342,7 @@ export function InvoiceList({
                   <div>
                     <p className="font-semibold">{invoice.number}</p>
                     <p className="text-sm text-muted-foreground">
-                      {`Client #${invoice.client_id}`}
+                      {invoiceClientName(invoice)}
                     </p>
                   </div>
                   <Badge variant={getStatusBadgeVariant(invoice.status)}>

@@ -34,6 +34,7 @@ interface ClientListProps {
   hasMore?: boolean;
   isLoadingMore?: boolean;
   onLoadMore?: () => void;
+  onAddClient?: () => void;
 }
 
 export function ClientList({
@@ -45,6 +46,7 @@ export function ClientList({
   hasMore = false,
   isLoadingMore = false,
   onLoadMore,
+  onAddClient,
 }: ClientListProps) {
   const sentinelRef = useRef<HTMLDivElement | null>(null);
 
@@ -98,9 +100,7 @@ export function ClientList({
             <p className="text-sm text-muted-foreground mb-6">
               Get started by adding your first client.
             </p>
-            <Button asChild>
-              <Link href="/dashboard/clients/new">Add Client</Link>
-            </Button>
+            {onAddClient && <Button onClick={onAddClient}>Add Client</Button>}
           </div>
         </CardContent>
       </Card>

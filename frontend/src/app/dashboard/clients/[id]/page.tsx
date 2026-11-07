@@ -8,6 +8,8 @@ import { Mail, Phone, MapPin, Pencil, Trash2, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { formatRelativeDate } from '@/lib/format';
 import { toast } from 'sonner';
+import { useState } from 'react';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 
 export default function ClientDetailPage() {
   const params = useParams();
@@ -15,6 +17,7 @@ export default function ClientDetailPage() {
   const clientId = params.id as string;
   const { data: client, isLoading } = useClient(clientId);
   const deleteClient = useDeleteClient();
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   const handleDelete = () => {
     toast.promise(
@@ -90,9 +93,11 @@ export default function ClientDetailPage() {
           </Button>
           <div>
             <h2 className="text-3xl font-bold tracking-tight">{client.name}</h2>
-            <p className="text-sm text-muted-foreground">
-              Client since {formatRelativeDate(client.email)}
-            </p>
+            {client.created_at && (
+              <p className="text-sm text-muted-foreground">
+                Client since {formatRelativeDate(client.created_at)}
+              </p>
+            )}
           </div>
         </div>
         <div className="flex gap-2">
@@ -104,7 +109,7 @@ export default function ClientDetailPage() {
           </Button>
           <Button
             variant="destructive"
-            onClick={handleDelete}
+            onClick={() => setConfirmOpen(true)}
             disabled={deleteClient.isPending}
           >
             <Trash2 className="mr-2 h-4 w-4" />
@@ -182,6 +187,17 @@ export default function ClientDetailPage() {
           </CardContent>
         </Card>
       </div>
+
+      <ConfirmDialog
+        open={confirmOpen}
+        onClose={() => setConfirmOpen(false)}
+        onConfirm={handleDelete}
+        title="Delete Client"
+        description={`Are you sure you want to delete ${client.name}? All associated data will be permanently removed.`}
+        confirmText="Delete"
+        cancelText="Cancel"
+        variant="destructive"
+      />
     </div>
   );
 }

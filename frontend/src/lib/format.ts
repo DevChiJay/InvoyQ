@@ -109,3 +109,7 @@ export const getStatusVariant = (status: string): 'default' | 'secondary' | 'des
 export const formatStatus = (status: string): string => {
   return status.charAt(0).toUpperCase() + status.slice(1);
 };
+
+/** Display name for an invoice's client; the API populates `client` from `client_id`. */
+export const invoiceClientName = (invoice: { client?: { name?: string } | null }): string =>
+  invoice.client?.name || 'Unknown client';

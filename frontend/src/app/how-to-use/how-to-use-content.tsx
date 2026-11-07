@@ -84,7 +84,7 @@ export default function HowToUseContent() {
                 size="lg"
                 className="bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700"
               >
-                <Link href={user ? "/dashboard" : "/auth/login"}>
+                <Link href={user ? "/dashboard" : "/login"}>
                   <Zap className="mr-2 h-5 w-5" />
                   {user ? "Go to Dashboard" : "Get Started Now"}
                 </Link>
@@ -1993,7 +1993,7 @@ export default function HowToUseContent() {
                   variant="secondary"
                   className="bg-white text-[#6366F1] hover:bg-gray-100"
                 >
-                  <Link href={user ? "/dashboard" : "/auth/login"}>
+                  <Link href={user ? "/dashboard" : "/login"}>
                     {user ? "Go to Dashboard" : "Get Started Free"}
                   </Link>
                 </Button>
