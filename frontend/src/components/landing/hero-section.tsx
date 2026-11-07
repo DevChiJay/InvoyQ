@@ -13,11 +13,11 @@ function ChatToInvoice() {
   return (
     <figure className="relative mx-auto w-full max-w-md" aria-label="Example: a chat message turned into an invoice">
       {/* The chat */}
-      <div className="ml-auto max-w-[85%] rounded-2xl rounded-br-sm bg-[#dcf8c6] px-4 py-3 text-sm leading-relaxed text-foreground shadow-frame">
+      <div className="ml-auto max-w-[85%] rounded-2xl rounded-br-sm bg-chat-bubble px-4 py-3 text-sm leading-relaxed text-chat-bubble-foreground shadow-frame">
         <p>
           Hi Tolu, thanks for the order 🙏 2 logo concepts at ₦25,000 each, delivery ₦5,000. Payment due Friday.
         </p>
-        <p className="mt-1 text-right text-[11px] text-foreground/75">10:42</p>
+        <p className="mt-1 text-right text-[11px] text-chat-bubble-foreground/75">10:42</p>
       </div>
 
       <div className="my-3 flex items-center justify-center gap-2 text-xs font-medium text-muted-foreground">

@@ -50,7 +50,7 @@ export function InvoicePreview({ invoice, client }: InvoicePreviewProps) {
       : subtotalAfterDiscount + taxAmount;
 
   return (
-    <Card className="@container shadow-lg border-[3px] border-black">
+    <Card className="light @container shadow-lg border-[3px] border-black">
       <CardContent className="p-6 @xl:p-8">
         {/* Invoice Header */}
         <div className="flex flex-col @xl:flex-row justify-between items-start gap-6 mb-6 pb-5 border-b-[3px] border-black">

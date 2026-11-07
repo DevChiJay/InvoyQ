@@ -294,7 +294,7 @@ export default function InvoiceGeneratorPage() {
                 <Button
                   onClick={handleGenerate}
                   disabled={isLoading || limitReached || !text.trim()}
-                  className="bg-primary text-white shadow-md hover:shadow-lg transition-all px-8"
+                  className="bg-primary text-primary-foreground shadow-md hover:shadow-lg transition-all px-8"
                   size="lg"
                 >
                   {isLoading ? (
@@ -334,7 +334,7 @@ export default function InvoiceGeneratorPage() {
                 onClick={handleDownload}
                 disabled={isDownloading}
                 variant="outline"
-                className="border-2 border-black shrink-0"
+                className="border-2 border-foreground shrink-0"
               >
                 {isDownloading ? (
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -351,11 +351,11 @@ export default function InvoiceGeneratorPage() {
             </div>
 
             {/* CTA banner */}
-            <div className="mt-8 rounded-2xl bg-primary p-6 sm:p-8 text-white text-center">
+            <div className="mt-8 rounded-2xl bg-primary p-6 sm:p-8 text-primary-foreground text-center">
               <h3 className="text-xl sm:text-2xl font-bold mb-2">
                 Ready to save, send & get paid?
               </h3>
-              <p className="text-white/80 mb-5 text-sm sm:text-base">
+              <p className="text-primary-foreground/80 mb-5 text-sm sm:text-base">
                 Sign up free to save your invoices, manage clients and track
                 expenses. Free accounts get {FREE_INVOICES_PER_MONTH} invoices
                 and {FREE_EXTRACTIONS_PER_MONTH} AI extractions a month.
@@ -375,7 +375,7 @@ export default function InvoiceGeneratorPage() {
                   asChild
                   size="lg"
                   variant="outline"
-                  className="border-white text-white hover:bg-card/10"
+                  className="border-primary-foreground text-primary-foreground bg-transparent dark:bg-transparent hover:bg-primary-foreground/10"
                 >
                   <Link href="/login">Sign in</Link>
                 </Button>

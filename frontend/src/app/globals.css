@@ -1,9 +1,10 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
-/* Dark mode is not offered. The variant stays class-based so leftover `dark:` classes
-   never switch on from the OS setting; nothing adds the `.dark` class. */
-@custom-variant dark (&:is(.dark *));
+/* Dark mode: next-themes puts `.dark` or `.light` on <html> (system setting by default, or the
+   person's choice). The variant skips anything inside a `.light` subtree, so documents that must
+   stay white (invoices) never pick up `dark:` styles. */
+@custom-variant dark (&:is(.dark *):not(:is(.light *)));
 
 @theme inline {
   --color-background: var(--background);
@@ -27,6 +28,9 @@
   --color-input: var(--input);
   --color-border: var(--border);
   --color-destructive: var(--destructive);
+  --color-destructive-solid: var(--destructive-solid);
+  --color-chat-bubble: var(--chat-bubble);
+  --color-chat-bubble-foreground: var(--chat-bubble-foreground);
   --color-success: var(--success);
   --color-success-strong: var(--success-strong);
   --color-warning-strong: var(--warning-strong);
@@ -58,8 +62,13 @@
  * "Calm ledger": a light slate base shared with devchi.me, and one indigo accent taken
  * from the InvoyQ logo. Semantic colours (success / warning / destructive) appear only
  * where they carry meaning, such as invoice status.
+ *
+ * `.light` repeats the light tokens so a subtree can opt out of dark mode (an invoice is paper:
+ * the PDF/PNG export must never turn dark). `.dark` below overrides them for the dark theme.
  */
-:root {
+:root,
+.light {
+  color-scheme: light;
   --radius: 0.875rem;
 
   --background: #f8fafc;
@@ -84,6 +93,8 @@
   --success: #15803d;
   --warning: #a16207;
   --destructive: #dc2626;
+  /* Background for solid destructive buttons and badges (white text on top). */
+  --destructive-solid: #dc2626;
   /* Darker text for soft (10% tint) status backgrounds, so small badge text passes AA. */
   --success-strong: #166534;
   --warning-strong: #854d0e;
@@ -108,16 +119,78 @@
   --sidebar-border: #e2e8f0;
   --sidebar-ring: #4f46e5;
 
+  /* The WhatsApp-style bubble in the landing hero */
+  --chat-bubble: #dcf8c6;
+  --chat-bubble-foreground: #0f172a;
+
   --elevation-frame: 0 1px 2px #0f172a0f, 0 18px 40px -22px #0f172a47;
   --elevation-nav: 0 1px 2px #0f172a0f, 0 8px 24px -12px #0f172a33;
+}
+
+/*
+ * Dark theme: deep slate-navy, the same cool family as the light slate base and the logo.
+ * Accent stays indigo, lifted to #818CF8 so it reads on navy; text on it flips to navy.
+ * Semantic colours become lighter tints that keep AA contrast on the dark surfaces.
+ */
+.dark {
+  color-scheme: dark;
+
+  --background: #0b1120;
+  --foreground: #e2e8f0;
+  --card: #111827;
+  --card-foreground: #e2e8f0;
+  --popover: #111827;
+  --popover-foreground: #e2e8f0;
+
+  --primary: #818cf8;
+  --primary-foreground: #0b1120;
+  --brand: #818cf8;
+  --accent: #1e1b4b;
+  --accent-foreground: #c7d2fe;
+
+  --secondary: #1e293b;
+  --secondary-foreground: #e2e8f0;
+  --muted: #1e293b;
+  --muted-foreground: #94a3b8;
+
+  --success: #4ade80;
+  --warning: #facc15;
+  --destructive: #f87171;
+  --destructive-solid: #b91c1c;
+  --success-strong: #86efac;
+  --warning-strong: #fde047;
+  --destructive-strong: #fca5a5;
+
+  --border: #1e293b;
+  --input: #334155;
+  --ring: #818cf8;
+
+  --chart-1: #818cf8;
+  --chart-2: #2dd4bf;
+  --chart-3: #fb923c;
+  --chart-4: #facc15;
+  --chart-5: #a78bfa;
+
+  --sidebar: #111827;
+  --sidebar-foreground: #e2e8f0;
+  --sidebar-primary: #818cf8;
+  --sidebar-primary-foreground: #0b1120;
+  --sidebar-accent: #1e1b4b;
+  --sidebar-accent-foreground: #c7d2fe;
+  --sidebar-border: #1e293b;
+  --sidebar-ring: #818cf8;
+
+  --chat-bubble: #005c4b;
+  --chat-bubble-foreground: #e9edef;
+
+  /* Shadows barely show on navy, so lean on a darker, tighter drop. */
+  --elevation-frame: 0 1px 2px #00000080, 0 18px 40px -22px #000000cc;
+  --elevation-nav: 0 1px 2px #00000080, 0 8px 24px -12px #000000b3;
 }
 
 @layer base {
   * {
     @apply border-border outline-ring/50;
-  }
-  html {
-    color-scheme: light;
   }
   body {
     @apply bg-background text-foreground;

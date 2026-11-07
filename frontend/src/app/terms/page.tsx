@@ -32,7 +32,7 @@ export default function TermsOfService() {
           <div className="text-center mb-12">
             <div className="flex justify-center mb-6">
               <div className="p-4 bg-primary rounded-2xl">
-                <FileText className="h-8 w-8 text-white" />
+                <FileText className="h-8 w-8 text-primary-foreground" />
               </div>
             </div>
             <h1 className="text-4xl font-bold text-foreground mb-4">

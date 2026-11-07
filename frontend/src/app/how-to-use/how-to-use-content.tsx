@@ -1999,11 +1999,11 @@ export default function HowToUseContent() {
         {/* Call to Action Section */}
         <section className="py-16 px-4 sm:px-6 lg:px-8">
           <div className="max-w-4xl mx-auto text-center">
-            <div className="p-8 sm:p-12 rounded-2xl bg-primary text-white">
+            <div className="p-8 sm:p-12 rounded-2xl bg-primary text-primary-foreground">
               <h2 className="text-3xl sm:text-4xl font-bold mb-4">
                 Ready to Streamline Your Invoicing?
               </h2>
-              <p className="text-lg text-white/90 mb-8 max-w-2xl mx-auto">
+              <p className="text-lg text-primary-foreground/90 mb-8 max-w-2xl mx-auto">
                 Join thousands of businesses using InvoyQ to create professional
                 invoices, track payments, and manage their finances with ease.
               </p>
@@ -2022,7 +2022,7 @@ export default function HowToUseContent() {
                   asChild
                   size="lg"
                   variant="outline"
-                  className="border-white text-white bg-card/10"
+                  className="border-primary-foreground text-primary-foreground bg-transparent dark:bg-transparent hover:bg-primary-foreground/10"
                 >
                   <Link href="/dashboard/settings">
                     <Settings className="mr-2 h-5 w-5" />

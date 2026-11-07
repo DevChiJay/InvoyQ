@@ -15,6 +15,7 @@ import { UsageMeter } from "@/components/shared/usage-meter";
 import { APP_STORE_URL, PLAY_STORE_URL } from "@/lib/seo";
 import { cn } from "@/lib/utils";
 import type { NavigationItem, NavigationSection } from "@/constants/navigation";
+import { ThemeToggle } from "@/components/shared/theme-toggle";
 import UserMenu from "./user-menu";
 
 interface AppShellProps {
@@ -215,7 +216,8 @@ export default function AppShell({
             <div className="lg:hidden">
               <ShellLogo homeHref={homeHref} badge={badge} />
             </div>
-            <div className="ml-auto">
+            <div className="ml-auto flex items-center gap-1">
+              <ThemeToggle />
               <UserMenu />
             </div>
           </header>

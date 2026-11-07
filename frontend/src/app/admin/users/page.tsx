@@ -426,7 +426,7 @@ export default function AdminUsersPage() {
                               alt={user.full_name || user.email}
                             />
                           ) : null}
-                          <AvatarFallback className="bg-primary text-white text-sm font-medium">
+                          <AvatarFallback className="bg-primary text-primary-foreground text-sm font-medium">
                             {getInitials(user.full_name, user.email)}
                           </AvatarFallback>
                         </Avatar>

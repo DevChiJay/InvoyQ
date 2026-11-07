@@ -242,7 +242,7 @@ export default function ContactForm() {
 
                       <Button
                         type="submit"
-                        className="w-full gap-2 text-lg py-6 bg-primary shadow-lg hover:shadow-xl transition-all text-white"
+                        className="w-full gap-2 text-lg py-6 bg-primary shadow-lg hover:shadow-xl transition-all text-primary-foreground"
                         disabled={isLoading}
                       >
                         {isLoading ? (

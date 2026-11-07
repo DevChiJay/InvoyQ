@@ -7,6 +7,7 @@ import { Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/ui/sheet";
 import { Logo } from "@/components/shared/logo";
+import { ThemeSegmented, ThemeToggle } from "@/components/shared/theme-toggle";
 import { cn } from "@/lib/utils";
 
 const links = [
@@ -38,6 +39,7 @@ export default function Navbar() {
             </Link>
           ))}
           <span className="mx-2 h-5 w-px bg-border" aria-hidden="true" />
+          <ThemeToggle />
           <Link href="/login" className={linkClass("/login")}>
             Log in
           </Link>
@@ -71,6 +73,10 @@ export default function Navbar() {
                 Sign Up
               </Link>
             </Button>
+            <div className="mt-6 space-y-2">
+              <p className="px-3 text-xs font-medium text-muted-foreground">Theme</p>
+              <ThemeSegmented className="w-full" />
+            </div>
           </div>
         </SheetContent>
       </Sheet>

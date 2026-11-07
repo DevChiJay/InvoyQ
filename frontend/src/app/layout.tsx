@@ -1,7 +1,8 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Space_Grotesk } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import { QueryProvider } from "@/components/providers/query-provider";
+import { ThemeProvider } from "@/components/providers/theme-provider";
 import Script from "next/script";
 import "./globals.css";
 import dynamic from "next/dynamic";
@@ -26,6 +27,14 @@ const spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],
   weight: ["500", "600", "700"],
 });
+
+// Browser UI colour follows the system theme (set before first paint, so no flash).
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#f8fafc" },
+    { media: "(prefers-color-scheme: dark)", color: "#0b1120" },
+  ],
+};
 
 export const metadata: Metadata = {
   title: {
@@ -127,10 +136,12 @@ export default function RootLayout({
         className={`${geistSans.variable} ${spaceGrotesk.variable} antialiased`}
       >
         {process.env.NODE_ENV === "production" && <GoogleAnalytics />}
-        <QueryProvider>
-          {children}
-          <Toaster />
-        </QueryProvider>
+        <ThemeProvider>
+          <QueryProvider>
+            {children}
+            <Toaster />
+          </QueryProvider>
+        </ThemeProvider>
 
         {/* Smartsupp Live Chat */}
         <Script

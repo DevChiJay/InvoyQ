@@ -16,7 +16,7 @@ export default function VideoEmbed({ videoId, title }: VideoEmbedProps) {
   const [playing, setPlaying] = useState(false);
 
   return (
-    <div className="relative aspect-video w-full overflow-hidden rounded-xl border bg-foreground shadow-frame">
+    <div className="light relative aspect-video w-full overflow-hidden rounded-xl bg-foreground shadow-frame">
       {playing ? (
         <iframe
           className="absolute inset-0 h-full w-full"
