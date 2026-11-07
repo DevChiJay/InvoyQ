@@ -7,8 +7,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { toast } from "sonner";
 import { Mail, MessageSquare, Send, Clock } from "lucide-react";
-import Navbar from "@/components/landing/navbar";
-import Footer from "@/components/landing/footer";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -84,20 +82,19 @@ export default function ContactForm() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <Navbar />
+    <div className="flex flex-col">
 
-      <main className="flex-1 bg-gradient-to-br from-white via-indigo-50 to-teal-50 dark:from-[#0F172A] dark:via-[#1a2642] dark:to-[#0F172A] pt-24 pb-16">
+      <main className="flex-1 bg-background pt-12 pb-16">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Header */}
           <div className="text-center mb-12">
-            <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 dark:text-[#E2E8F0] mb-4">
+            <h1 className="text-4xl sm:text-5xl font-bold text-foreground mb-4">
               Get in{" "}
-              <span className="bg-gradient-to-r from-[#6366F1] to-[#14B8A6] bg-clip-text text-transparent">
+              <span>
                 Touch
               </span>
             </h1>
-            <p className="text-xl text-gray-600 dark:text-[#E2E8F0]/80 max-w-2xl mx-auto">
+            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
               Have a question or feedback? We&apos;d love to hear from you. Send
               us a message and we&apos;ll respond as soon as possible.
             </p>
@@ -109,14 +106,14 @@ export default function ContactForm() {
               <Card className="border-2">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <Mail className="h-5 w-5 text-[#6366F1]" />
+                    <Mail className="h-5 w-5 text-primary" />
                     Email Us
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <a
                     href="mailto:support@invoyq.com"
-                    className="text-[#6366F1] hover:text-[#14B8A6] font-medium transition-colors"
+                    className="text-primary hover:text-primary font-medium transition-colors"
                   >
                     support@invoyq.com
                   </a>
@@ -126,26 +123,26 @@ export default function ContactForm() {
               <Card className="border-2">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <Clock className="h-5 w-5 text-[#14B8A6]" />
+                    <Clock className="h-5 w-5 text-primary" />
                     Response Time
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-gray-600 dark:text-[#E2E8F0]/80">
+                  <p className="text-muted-foreground">
                     We typically respond within 24 hours during business days.
                   </p>
                 </CardContent>
               </Card>
 
-              <Card className="border-2 bg-gradient-to-br from-[#6366F1]/10 to-[#14B8A6]/10">
+              <Card className="bg-accent/50">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <MessageSquare className="h-5 w-5 text-[#6366F1]" />
+                    <MessageSquare className="h-5 w-5 text-primary" />
                     Quick Support
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-sm text-gray-600 dark:text-[#E2E8F0]/80">
+                  <p className="text-sm text-muted-foreground">
                     For urgent issues or questions about your account, please
                     include your account email in the message.
                   </p>
@@ -245,7 +242,7 @@ export default function ContactForm() {
 
                       <Button
                         type="submit"
-                        className="w-full gap-2 text-lg py-6 bg-gradient-to-r from-[#6366F1] to-[#14B8A6] hover:from-[#5558E3] hover:to-[#12A594] shadow-lg hover:shadow-xl transition-all text-white"
+                        className="w-full gap-2 text-lg py-6 bg-primary shadow-lg hover:shadow-xl transition-all text-white"
                         disabled={isLoading}
                       >
                         {isLoading ? (
@@ -265,8 +262,6 @@ export default function ContactForm() {
           </div>
         </div>
       </main>
-
-      <Footer />
     </div>
   );
 }

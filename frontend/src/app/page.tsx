@@ -3,10 +3,8 @@ import Navbar from "@/components/landing/navbar";
 import HeroSection from "@/components/landing/hero-section";
 import FeaturesSection from "@/components/landing/features-section";
 import HowItWorks from "@/components/landing/how-it-works";
-import TestimonialsSection from "@/components/landing/testimonials-section";
 import CTASection from "@/components/landing/cta-section";
 import Footer from "@/components/landing/footer";
-import ScrollToTop from "@/components/landing/scroll-to-top";
 import RedirectIfAuthed from "@/components/landing/redirect-if-authed";
 import { JsonLd } from "@/components/json-ld";
 import { pageMetadata, softwareApplicationJsonLd } from "@/lib/seo";
@@ -28,10 +26,8 @@ export default function Home() {
       <HeroSection />
       <HowItWorks />
       <FeaturesSection />
-      <TestimonialsSection />
       <CTASection />
       <Footer />
-      <ScrollToTop />
     </main>
   );
 }

@@ -7,7 +7,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { InvoicePreview } from "@/components/invoices/invoice-preview";
-import Navbar from "@/components/landing/navbar";
 import { freeExtractionAPI } from "@/lib/api";
 import { toPng } from "html-to-image";
 import { toast } from "sonner";
@@ -225,36 +224,35 @@ export default function InvoiceGeneratorPage() {
   const limitReached = remaining <= 0;
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-[#0F172A]">
-      <Navbar />
+    <div className="bg-background">
 
       {/* Hero / Input section */}
       <section className="pt-28 pb-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-3xl mx-auto text-center">
-          <Badge className="mb-4 bg-linear-to-r from-[#6366F1] to-[#14B8A6] text-white border-0 px-4 py-1.5 text-sm font-semibold">
+          <Badge variant="info" className="mb-4 px-3 py-1 text-sm">
             <Sparkles className="h-3.5 w-3.5 mr-1.5 inline" />
             Free Invoice Generator
           </Badge>
-          <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 dark:text-white mb-4 leading-tight">
+          <h1 className="text-4xl sm:text-5xl font-bold text-foreground mb-4 leading-tight">
             Turn any transaction text
             <br />
-            <span className="bg-linear-to-r from-[#6366F1] to-[#14B8A6] bg-clip-text text-transparent">
+            <span>
               into a real invoice
             </span>
           </h1>
-          <p className="text-lg text-gray-600 dark:text-gray-400 mb-2">
+          <p className="text-lg text-muted-foreground mb-2">
             Paste a message, chat, or description of a job below. Our AI
             extracts the details and generates a professional invoice instantly.
           </p>
-          <p className="text-sm text-gray-500 dark:text-gray-500">
+          <p className="text-sm text-muted-foreground">
             No sign-up required &mdash;{" "}
             <span
               className={`font-semibold ${
                 remaining === 0
-                  ? "text-red-500"
+                  ? "text-destructive"
                   : remaining === 1
-                    ? "text-yellow-500"
-                    : "text-[#14B8A6]"
+                    ? "text-warning"
+                    : "text-primary"
               }`}
             >
               {remaining} of {MAX_FREE_USES} free generations left today
@@ -263,24 +261,25 @@ export default function InvoiceGeneratorPage() {
         </div>
 
         <div className="max-w-3xl mx-auto mt-8">
-          <Card className="border-2 border-gray-200 dark:border-white/10 shadow-lg">
+          <Card className="border-2 border-border shadow-lg">
             <CardContent className="p-6">
               <Textarea
+                aria-label="Describe the job or paste the chat"
                 value={text}
                 onChange={(e) => setText(e.target.value)}
                 placeholder={`E.g. "Client: Acme Corp. Designed a logo — $500. Payment due in 14 days. Client email: info@acme.com"`}
-                className="min-h-[140px] text-base resize-none border-gray-200 dark:border-white/10 focus-visible:ring-[#6366F1]"
+                className="min-h-[140px] text-base resize-none border-border focus-visible:ring-primary"
                 disabled={isLoading || limitReached}
               />
 
               {limitReached && (
-                <div className="mt-3 flex items-start gap-2 rounded-lg bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 p-3">
-                  <AlertTriangle className="h-4 w-4 text-yellow-600 dark:text-yellow-400 mt-0.5 shrink-0" />
-                  <p className="text-sm text-yellow-700 dark:text-yellow-300">
+                <div className="mt-3 flex items-start gap-2 rounded-lg bg-warning/10 border border-warning/30 p-3">
+                  <AlertTriangle className="h-4 w-4 text-warning mt-0.5 shrink-0" />
+                  <p className="text-sm text-warning">
                     You&apos;ve used all 3 free generations for today.{" "}
                     <Link
                       href="/register"
-                      className="font-semibold underline hover:text-yellow-900 dark:hover:text-yellow-100"
+                      className="font-semibold underline hover:text-foreground"
                     >
                       Sign up free
                     </Link>{" "}
@@ -293,7 +292,7 @@ export default function InvoiceGeneratorPage() {
                 <Button
                   onClick={handleGenerate}
                   disabled={isLoading || limitReached || !text.trim()}
-                  className="bg-linear-to-r from-[#6366F1] to-[#14B8A6] hover:from-[#5558E3] hover:to-[#12A594] text-white shadow-md hover:shadow-lg transition-all px-8"
+                  className="bg-primary text-white shadow-md hover:shadow-lg transition-all px-8"
                   size="lg"
                 >
                   {isLoading ? (
@@ -321,10 +320,10 @@ export default function InvoiceGeneratorPage() {
             {/* Action bar */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-6">
               <div>
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+                <h2 className="text-xl font-bold text-foreground">
                   Your Invoice Preview
                 </h2>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+                <p className="text-sm text-muted-foreground mt-0.5">
                   Missing details filled with placeholder values. Sign up to
                   personalise.
                 </p>
@@ -333,7 +332,7 @@ export default function InvoiceGeneratorPage() {
                 onClick={handleDownload}
                 disabled={isDownloading}
                 variant="outline"
-                className="border-2 border-black dark:border-white shrink-0"
+                className="border-2 border-black shrink-0"
               >
                 {isDownloading ? (
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -350,7 +349,7 @@ export default function InvoiceGeneratorPage() {
             </div>
 
             {/* CTA banner */}
-            <div className="mt-8 rounded-2xl bg-linear-to-r from-[#6366F1] to-[#14B8A6] p-6 sm:p-8 text-white text-center">
+            <div className="mt-8 rounded-2xl bg-primary p-6 sm:p-8 text-white text-center">
               <h3 className="text-xl sm:text-2xl font-bold mb-2">
                 Ready to save, send & get paid?
               </h3>
@@ -362,7 +361,7 @@ export default function InvoiceGeneratorPage() {
                 <Button
                   asChild
                   size="lg"
-                  className="bg-white text-[#6366F1] hover:bg-gray-100 font-bold shadow-md"
+                  className="bg-card text-primary hover:bg-muted font-bold shadow-md"
                 >
                   <Link href="/register">
                     Create free account
@@ -373,7 +372,7 @@ export default function InvoiceGeneratorPage() {
                   asChild
                   size="lg"
                   variant="outline"
-                  className="border-white text-white hover:bg-white/10"
+                  className="border-white text-white hover:bg-card/10"
                 >
                   <Link href="/login">Sign in</Link>
                 </Button>

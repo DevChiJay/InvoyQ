@@ -1,50 +1,27 @@
-"use client";
-
-import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { ArrowRight, Sparkles } from "lucide-react";
+import { ArrowRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 export default function CTASection() {
   return (
-    <section className="py-20 bg-gradient-to-br from-[#6366F1] via-[#14B8A6] to-[#0F172A] relative overflow-hidden">
-      {/* Background decoration */}
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute top-10 right-10 h-64 w-64 rounded-full bg-[#FACC15]/20 blur-3xl"></div>
-        <div className="absolute bottom-10 left-10 h-64 w-64 rounded-full bg-white/10 blur-3xl"></div>
-      </div>
-
-      <div className="container relative mx-auto px-4">
-        <div className="max-w-4xl mx-auto text-center text-white">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/20 backdrop-blur-sm text-white text-sm font-medium mb-6">
-            <Sparkles className="h-4 w-4" />
-            Start Free Today
+    <section className="bg-background py-20 sm:py-24">
+      <div className="mx-auto max-w-6xl px-4 sm:px-6">
+        <div className="flex flex-col items-start gap-6 rounded-2xl bg-primary px-6 py-10 text-primary-foreground sm:px-10 lg:flex-row lg:items-center lg:justify-between">
+          <div className="max-w-2xl">
+            <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">Ready to Simplify Your Invoicing?</h2>
+            <p className="mt-3 text-lg text-primary-foreground/85">
+              Join thousands of businesses managing invoices, expenses, and payments all in one powerful platform.
+            </p>
+            <p className="mt-4 text-sm text-primary-foreground/75">
+              No credit card required · 10 free invoices · Upgrade anytime
+            </p>
           </div>
-
-          <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6">
-            Ready to Simplify Your Invoicing?
-          </h2>
-
-          <p className="text-xl md:text-2xl text-[#E2E8F0] mb-10 max-w-2xl mx-auto">
-            Join thousands of businesses managing invoices, expenses, and
-            payments all in one powerful platform.
-          </p>
-
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            <Button
-              size="lg"
-              asChild
-              className="gap-2 text-lg px-8 py-6 bg-white text-[#6366F1] hover:bg-[#E2E8F0] shadow-lg hover:shadow-xl transition-all"
-            >
-              <Link href="/register">
-                Get Started Free
-                <ArrowRight className="h-5 w-5" />
-              </Link>
-            </Button>
-          </div>
-
-          <p className="text-sm text-teal-100 mt-6">
-            No credit card required • 10 free invoices • Upgrade anytime
-          </p>
+          <Button size="lg" variant="secondary" asChild className="h-11 shrink-0 px-6">
+            <Link href="/register">
+              Get Started Free
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          </Button>
         </div>
       </div>
     </section>

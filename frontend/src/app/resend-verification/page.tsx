@@ -51,7 +51,7 @@ export default function ResendVerificationPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md">
         <CardHeader>
           <div className="flex items-center gap-2">
@@ -74,9 +74,9 @@ export default function ResendVerificationPage() {
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-4">
             {status === 'success' && (
-              <Alert className="border-green-200 bg-green-50 dark:border-green-900 dark:bg-green-950">
-                <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
-                <AlertDescription className="text-green-800 dark:text-green-200">
+              <Alert className="border-success/30 bg-success/10">
+                <CheckCircle2 className="h-4 w-4 text-success" />
+                <AlertDescription className="text-success">
                   {message}
                 </AlertDescription>
               </Alert>

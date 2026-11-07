@@ -73,7 +73,7 @@ export function UpgradeModal({ open, onClose }: UpgradeModalProps) {
 
         <div className="space-y-4">
           {/* Pricing */}
-          <div className="bg-primary p-4 rounded-lg">
+          <div className="bg-accent p-4 rounded-lg">
             <div className="text-center">
               <div className="text-3xl font-bold">
                 {currencyInfo.symbol}{currencyInfo.price.toLocaleString()}

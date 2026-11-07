@@ -85,14 +85,14 @@ export default function RegisterForm() {
       <CardContent>
         {registeredEmail ? (
           <div className="space-y-4">
-            <div className="rounded-lg border border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950 p-4">
+            <div className="rounded-lg border border-success/30 bg-success/10 p-4">
               <div className="flex items-start gap-3">
-                <Check className="h-5 w-5 text-green-600 dark:text-green-400 mt-0.5" />
+                <Check className="h-5 w-5 text-success mt-0.5" />
                 <div className="space-y-1">
-                  <p className="font-medium text-green-900 dark:text-green-100">
+                  <p className="font-medium text-foreground">
                     Account created successfully!
                   </p>
-                  <p className="text-sm text-green-800 dark:text-green-200">
+                  <p className="text-sm text-success">
                     We&apos;ve sent a verification email to <strong>{registeredEmail}</strong>
                   </p>
                 </div>
@@ -185,7 +185,7 @@ export default function RegisterForm() {
                     <div className="mt-2 space-y-1 text-sm">
                       <div className={cn(
                         'flex items-center gap-2',
-                        passwordChecks.minLength ? 'text-green-600' : 'text-muted-foreground'
+                        passwordChecks.minLength ? 'text-success' : 'text-muted-foreground'
                       )}>
                         {passwordChecks.minLength ? (
                           <Check className="h-4 w-4" />
@@ -196,7 +196,7 @@ export default function RegisterForm() {
                       </div>
                       <div className={cn(
                         'flex items-center gap-2',
-                        passwordChecks.hasNumber ? 'text-green-600' : 'text-muted-foreground'
+                        passwordChecks.hasNumber ? 'text-success' : 'text-muted-foreground'
                       )}>
                         {passwordChecks.hasNumber ? (
                           <Check className="h-4 w-4" />
@@ -240,7 +240,7 @@ export default function RegisterForm() {
             <span className="w-full border-t" />
           </div>
           <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-white px-2 text-muted-foreground dark:bg-gray-950">
+            <span className="bg-card px-2 text-muted-foreground">
               Or continue with
             </span>
           </div>

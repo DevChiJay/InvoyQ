@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { pageMetadata, webApplicationJsonLd } from "@/lib/seo";
 import { JsonLd } from "@/components/json-ld";
+import MarketingShell from "@/components/landing/marketing-shell";
 
 export const metadata: Metadata = pageMetadata({
   title: "Free AI Invoice Generator",
@@ -13,7 +14,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   return (
     <>
       <JsonLd data={webApplicationJsonLd} />
-      {children}
+      <MarketingShell>{children}</MarketingShell>
     </>
   );
 }

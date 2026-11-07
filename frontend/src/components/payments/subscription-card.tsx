@@ -142,7 +142,7 @@ export function SubscriptionCard({ onUpgrade }: SubscriptionCardProps) {
 
             {/* Upgrade CTA */}
             <div className="pt-4 border-t">
-              <div className="bg-primary p-4 rounded-lg">
+              <div className="bg-accent p-4 rounded-lg">
                 <h4 className="font-semibold mb-2">Upgrade to Pro</h4>
                 <p className="text-sm text-muted-foreground mb-3">
                   Unlock unlimited extractions, payment links, and more

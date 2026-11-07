@@ -85,16 +85,16 @@ function AuthCallbackContent() {
   }, [searchParams, router, setUser, setToken]);
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-linear-to-br from-blue-50 to-indigo-100">
-      <div className="mx-auto max-w-md space-y-6 rounded-lg bg-white p-8 shadow-lg">
+    <div className="flex min-h-screen items-center justify-center bg-background p-4">
+      <div className="mx-auto max-w-md space-y-6 rounded-lg bg-card p-8 shadow-lg">
         <div className="text-center">
           {status === "processing" && (
             <>
-              <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-4 border-gray-200 border-t-blue-600"></div>
-              <h1 className="text-2xl font-bold text-gray-900">
+              <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-4 border-border border-t-blue-600"></div>
+              <h1 className="text-2xl font-bold text-foreground">
                 Completing sign in...
               </h1>
-              <p className="mt-2 text-gray-600">
+              <p className="mt-2 text-muted-foreground">
                 Please wait while we set up your account.
               </p>
             </>
@@ -102,9 +102,9 @@ function AuthCallbackContent() {
 
           {status === "success" && (
             <>
-              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-green-100">
+              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-success/10">
                 <svg
-                  className="h-6 w-6 text-green-600"
+                  className="h-6 w-6 text-success"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -117,8 +117,8 @@ function AuthCallbackContent() {
                   />
                 </svg>
               </div>
-              <h1 className="text-2xl font-bold text-gray-900">Success!</h1>
-              <p className="mt-2 text-gray-600">
+              <h1 className="text-2xl font-bold text-foreground">Success!</h1>
+              <p className="mt-2 text-muted-foreground">
                 Redirecting to your dashboard...
               </p>
             </>
@@ -126,9 +126,9 @@ function AuthCallbackContent() {
 
           {status === "error" && (
             <>
-              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-100">
+              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-destructive/10">
                 <svg
-                  className="h-6 w-6 text-red-600"
+                  className="h-6 w-6 text-destructive"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -141,10 +141,10 @@ function AuthCallbackContent() {
                   />
                 </svg>
               </div>
-              <h1 className="text-2xl font-bold text-gray-900">
+              <h1 className="text-2xl font-bold text-foreground">
                 Authentication Failed
               </h1>
-              <p className="mt-2 text-gray-600">Redirecting to login page...</p>
+              <p className="mt-2 text-muted-foreground">Redirecting to login page...</p>
             </>
           )}
         </div>
@@ -157,12 +157,12 @@ export default function AuthCallbackPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex min-h-screen items-center justify-center bg-linear-to-br from-blue-50 to-indigo-100">
-          <div className="mx-auto max-w-md space-y-6 rounded-lg bg-white p-8 shadow-lg">
+        <div className="flex min-h-screen items-center justify-center bg-background p-4">
+          <div className="mx-auto max-w-md space-y-6 rounded-lg bg-card p-8 shadow-lg">
             <div className="text-center">
-              <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-4 border-gray-200 border-t-blue-600"></div>
-              <h1 className="text-2xl font-bold text-gray-900">Loading...</h1>
-              <p className="mt-2 text-gray-600">Please wait...</p>
+              <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-4 border-border border-t-blue-600"></div>
+              <h1 className="text-2xl font-bold text-foreground">Loading...</h1>
+              <p className="mt-2 text-muted-foreground">Please wait...</p>
             </div>
           </div>
         </div>
