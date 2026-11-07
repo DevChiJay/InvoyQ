@@ -507,12 +507,43 @@ export interface MonthlyStats {
   total_invoices: number;
   paid_invoices: number;
   unpaid_invoices: number;
+  /** Invoices in the month by status; only statuses that occur are listed. Absent on older backends. */
+  status_counts?: Record<string, number>;
   total_products_sold: number;
   top_products: TopProduct[];
   new_clients: number;
   period_start: string; // YYYY-MM-DD
   period_end: string; // YYYY-MM-DD
   currency: string;
+}
+
+export interface MonthTrendPoint {
+  month: number;
+  year: number;
+  revenue: string; // Decimal as string
+  expenses: string;
+  net_income: string;
+  total_invoices: number;
+  paid_invoices: number;
+}
+
+export interface DailyPoint {
+  date: string; // YYYY-MM-DD
+  revenue: string;
+  expenses: string;
+}
+
+/** GET /v1/stats/trend: the N months ending at the selected month, plus its daily figures. */
+export interface StatsTrend {
+  currency: string;
+  month: number;
+  year: number;
+  months: MonthTrendPoint[];
+  daily: DailyPoint[];
+}
+
+export interface StatsTrendResponse {
+  trend: StatsTrend;
 }
 
 export interface MonthlyStatsParams {

@@ -10,7 +10,7 @@ from app.db.mongo import get_database
 from app.dependencies.auth import get_current_user
 from app.repositories.user_repository import UserInDB
 from app.repositories.monthly_stats_repository import MonthlyStatsRepository
-from app.schemas.monthly_stats import MonthlyStatsResponse
+from app.schemas.monthly_stats import MonthlyStatsResponse, StatsTrendResponse
 
 router = APIRouter()
 
@@ -55,3 +55,29 @@ async def get_monthly_stats(
     )
     
     return MonthlyStatsResponse(stats=stats)
+
+
+@router.get("/trend", response_model=StatsTrendResponse)
+async def get_stats_trend(
+    month: int = Query(..., ge=1, le=12, description="Selected month (1-12)"),
+    year: int = Query(..., ge=2000, le=2100, description="Selected year"),
+    currency: str = Query("NGN", min_length=3, max_length=3, description="Currency filter (ISO 4217 code)"),
+    months: int = Query(6, ge=1, le=12, description="How many months to return, ending at the selected month"),
+    db: AsyncIOMotorDatabase = Depends(get_database),
+    current_user: UserInDB = Depends(get_current_user),
+):
+    """
+    Trend for charts: revenue, expenses and invoice counts for the `months` months ending at
+    the selected month (zero-filled), plus daily revenue and expenses for the selected month.
+
+    Uses the same definitions as `/monthly`: revenue is paid invoices by issued date.
+    """
+    repo = MonthlyStatsRepository(db)
+    trend = await repo.get_trend(
+        user_id=str(current_user.id),
+        month=month,
+        year=year,
+        currency=currency.upper(),
+        months=months,
+    )
+    return StatsTrendResponse(trend=trend)

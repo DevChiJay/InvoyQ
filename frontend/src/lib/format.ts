@@ -71,6 +71,25 @@ export const formatCurrency = (
  * Safely parses a decimal string to number for calculations
  * Returns 0 if invalid
  */
+/** Short money for chart axes: ₦1.2M, ₦350K, ₦900. Tooltips and cards use formatCurrency. */
+export function formatCompactCurrency(
+  amount: string | number | null | undefined,
+  currency: string = DEFAULT_CURRENCY,
+): string {
+  const value = parseDecimal(amount);
+  try {
+    return new Intl.NumberFormat(getCurrency(currency)?.locale ?? 'en-NG', {
+      style: 'currency',
+      currency,
+      notation: 'compact',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 1,
+    }).format(value);
+  } catch {
+    return String(value);
+  }
+}
+
 export const parseDecimal = (value: string | number | null | undefined): number => {
   if (value === null || value === undefined) return 0;
   if (typeof value === 'number') return value;

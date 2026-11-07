@@ -32,6 +32,7 @@ import type {
   ExpenseSummaryResponse,
   MonthlyStatsParams,
   MonthlyStatsResponse,
+  StatsTrendResponse,
   Usage,
   AdminUser,
   AdminUserListResponse,
@@ -463,6 +464,9 @@ export const usageAPI = {
 export const statsAPI = {
   getMonthlyStats: (params: MonthlyStatsParams) =>
     api.get<MonthlyStatsResponse>("/v1/stats/monthly", { params }),
+
+  getTrend: (params: MonthlyStatsParams & { months?: number }) =>
+    api.get<StatsTrendResponse>("/v1/stats/trend", { params }),
 };
 
 // Demo extraction helper - uses the same endpoint as authenticated extraction

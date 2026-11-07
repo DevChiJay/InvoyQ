@@ -165,9 +165,10 @@
   --input: #334155;
   --ring: #818cf8;
 
-  --chart-1: #818cf8;
+  /* Validated for the dark surface (OKLCH L 0.48-0.67, CVD separation): indigo / orange */
+  --chart-1: #7680f0;
   --chart-2: #2dd4bf;
-  --chart-3: #fb923c;
+  --chart-3: #e0703a;
   --chart-4: #facc15;
   --chart-5: #a78bfa;
 

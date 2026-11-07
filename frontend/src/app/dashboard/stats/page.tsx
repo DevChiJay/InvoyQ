@@ -1,71 +1,71 @@
 "use client";
 
-import React from "react";
+import { useMemo } from "react";
+import { BarChart3 } from "lucide-react";
 import { useMonthlyStats } from "@/lib/hooks/use-monthly-stats";
+import { useStatsTrend } from "@/lib/hooks/use-stats-trend";
 import { MonthNavigator } from "@/components/ui/month-navigator";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import {
-  DollarSign,
-  TrendingDown,
-  TrendingUp,
-  FileText,
-  ShoppingBag,
-  Users,
-  CheckCircle,
-  XCircle,
-} from "lucide-react";
-import { formatCurrency as formatMoney, parseDecimal } from "@/lib/format";
+import { Skeleton } from "@/components/ui/skeleton";
+import { PageHeader } from "@/components/shared/page-header";
+import { EmptyState } from "@/components/shared/empty-state";
+import { KpiCard } from "@/components/stats/kpi-card";
+import { TrendChart } from "@/components/stats/trend-chart";
+import { DailyChart } from "@/components/stats/daily-chart";
+import { StatusBreakdown } from "@/components/stats/status-breakdown";
+import { TopProducts } from "@/components/stats/top-products";
+import { formatCurrency, parseDecimal } from "@/lib/format";
+
+const monthName = (m: number, y: number, style: "short" | "long" = "long") =>
+  new Date(y, m - 1, 1).toLocaleString("en", style === "long" ? { month: "long", year: "numeric" } : { month: "short" });
+
+/** Change from `previous` to `current` as a fraction; null when there is nothing to compare against. */
+function relativeChange(current: number, previous: number): number | null {
+  if (previous === 0) return current === 0 ? 0 : null;
+  return (current - previous) / Math.abs(previous);
+}
+
+function ChartsSkeleton() {
+  return (
+    <div className="space-y-6" role="status" aria-label="Loading statistics">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {[0, 1, 2, 3].map((i) => (
+          <Skeleton key={i} className="h-28 rounded-xl" />
+        ))}
+      </div>
+      <div className="grid gap-4 lg:grid-cols-2">
+        {[0, 1].map((i) => (
+          <Skeleton key={i} className="h-96 rounded-xl" />
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export default function MonthlyStatsPage() {
-  const {
-    stats,
-    isLoading,
-    error,
-    month,
-    year,
-    currency,
-    goToCurrentMonth,
-    setMonthYear,
-    isCurrentMonth,
-  } = useMonthlyStats("NGN");
+  const { stats, isLoading, error, month, year, currency, goToCurrentMonth, setMonthYear, isCurrentMonth } =
+    useMonthlyStats("NGN");
+  // Trend and daily detail come from a newer endpoint; if it is missing the rest of the page still works.
+  const { data: trend } = useStatsTrend(month, year, currency);
 
-  const formatCurrency = (value: string) => formatMoney(parseDecimal(value), currency);
+  const label = monthName(month, year);
+  const money = (value: string | number) => formatCurrency(parseDecimal(value), currency);
 
-  if (error) {
-    return (
-      <div className="space-y-6">
-        <div>
-          <h1 className="font-display text-2xl font-semibold tracking-tight sm:text-3xl">
-            Monthly Statistics
-          </h1>
-          <p className="text-muted-foreground">
-            View detailed statistics for each month
-          </p>
-        </div>
-        <Alert variant="destructive">
-          <AlertDescription>
-            Failed to load monthly statistics. Please try again.
-          </AlertDescription>
-        </Alert>
-      </div>
-    );
-  }
+  const previous = useMemo(() => {
+    if (!trend || trend.months.length < 2) return null;
+    return trend.months[trend.months.length - 2];
+  }, [trend]);
+  const against = previous ? monthName(previous.month, previous.year, "short") : undefined;
+  const change = (current: string, key: "revenue" | "expenses" | "net_income") =>
+    previous ? relativeChange(parseDecimal(current), parseDecimal(previous[key])) : undefined;
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="font-display text-2xl font-semibold tracking-tight sm:text-3xl">
-          Monthly Statistics
-        </h1>
-        <p className="text-muted-foreground">
-          View detailed statistics for each month
-        </p>
-      </div>
+      <PageHeader title="Monthly stats" description="How the business did, month by month." />
 
-      {/* Month Navigator */}
-      <Card>
-        <CardContent className="p-4">
+      <Card className="py-1">
+        <CardContent className="px-4 py-0">
           <MonthNavigator
             month={month}
             year={year}
@@ -77,209 +77,85 @@ export default function MonthlyStatsPage() {
         </CardContent>
       </Card>
 
-      {isLoading ? (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {[...Array(9)].map((_, i) => (
-            <Card key={i} className="animate-pulse">
-              <CardHeader>
-                <div className="h-4 bg-muted rounded w-1/2"></div>
-              </CardHeader>
-              <CardContent>
-                <div className="h-8 bg-muted rounded"></div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      ) : !stats ? (
-        <Alert>
-          <AlertDescription>No data available for this month.</AlertDescription>
+      {error ? (
+        <Alert variant="destructive">
+          <AlertDescription>Failed to load monthly statistics. Please try again.</AlertDescription>
         </Alert>
+      ) : isLoading ? (
+        <ChartsSkeleton />
+      ) : !stats ? (
+        <Card>
+          <EmptyState
+            icon={BarChart3}
+            title="No data for this month"
+            description="Create invoices and record expenses to see your figures here."
+          />
+        </Card>
       ) : (
         <>
-          {/* Financial Overview */}
-          <div>
-            <h2 className="mb-4 text-lg font-semibold">Financial Overview</h2>
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">
-                    Total Revenue
-                  </CardTitle>
-                  <TrendingUp className="h-4 w-4 text-success" />
-                </CardHeader>
-                <CardContent>
-                  <div className="font-display text-2xl font-semibold tabular-nums text-success">
-                    {formatCurrency(stats.total_revenue)}
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    From paid invoices
-                  </p>
-                </CardContent>
-              </Card>
+          <section aria-label="Key figures" className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <KpiCard
+              label="Revenue"
+              value={money(stats.total_revenue)}
+              change={change(stats.total_revenue, "revenue")}
+              against={against}
+              hint="From paid invoices"
+            />
+            <KpiCard
+              label="Expenses"
+              value={money(stats.total_expenses)}
+              change={change(stats.total_expenses, "expenses")}
+              against={against}
+              hint="All expenses"
+            />
+            <KpiCard
+              label="Net income"
+              value={money(stats.net_income)}
+              tone={parseDecimal(stats.net_income) < 0 ? "negative" : "default"}
+              change={change(stats.net_income, "net_income")}
+              against={against}
+              hint="Revenue minus expenses"
+            />
+            <KpiCard
+              label="Unpaid invoices"
+              value={stats.unpaid_invoices}
+              hint={`${stats.paid_invoices} paid of ${stats.total_invoices} issued`}
+            />
+          </section>
 
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">
-                    Total Expenses
-                  </CardTitle>
-                  <TrendingDown className="h-4 w-4 text-destructive" />
-                </CardHeader>
-                <CardContent>
-                  <div className="font-display text-2xl font-semibold tabular-nums text-destructive">
-                    {formatCurrency(stats.total_expenses)}
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    All expenses
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">
-                    Net Income
-                  </CardTitle>
-                  <DollarSign className="h-4 w-4 text-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="font-display text-2xl font-semibold tabular-nums text-foreground">
-                    {formatCurrency(stats.net_income)}
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Revenue - Expenses
-                  </p>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-
-          {/* Invoices */}
-          <div>
-            <h2 className="mb-4 text-lg font-semibold">Invoices</h2>
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle className="text-sm font-medium">
-                    Total Invoices
-                  </CardTitle>
-                  <FileText className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="font-display text-2xl font-semibold tabular-nums">
-                    {stats.total_invoices}
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    All invoices
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle className="text-sm font-medium">
-                    Paid Invoices
-                  </CardTitle>
-                  <CheckCircle className="h-4 w-4 text-success" />
-                </CardHeader>
-                <CardContent>
-                  <div className="font-display text-2xl font-semibold tabular-nums">
-                    {stats.paid_invoices}
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Successfully paid
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle className="text-sm font-medium">
-                    Unpaid Invoices
-                  </CardTitle>
-                  <XCircle className="h-4 w-4 text-warning" />
-                </CardHeader>
-                <CardContent>
-                  <div className="font-display text-2xl font-semibold tabular-nums">
-                    {stats.unpaid_invoices}
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Pending payment
-                  </p>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-
-          {/* Products and Clients */}
-          <div className="grid gap-4 md:grid-cols-2">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium">
-                  Products Sold
-                </CardTitle>
-                <ShoppingBag className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="font-display text-2xl font-semibold tabular-nums">
-                  {stats.total_products_sold}
-                </div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Total quantity sold
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium">
-                  New Clients
-                </CardTitle>
-                <Users className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="font-display text-2xl font-semibold tabular-nums">{stats.new_clients}</div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Clients added this month
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Top Products */}
-          {stats.top_products && stats.top_products.length > 0 && (
-            <div>
-              <h2 className="mb-4 text-lg font-semibold">Top 5 Products</h2>
-              <Card>
-                <CardContent className="p-0">
-                  <div className="divide-y">
-                    {stats.top_products.map((product, index) => (
-                      <div
-                        key={product.product_id}
-                        className="flex items-center justify-between p-4 hover:bg-muted/50 transition-colors"
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary font-semibold text-sm">
-                            {index + 1}
-                          </div>
-                          <div>
-                            <p className="font-medium">{product.name}</p>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <p className="font-semibold">
-                            {product.quantity_sold}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            units sold
-                          </p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
+          {trend && (
+            <div className="grid gap-4 lg:grid-cols-2 [&>*]:min-w-0">
+              <TrendChart
+                months={trend.months}
+                currency={currency}
+                selected={{ month, year }}
+                onSelectMonth={setMonthYear}
+              />
+              <DailyChart daily={trend.daily} currency={currency} monthLabel={label} />
             </div>
           )}
+
+          <div className="grid gap-4 lg:grid-cols-2">
+            {stats.status_counts && <StatusBreakdown counts={stats.status_counts} monthLabel={label} />}
+            <TopProducts products={stats.top_products ?? []} monthLabel={label} />
+          </div>
+
+          <Card>
+            <CardContent>
+              <dl className="grid divide-y sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+                {[
+                  { label: "Products sold", value: stats.total_products_sold },
+                  { label: "New clients", value: stats.new_clients },
+                  { label: "Invoices issued", value: stats.total_invoices },
+                ].map((item) => (
+                  <div key={item.label} className="py-3 sm:px-6 sm:py-0 sm:first:pl-0 sm:last:pr-0">
+                    <dt className="text-sm text-muted-foreground">{item.label}</dt>
+                    <dd className="font-display text-2xl font-semibold tabular-nums">{item.value}</dd>
+                  </div>
+                ))}
+              </dl>
+            </CardContent>
+          </Card>
         </>
       )}
     </div>
