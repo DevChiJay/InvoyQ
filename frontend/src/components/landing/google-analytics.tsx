@@ -3,7 +3,7 @@
 
 import Script from 'next/script';
 import { usePathname } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
 // Add TypeScript declaration for Google Analytics
 declare global {
@@ -18,14 +18,16 @@ const GA_MEASUREMENT_ID = 'G-7RNHPDT7FP';
 
 export function GoogleAnalytics() {
   const pathname = usePathname();
-  
+  const isFirstRender = useRef(true);
+
   useEffect(() => {
-    if (pathname) {
-      // Page view tracking
-      window.gtag?.('config', GA_MEASUREMENT_ID, {
-        page_path: pathname,
-      });
+    // The init script below records the first page view; track later client-side
+    // navigations here. (Firing on mount as well counted the landing page twice.)
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
     }
+    window.gtag?.('config', GA_MEASUREMENT_ID, { page_path: pathname });
   }, [pathname]);
 
   return (

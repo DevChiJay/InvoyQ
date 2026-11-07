@@ -68,7 +68,7 @@ export const metadata: Metadata = {
     type: "website",
     images: [
       {
-        url: "/og-image.png",
+        url: "/og-image.jpg",
         width: 1200,
         height: 630,
         alt: "InvoyQ - All-in-One Invoicing Platform",
@@ -80,7 +80,7 @@ export const metadata: Metadata = {
     title: "InvoyQ - All-in-One Invoicing Platform",
     description:
       "Create professional invoices, track payments, manage clients, products, and expenses, and get paid faster with InvoyQ.",
-    images: ["/og-image.png"],
+    images: ["/og-image.jpg"],
     creator: "@devchijay",
   },
   robots: {
@@ -97,7 +97,7 @@ export const metadata: Metadata = {
   icons: {
     icon: "/icon.svg",
     shortcut: "/icon.svg",
-    apple: "/icon.svg",
+    apple: "/apple-touch-icon.png",
   },
   manifest: "/manifest.json",
 };
@@ -135,7 +135,8 @@ export default function RootLayout({
         {/* Smartsupp Live Chat */}
         <Script
           id="smartsupp-chat"
-          strategy="afterInteractive"
+          // The chat widget isn't needed to read or use the page: load it once the browser is idle.
+          strategy="lazyOnload"
           dangerouslySetInnerHTML={{
             __html: `
               var _smartsupp = _smartsupp || {};
