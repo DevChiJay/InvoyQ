@@ -1,10 +1,12 @@
 import { Metadata } from "next";
+import { pageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: "Privacy Policy",
   description:
-    "InvoYQ Privacy Policy — Learn how we collect, use, and protect your data.",
-};
+    "InvoyQ Privacy Policy — Learn how we collect, use, and protect your data.",
+  path: "/privacy",
+});
 
 export default function PrivacyPolicyPage() {
   return (

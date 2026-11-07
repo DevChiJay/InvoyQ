@@ -33,7 +33,7 @@ export default function HeroSection() {
           {/* Subheadline */}
           <p className="text-xl sm:text-2xl text-gray-600 dark:text-[#E2E8F0]/80 max-w-3xl mx-auto mb-12 leading-relaxed">
             Create professional invoices, track payments, manage clients and
-            expenses all in one place. Get paid faster with InvoYQ.
+            expenses all in one place. Get paid faster with InvoyQ.
           </p>
 
           {/* CTA Buttons */}

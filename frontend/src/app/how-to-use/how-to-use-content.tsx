@@ -151,7 +151,11 @@ export default function HowToUseContent() {
               </TabsList>
 
               {/* Getting Started Tab */}
-              <TabsContent value="getting-started" className="mt-6 space-y-6">
+              <TabsContent
+                value="getting-started"
+                forceMount
+                className="mt-6 space-y-6 data-[state=inactive]:hidden"
+              >
                 <Card className="hover:border-[#14B8A6]/50 dark:hover:border-[#14B8A6] hover:shadow-lg transition-all duration-300">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2 text-2xl">
@@ -399,7 +403,11 @@ export default function HowToUseContent() {
               </TabsContent>
 
               {/* Dashboard Tab */}
-              <TabsContent value="dashboard" className="mt-6 space-y-6">
+              <TabsContent
+                value="dashboard"
+                forceMount
+                className="mt-6 space-y-6 data-[state=inactive]:hidden"
+              >
                 <Card className="hover:border-[#14B8A6]/50 dark:hover:border-[#14B8A6] hover:shadow-lg transition-all duration-300">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2 text-2xl">
@@ -642,7 +650,11 @@ export default function HowToUseContent() {
               </TabsContent>
 
               {/* Invoices Tab */}
-              <TabsContent value="invoices" className="mt-6 space-y-6">
+              <TabsContent
+                value="invoices"
+                forceMount
+                className="mt-6 space-y-6 data-[state=inactive]:hidden"
+              >
                 <Card className="hover:border-[#14B8A6]/50 dark:hover:border-[#14B8A6] hover:shadow-lg transition-all duration-300">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2 text-2xl">
@@ -936,7 +948,11 @@ export default function HowToUseContent() {
               </TabsContent>
 
               {/* Products Tab */}
-              <TabsContent value="products" className="mt-6 space-y-6">
+              <TabsContent
+                value="products"
+                forceMount
+                className="mt-6 space-y-6 data-[state=inactive]:hidden"
+              >
                 <Card className="hover:border-[#14B8A6]/50 dark:hover:border-[#14B8A6] hover:shadow-lg transition-all duration-300">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2 text-2xl">
@@ -1293,7 +1309,11 @@ export default function HowToUseContent() {
               </TabsContent>
 
               {/* Clients Tab */}
-              <TabsContent value="clients" className="mt-6 space-y-6">
+              <TabsContent
+                value="clients"
+                forceMount
+                className="mt-6 space-y-6 data-[state=inactive]:hidden"
+              >
                 <Card className="hover:border-[#14B8A6]/50 dark:hover:border-[#14B8A6] hover:shadow-lg transition-all duration-300">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2 text-2xl">
@@ -1543,7 +1563,11 @@ export default function HowToUseContent() {
               </TabsContent>
 
               {/* Expenses Tab */}
-              <TabsContent value="expenses" className="mt-6 space-y-6">
+              <TabsContent
+                value="expenses"
+                forceMount
+                className="mt-6 space-y-6 data-[state=inactive]:hidden"
+              >
                 <Card className="hover:border-[#14B8A6]/50 dark:hover:border-[#14B8A6] hover:shadow-lg transition-all duration-300">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2 text-2xl">
@@ -1823,7 +1847,7 @@ export default function HowToUseContent() {
                     How does the AI invoice extraction feature work?
                   </span>
                 </AccordionTrigger>
-                <AccordionContent className="text-muted-foreground">
+                <AccordionContent forceMount className="text-muted-foreground">
                   Upload an invoice image (PNG, JPG) or PDF, and our AI
                   automatically extracts key information like dates, amounts,
                   client details, and line items. You can review the extracted
@@ -1842,7 +1866,7 @@ export default function HowToUseContent() {
                     Can I customize my invoice design with my company logo?
                   </span>
                 </AccordionTrigger>
-                <AccordionContent className="text-muted-foreground">
+                <AccordionContent forceMount className="text-muted-foreground">
                   Yes! Go to Settings → Business Profile to upload your company
                   logo and add your business details. This information will
                   automatically appear on all your invoices, giving them a
@@ -1860,7 +1884,7 @@ export default function HowToUseContent() {
                     Does InvoyQ support multiple currencies?
                   </span>
                 </AccordionTrigger>
-                <AccordionContent className="text-muted-foreground">
+                <AccordionContent forceMount className="text-muted-foreground">
                   Absolutely! InvoyQ supports major currencies including USD,
                   EUR, GBP, NGN, and many more. You can select the currency when
                   creating each invoice or set a default currency for your
@@ -1878,7 +1902,7 @@ export default function HowToUseContent() {
                     How do low stock alerts work?
                   </span>
                 </AccordionTrigger>
-                <AccordionContent className="text-muted-foreground">
+                <AccordionContent forceMount className="text-muted-foreground">
                   When you add products with initial stock quantities, InvoyQ
                   automatically tracks inventory levels. As products are added
                   to invoices, the stock count decreases. You'll receive alerts
@@ -1897,7 +1921,7 @@ export default function HowToUseContent() {
                     Is my data secure with InvoyQ?
                   </span>
                 </AccordionTrigger>
-                <AccordionContent className="text-muted-foreground">
+                <AccordionContent forceMount className="text-muted-foreground">
                   Yes, security is our top priority. All data is encrypted in
                   transit and at rest. We use industry-standard security
                   practices including secure authentication (with Google OAuth
@@ -1916,7 +1940,7 @@ export default function HowToUseContent() {
                     Can I export my invoices and financial data?
                   </span>
                 </AccordionTrigger>
-                <AccordionContent className="text-muted-foreground">
+                <AccordionContent forceMount className="text-muted-foreground">
                   Yes! Individual invoices can be downloaded as PDF or saved as
                   images. You can also export lists of invoices, clients,
                   products, and expenses as CSV files for use in accounting
@@ -1937,7 +1961,7 @@ export default function HowToUseContent() {
                     </Badge>
                   </span>
                 </AccordionTrigger>
-                <AccordionContent className="text-muted-foreground">
+                <AccordionContent forceMount className="text-muted-foreground">
                   Yes! InvoyQ mobile apps for iOS and Android are currently in
                   early access. Join the beta program to get early access and
                   manage invoices, track expenses, and view business stats on
@@ -1962,7 +1986,7 @@ export default function HowToUseContent() {
                     What happens when an invoice becomes overdue?
                   </span>
                 </AccordionTrigger>
-                <AccordionContent className="text-muted-foreground">
+                <AccordionContent forceMount className="text-muted-foreground">
                   Invoices are automatically marked as "Overdue" when they pass
                   their due date without being paid. Overdue invoices are
                   highlighted on your dashboard with a distinctive badge, making

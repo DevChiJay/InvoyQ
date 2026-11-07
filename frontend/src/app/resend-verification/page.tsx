@@ -65,7 +65,7 @@ export default function ResendVerificationPage() {
               <ArrowLeft className="h-4 w-4" />
             </Button>
             <div>
-              <CardTitle>Resend Verification Email</CardTitle>
+              <CardTitle as="h1">Resend Verification Email</CardTitle>
               <CardDescription>Enter your email to receive a new verification link</CardDescription>
             </div>
           </div>

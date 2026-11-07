@@ -16,7 +16,7 @@ export default function AuthLayout({
           <Link href="/" className="flex items-center gap-2">
             <Image
               src="/logo.svg"
-              alt="InvoYQ"
+              alt="InvoyQ"
               width={120}
               height={32}
               className="h-8 w-auto dark:brightness-0 dark:invert"

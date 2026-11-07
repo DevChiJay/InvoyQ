@@ -72,7 +72,7 @@ export default function FeaturesSection() {
             Everything You Need to <span className="bg-gradient-to-r from-[#6366F1] to-[#14B8A6] bg-clip-text text-transparent">Succeed</span>
           </h2>
           <p className="text-xl text-gray-600 dark:text-[#E2E8F0]/80 max-w-3xl mx-auto">
-            From invoice creation to payment tracking, InvoYQ has all the tools you need 
+            From invoice creation to payment tracking, InvoyQ has all the tools you need 
             to streamline your business workflow.
           </p>
         </div>

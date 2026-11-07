@@ -29,7 +29,7 @@ export default function Footer() {
               <div className="p-2 bg-linear-to-br from-[#6366F1] to-[#14B8A6] rounded-lg">
                 <FileText className="h-5 w-5 text-white" />
               </div>
-              <span className="text-xl font-bold text-white">InvoYQ</span>
+              <span className="text-xl font-bold text-white">InvoyQ</span>
             </Link>
             <p className="text-sm text-[#E2E8F0]/70 leading-relaxed">
               All-in-one invoicing and business management platform.
@@ -111,7 +111,7 @@ export default function Footer() {
         {/* Bottom Section */}
         <div className="flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="text-sm text-gray-400">
-            <p>© {currentYear} InvoYQ. All rights reserved.</p>
+            <p>© {currentYear} InvoyQ. All rights reserved.</p>
             <p className="mt-1">
               Created by{" "}
               <span className="text-white font-medium">

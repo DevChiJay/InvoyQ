@@ -22,7 +22,7 @@ export default function AdminHeader() {
             <Link href="/admin" className="flex items-center gap-2">
               <Image
                 src="/logo.svg"
-                alt="InvoYQ"
+                alt="InvoyQ"
                 width={140}
                 height={38}
                 className="h-9 w-auto dark:brightness-0 dark:invert"

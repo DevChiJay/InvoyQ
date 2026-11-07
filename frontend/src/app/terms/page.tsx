@@ -1,14 +1,16 @@
 import type { Metadata } from "next";
+import { pageMetadata } from "@/lib/seo";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FileText, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: "Terms of Service",
   description:
-    "InvoYQ Terms of Service — Read our terms and conditions for using the InvoYQ invoicing platform.",
-};
+    "InvoyQ Terms of Service — Read our terms and conditions for using the InvoyQ invoicing platform.",
+  path: "/terms",
+});
 
 export default function TermsOfService() {
   return (
@@ -47,7 +49,7 @@ export default function TermsOfService() {
                   1. Acceptance of Terms
                 </h2>
                 <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
-                  By accessing and using InvoYQ ("the Service"), you agree to be
+                  By accessing and using InvoyQ ("the Service"), you agree to be
                   bound by these Terms of Service ("Terms"). If you do not agree
                   to these Terms, please do not use our Service.
                 </p>
@@ -58,7 +60,7 @@ export default function TermsOfService() {
                   2. Description of Service
                 </h2>
                 <p className="text-gray-600 dark:text-gray-300 leading-relaxed mb-4">
-                  InvoYQ is an AI-powered invoice extraction and management
+                  InvoyQ is an AI-powered invoice extraction and management
                   platform that helps businesses:
                 </p>
                 <ul className="list-disc list-inside text-gray-600 dark:text-gray-300 space-y-2 ml-4">
@@ -102,7 +104,7 @@ export default function TermsOfService() {
                 </h2>
                 <div className="space-y-4">
                   <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
-                    InvoYQ offers both free and paid subscription plans:
+                    InvoyQ offers both free and paid subscription plans:
                   </p>
                   <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
                     <h3 className="font-semibold text-gray-900 dark:text-white mb-2">
@@ -164,7 +166,7 @@ export default function TermsOfService() {
                   7. Limitation of Liability
                 </h2>
                 <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
-                  InvoYQ is provided "as is" without warranties of any kind. We
+                  InvoyQ is provided "as is" without warranties of any kind. We
                   shall not be liable for any indirect, incidental, special, or
                   consequential damages arising from your use of the Service.
                   Our total liability shall not exceed the amount you paid for
@@ -208,7 +210,7 @@ export default function TermsOfService() {
 
               <div className="border-t pt-6 mt-8">
                 <p className="text-sm text-gray-500 dark:text-gray-400 text-center">
-                  InvoYQ is created by{" "}
+                  InvoyQ is created by{" "}
                   <span className="font-medium text-gray-700 dark:text-gray-300">
                     Devchi Digital
                   </span>

@@ -59,7 +59,7 @@ export default function MobileNav() {
             >
               <Image
                 src="/logo.svg"
-                alt="InvoYQ"
+                alt="InvoyQ"
                 width={120}
                 height={32}
                 className="h-8 w-auto dark:brightness-0 dark:invert"

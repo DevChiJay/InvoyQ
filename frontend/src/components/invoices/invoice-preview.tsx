@@ -13,7 +13,7 @@ interface InvoicePreviewProps {
 export function InvoicePreview({ invoice, client }: InvoicePreviewProps) {
   // Use business info from invoice (with fallbacks)
   const userInfo = invoice.user_business_info;
-  const companyName = userInfo?.company_name || userInfo?.full_name || "InvoYQ";
+  const companyName = userInfo?.company_name || userInfo?.full_name || "InvoyQ";
   const companyEmail = userInfo?.email || "hello@invoyq.com";
   const companyPhone = userInfo?.phone;
   const companyAddress = userInfo?.company_address;

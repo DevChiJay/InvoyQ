@@ -91,9 +91,9 @@ function AuthCallbackContent() {
           {status === "processing" && (
             <>
               <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-4 border-gray-200 border-t-blue-600"></div>
-              <h2 className="text-2xl font-bold text-gray-900">
+              <h1 className="text-2xl font-bold text-gray-900">
                 Completing sign in...
-              </h2>
+              </h1>
               <p className="mt-2 text-gray-600">
                 Please wait while we set up your account.
               </p>
@@ -117,7 +117,7 @@ function AuthCallbackContent() {
                   />
                 </svg>
               </div>
-              <h2 className="text-2xl font-bold text-gray-900">Success!</h2>
+              <h1 className="text-2xl font-bold text-gray-900">Success!</h1>
               <p className="mt-2 text-gray-600">
                 Redirecting to your dashboard...
               </p>
@@ -141,9 +141,9 @@ function AuthCallbackContent() {
                   />
                 </svg>
               </div>
-              <h2 className="text-2xl font-bold text-gray-900">
+              <h1 className="text-2xl font-bold text-gray-900">
                 Authentication Failed
-              </h2>
+              </h1>
               <p className="mt-2 text-gray-600">Redirecting to login page...</p>
             </>
           )}
@@ -161,7 +161,7 @@ export default function AuthCallbackPage() {
           <div className="mx-auto max-w-md space-y-6 rounded-lg bg-white p-8 shadow-lg">
             <div className="text-center">
               <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-4 border-gray-200 border-t-blue-600"></div>
-              <h2 className="text-2xl font-bold text-gray-900">Loading...</h2>
+              <h1 className="text-2xl font-bold text-gray-900">Loading...</h1>
               <p className="mt-2 text-gray-600">Please wait...</p>
             </div>
           </div>

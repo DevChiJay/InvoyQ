@@ -26,7 +26,7 @@ export default function Navbar() {
             <Link href="/" className="flex items-center">
               <Image
                 src="/logo.svg"
-                alt="InvoYQ"
+                alt="InvoyQ"
                 width={160}
                 height={42}
                 className="h-10 w-auto dark:brightness-0 dark:invert"

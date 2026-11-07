@@ -64,7 +64,7 @@ export default function VerifyEmailClient() {
               <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900">
                 <Loader2 className="h-6 w-6 animate-spin text-blue-600 dark:text-blue-400" />
               </div>
-              <CardTitle>Verifying Your Email</CardTitle>
+              <CardTitle as="h1">Verifying Your Email</CardTitle>
               <CardDescription>Please wait while we verify your email address...</CardDescription>
             </>
           )}
@@ -74,7 +74,7 @@ export default function VerifyEmailClient() {
               <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-green-100 dark:bg-green-900">
                 <CheckCircle2 className="h-6 w-6 text-green-600 dark:text-green-400" />
               </div>
-              <CardTitle>Email Verified!</CardTitle>
+              <CardTitle as="h1">Email Verified!</CardTitle>
               <CardDescription>Your email has been successfully verified.</CardDescription>
             </>
           )}
@@ -84,7 +84,7 @@ export default function VerifyEmailClient() {
               <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-100 dark:bg-red-900">
                 <XCircle className="h-6 w-6 text-red-600 dark:text-red-400" />
               </div>
-              <CardTitle>Verification Failed</CardTitle>
+              <CardTitle as="h1">Verification Failed</CardTitle>
               <CardDescription>We couldn&apos;t verify your email address.</CardDescription>
             </>
           )}
@@ -105,7 +105,7 @@ export default function VerifyEmailClient() {
                   <div className="flex items-center justify-center gap-2 p-4 bg-blue-50 dark:bg-blue-950 rounded-lg">
                     <Smartphone className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                     <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
-                      Please open the InvoYQ mobile app to continue
+                      Please open the InvoyQ mobile app to continue
                     </p>
                   </div>
                   <p className="text-sm text-muted-foreground">
@@ -114,7 +114,7 @@ export default function VerifyEmailClient() {
                 </div>
               ) : (
                 <p className="text-sm text-muted-foreground pt-2">
-                  You can now log in to your account and start using InvoYQ!
+                  You can now log in to your account and start using InvoyQ!
                 </p>
               )}
             </div>

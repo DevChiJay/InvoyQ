@@ -1,6 +1,6 @@
 {
-  "name": "InvoYQ - AI-Powered Invoice Management",
-  "short_name": "InvoYQ",
+  "name": "InvoyQ - AI-Powered Invoice Management",
+  "short_name": "InvoyQ",
   "description": "Extract invoice data instantly with AI. Save hours of manual data entry and get paid faster.",
   "start_url": "/",
   "display": "standalone",

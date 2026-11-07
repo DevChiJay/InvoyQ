@@ -27,8 +27,8 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "InvoYQ - All-in-One Invoicing Platform",
-    template: "%s | InvoYQ",
+    default: "InvoyQ - All-in-One Invoicing Platform",
+    template: "%s | InvoyQ",
   },
   description:
     "All-in-one invoicing dashboard to create, manage, and track invoices, clients, products, stock, and expenses—built for speed, clarity, and getting paid faster.",
@@ -46,26 +46,22 @@ export const metadata: Metadata = {
     "invoice software",
     "freelance invoicing",
   ],
-  authors: [{ name: "Devchi Digital" }],
-  creator: "Devchi",
-  publisher: "InvoYQ",
+  authors: [{ name: "Devchi Digital", url: "https://www.devchi.me" }],
+  creator: "Devchi Digital",
+  publisher: "Devchi Digital",
   formatDetection: {
     email: false,
     address: false,
     telephone: false,
   },
-  metadataBase: new URL(
-    process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
-  ),
-  alternates: {
-    canonical: "/",
-  },
+  // Canonical URLs are set per page (see each page's `alternates`), never site-wide,
+  // otherwise every page would tell search engines it is the homepage.
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://invoyq.com"),
   openGraph: {
-    title: "InvoYQ - All-in-One Invoicing Platform",
+    title: "InvoyQ - All-in-One Invoicing Platform",
     description:
       "All-in-one invoicing dashboard to create, manage, and track invoices, clients, products, stock, and expenses—built for speed, clarity, and getting paid faster.",
-    url: "/",
-    siteName: "InvoYQ",
+    siteName: "InvoyQ",
     locale: "en_US",
     type: "website",
     images: [
@@ -73,15 +69,15 @@ export const metadata: Metadata = {
         url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: "InvoYQ - All-in-One Invoicing Platform",
+        alt: "InvoyQ - All-in-One Invoicing Platform",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "InvoYQ - All-in-One Invoicing Platform",
+    title: "InvoyQ - All-in-One Invoicing Platform",
     description:
-      "Create professional invoices, track payments, manage clients, products, and expenses, and get paid faster with InvoYQ.",
+      "Create professional invoices, track payments, manage clients, products, and expenses, and get paid faster with InvoyQ.",
     images: ["/og-image.png"],
     creator: "@devchijay",
   },
@@ -115,10 +111,6 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <link
-          rel="canonical"
-          href={process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}
-        />
         {/* Only load script if environment variables exist */}
         {umamiUrl && umamiId && (
           <Script

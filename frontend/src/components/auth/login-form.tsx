@@ -70,7 +70,7 @@ export default function LoginForm() {
   return (
     <Card>
       <CardHeader className="space-y-1">
-        <CardTitle className="text-2xl font-bold">Welcome back</CardTitle>
+        <CardTitle as="h1" className="text-2xl font-bold">Welcome back</CardTitle>
         <CardDescription>
           Enter your credentials to access your account
         </CardDescription>

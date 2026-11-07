@@ -9,7 +9,7 @@ export default function TestimonialsSection() {
       name: "Sarah Chen",
       role: "Freelance Designer",
       content:
-        "InvoYQ saved me 10+ hours every week. Creating professional invoices is now quick and easy. Game changer!",
+        "InvoyQ saved me 10+ hours every week. Creating professional invoices is now quick and easy. Game changer!",
       rating: 5,
       avatar: "SC",
     },
