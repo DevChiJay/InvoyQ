@@ -7,13 +7,7 @@
     "development": {
       "developmentClient": true,
       "distribution": "internal",
-      "env": {
-        "EXPO_PUBLIC_API_BASE_URL": "https://",
-        "EXPO_PUBLIC_FRONTEND_URL": "https://",
-        "EXPO_PUBLIC_GOOGLE_CLIENT_ID_IOS": "",
-        "EXPO_PUBLIC_GOOGLE_CLIENT_ID_ANDROID": "",
-        "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": ""
-      },
+      "environment": "development",
       "channel": "development"
     },
     "preview": {
@@ -22,13 +16,7 @@
         "buildType": "apk",
         "autoIncrement": true
       },
-      "env": {
-        "EXPO_PUBLIC_API_BASE_URL": "https://",
-        "EXPO_PUBLIC_FRONTEND_URL": "https://",
-        "EXPO_PUBLIC_GOOGLE_CLIENT_ID_IOS": "",
-        "EXPO_PUBLIC_GOOGLE_CLIENT_ID_ANDROID": "",
-        "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": ""
-      },
+      "environment": "preview",
       "channel": "preview"
     },
     "production": {
@@ -40,13 +28,7 @@
         "buildType": "app-bundle",
         "autoIncrement": true
       },
-      "env": {
-        "EXPO_PUBLIC_API_BASE_URL": "https://",
-        "EXPO_PUBLIC_FRONTEND_URL": "https://",
-        "EXPO_PUBLIC_GOOGLE_CLIENT_ID_IOS": "",
-        "EXPO_PUBLIC_GOOGLE_CLIENT_ID_ANDROID": "",
-        "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": ""
-      },
+      "environment": "production",
       "channel": "production"
     }
   },
@@ -55,11 +37,6 @@
       "android": {
         "serviceAccountKeyPath": "./service-account-key.json",
         "track": "production"
-      },
-      "ios": {
-        "appleId": "appleid@email.com",
-        "ascAppId": "123456789",
-        "appleTeamId": "A7PH4NUM3R"
       }
     }
   }
