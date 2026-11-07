@@ -32,6 +32,7 @@ import type {
   ExpenseSummaryResponse,
   MonthlyStatsParams,
   MonthlyStatsResponse,
+  Usage,
   AdminUser,
   AdminUserListResponse,
   AdminUserListParams,
@@ -449,6 +450,11 @@ export const expensesAPI = {
     period?: "week" | "month" | "year";
     reference_date?: string;
   }) => api.get<ExpenseSummaryResponse>("/v1/expenses/summary", { params }),
+};
+
+// Plan usage API
+export const usageAPI = {
+  get: () => api.get<Usage>("/v1/usage"),
 };
 
 // Stats API

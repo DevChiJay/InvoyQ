@@ -49,14 +49,7 @@ export function UpgradeModal({ open, onClose }: UpgradeModalProps) {
     );
   };
 
-  const features = [
-    "Unlimited invoice extractions",
-    "Payment link generation",
-    "Email reminders",
-    "Priority support",
-    "Advanced analytics",
-    "Custom branding",
-  ];
+  const features = ["Unlimited invoices", "Unlimited AI extractions"];
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -67,7 +60,7 @@ export function UpgradeModal({ open, onClose }: UpgradeModalProps) {
             <DialogTitle>Upgrade to Pro</DialogTitle>
           </div>
           <DialogDescription>
-            Unlock all premium features and take your invoicing to the next level
+            Remove the monthly limits on invoices and AI extractions
           </DialogDescription>
         </DialogHeader>
 

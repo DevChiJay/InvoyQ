@@ -11,12 +11,18 @@ import { transformExtractionResponse } from '@/lib/extraction-transformer';
 import { EXTRACTION_STORAGE_KEY } from '@/components/invoices/invoice-form';
 import { PageHeader } from '@/components/shared/page-header';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { UsageNotice } from '@/components/shared/usage-meter';
+import { useInvalidateUsage } from '@/lib/hooks/use-usage';
+import { parseLimitError } from '@/lib/plan';
+import { BILLING_HREF } from '@/constants/plans';
 import { formatErrorMessage } from '@/lib/utils';
 
 const STEPS = ['Paste the chat', 'Review the draft', 'Save and send'];
 
 /** Turns an extraction failure into something the person can act on. */
 function describeExtractionError(error: unknown): string {
+  const limit = parseLimitError(error);
+  if (limit) return limit.message;
   if (!isAxiosError(error)) return 'Something went wrong. Please try again.';
   if (!error.response) return "Couldn't reach InvoyQ. Check your connection and try again.";
   const { status, data } = error.response;
@@ -28,17 +34,24 @@ function describeExtractionError(error: unknown): string {
 export default function ExtractPage() {
   const router = useRouter();
   const extraction = useExtraction();
+  const invalidateUsage = useInvalidateUsage();
   const [error, setError] = useState<string | null>(null);
+  const [limitReached, setLimitReached] = useState(false);
 
   const handleExtract = async (formData: FormData) => {
     setError(null);
+    setLimitReached(false);
     try {
       const response = await extraction.mutateAsync(formData);
       const transformed = transformExtractionResponse(response.data);
       sessionStorage.setItem(EXTRACTION_STORAGE_KEY, JSON.stringify(transformed.parsed));
+      invalidateUsage();
       router.push('/dashboard/invoices/new?from=extraction');
     } catch (err) {
+      setLimitReached(parseLimitError(err) !== null);
       setError(describeExtractionError(err));
+      // A refused or failed attempt may have changed the counter (a failed one is given back).
+      invalidateUsage();
     }
   };
 
@@ -70,9 +83,17 @@ export default function ExtractPage() {
       {error && (
         <Alert variant="destructive" role="alert">
           <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Extraction didn&apos;t work</AlertTitle>
+          <AlertTitle>{limitReached ? 'Monthly limit reached' : "Extraction didn't work"}</AlertTitle>
           <AlertDescription>
             <p>{error}</p>
+            {limitReached && (
+              <p>
+                <Link href={BILLING_HREF} className="font-medium underline underline-offset-4">
+                  See upgrade options
+                </Link>
+                .
+              </p>
+            )}
             <p>
               You can also{' '}
               <Link href="/dashboard/invoices/new" className="font-medium underline underline-offset-4">
@@ -83,6 +104,8 @@ export default function ExtractPage() {
           </AlertDescription>
         </Alert>
       )}
+
+      {!error && <UsageNotice resource="extractions" />}
 
       <UploadChat onExtract={handleExtract} isLoading={extraction.isPending} />
     </div>

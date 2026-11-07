@@ -1,5 +1,6 @@
 "use client";
 
+import { FREE_EXTRACTIONS_PER_MONTH, FREE_INVOICES_PER_MONTH } from "@/constants/plans";
 import { useRef, useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -156,7 +157,7 @@ export default function InvoiceGeneratorPage() {
       return;
     }
     if (remaining <= 0) {
-      toast.error("Daily limit reached. Sign up for unlimited access.");
+      toast.error("Daily limit reached. Create a free account to keep going.");
       return;
     }
 
@@ -179,7 +180,7 @@ export default function InvoiceGeneratorPage() {
         ?.status;
       if (status === 429) {
         toast.error(
-          "You've reached your daily limit on the server. Sign up for unlimited access.",
+          "You've reached the daily limit. Create a free account to keep going.",
         );
         setRemaining(0);
       } else {
@@ -276,14 +277,15 @@ export default function InvoiceGeneratorPage() {
                 <div className="mt-3 flex items-start gap-2 rounded-lg bg-warning/10 border border-warning/30 p-3">
                   <AlertTriangle className="h-4 w-4 text-warning mt-0.5 shrink-0" />
                   <p className="text-sm text-warning">
-                    You&apos;ve used all 3 free generations for today.{" "}
+                    You&apos;ve used all {MAX_FREE_USES} free generations for today.{" "}
                     <Link
                       href="/register"
                       className="font-semibold underline hover:text-foreground"
                     >
                       Sign up free
                     </Link>{" "}
-                    for unlimited access.
+                    for {FREE_INVOICES_PER_MONTH} invoices and {FREE_EXTRACTIONS_PER_MONTH} AI
+                    extractions a month.
                   </p>
                 </div>
               )}
@@ -354,8 +356,9 @@ export default function InvoiceGeneratorPage() {
                 Ready to save, send & get paid?
               </h3>
               <p className="text-white/80 mb-5 text-sm sm:text-base">
-                Sign up free and unlock unlimited invoices, client management,
-                expense tracking, and payment links.
+                Sign up free to save your invoices, manage clients and track
+                expenses. Free accounts get {FREE_INVOICES_PER_MONTH} invoices
+                and {FREE_EXTRACTIONS_PER_MONTH} AI extractions a month.
               </p>
               <div className="flex flex-col sm:flex-row gap-3 justify-center">
                 <Button

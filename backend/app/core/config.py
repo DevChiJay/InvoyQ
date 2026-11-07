@@ -21,7 +21,15 @@ class Settings(BaseModel):
     # App base URL (used to build public-ish URLs in dev)
     APP_BASE_URL: str = os.getenv("APP_BASE_URL", "http://localhost:8000")
 
-    # Payments
+    # Plan limits (calendar month, UTC). Pro is unlimited unless PRO_EXTRACTIONS_PER_MONTH is set.
+    FREE_INVOICES_PER_MONTH: int = int(os.getenv("FREE_INVOICES_PER_MONTH", "100"))
+    FREE_EXTRACTIONS_PER_MONTH: int = int(os.getenv("FREE_EXTRACTIONS_PER_MONTH", "10"))
+    PRO_EXTRACTIONS_PER_MONTH: int | None = (
+        int(os.environ["PRO_EXTRACTIONS_PER_MONTH"]) if os.getenv("PRO_EXTRACTIONS_PER_MONTH") else None
+    )
+
+    # Payments. The payment endpoints are not connected yet; the UI offers "contact us" until this is true.
+    PAYMENTS_ENABLED: bool = os.getenv("PAYMENTS_ENABLED", "false").lower() == "true"
     PAYSTACK_SECRET_KEY: str | None = os.getenv("PAYSTACK_SECRET_KEY")
     PAYSTACK_BASE_URL: str = os.getenv("PAYSTACK_BASE_URL", "https://api.paystack.co")
     STRIPE_SECRET_KEY: str | None = os.getenv("STRIPE_SECRET_KEY")

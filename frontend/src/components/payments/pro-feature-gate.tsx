@@ -6,6 +6,7 @@ import { UpgradeModal } from "@/components/payments/upgrade-modal";
 import { Crown, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { isProActive } from "@/lib/plan";
 
 interface ProFeatureGateProps {
   children: ReactNode;
@@ -27,7 +28,7 @@ export function ProFeatureGate({
     return null;
   }
 
-  const isPro = subscription?.is_pro && subscription?.subscription_status === "active";
+  const isPro = isProActive(subscription);
 
   if (isPro) {
     return <>{children}</>;
@@ -82,7 +83,7 @@ export function useProFeature() {
   const { data: subscription } = useSubscriptionStatus();
   const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
 
-  const isPro = subscription?.is_pro && subscription?.subscription_status === "active";
+  const isPro = isProActive(subscription);
 
   const requirePro = (feature: string, callback: () => void) => {
     if (isPro) {

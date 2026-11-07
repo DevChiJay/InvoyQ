@@ -7,6 +7,7 @@ import { useCreateInvoice } from '@/lib/hooks/use-invoices';
 import { InvoiceForm, EXTRACTION_STORAGE_KEY } from '@/components/invoices/invoice-form';
 import { PageHeader } from '@/components/shared/page-header';
 import { Button } from '@/components/ui/button';
+import { UsageNotice } from '@/components/shared/usage-meter';
 import type { InvoiceCreate, InvoiceUpdate } from '@/types/api';
 
 export default function NewInvoicePage() {
@@ -46,6 +47,8 @@ export default function NewInvoicePage() {
           ) : undefined
         }
       />
+
+      <UsageNotice resource="invoices" />
 
       <InvoiceForm
         onSubmit={handleSubmit}

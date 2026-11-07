@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { FREE_EXTRACTIONS_PER_MONTH, FREE_INVOICES_PER_MONTH } from "@/constants/plans";
 import { pageMetadata } from "@/lib/seo";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -111,8 +112,9 @@ export default function TermsOfService() {
                       Free Plan
                     </h3>
                     <p className="text-muted-foreground text-sm">
-                      Limited to 10 AI extractions per month with basic
-                      features.
+                      Up to {FREE_INVOICES_PER_MONTH} invoices and{" "}
+                      {FREE_EXTRACTIONS_PER_MONTH} AI extractions per calendar
+                      month. Allowances reset on the 1st of each month (UTC).
                     </p>
                   </div>
                   <div className="bg-muted/50 p-4 rounded-lg">
@@ -120,8 +122,8 @@ export default function TermsOfService() {
                       Pro Plan
                     </h3>
                     <p className="text-muted-foreground text-sm">
-                      $19 USD or ₦20,000 NGN per month with unlimited
-                      extractions and advanced features.
+                      Unlimited invoices and AI extractions. The price is shown
+                      before you pay.
                     </p>
                   </div>
                   <p className="text-muted-foreground leading-relaxed">

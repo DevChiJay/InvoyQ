@@ -5,7 +5,7 @@ import { navigation, primaryAction } from "@/constants/navigation";
 
 export default function DashboardShell({ children }: { children: React.ReactNode }) {
   return (
-    <AppShell navigation={navigation} primaryAction={primaryAction} homeHref="/dashboard">
+    <AppShell navigation={navigation} primaryAction={primaryAction} homeHref="/dashboard" showUsage>
       {children}
     </AppShell>
   );

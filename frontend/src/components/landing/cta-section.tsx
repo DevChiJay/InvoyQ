@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { FREE_INVOICES_PER_MONTH } from "@/constants/plans";
 import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -13,7 +14,7 @@ export default function CTASection() {
               Join thousands of businesses managing invoices, expenses, and payments all in one powerful platform.
             </p>
             <p className="mt-4 text-sm text-primary-foreground/90">
-              No credit card required · 10 free invoices · Upgrade anytime
+              No credit card required · {FREE_INVOICES_PER_MONTH} free invoices a month · Upgrade anytime
             </p>
           </div>
           <Button size="lg" variant="secondary" asChild className="h-11 shrink-0 px-6">

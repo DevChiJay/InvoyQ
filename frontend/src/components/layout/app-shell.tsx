@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/ui/sheet";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Logo } from "@/components/shared/logo";
+import { UsageMeter } from "@/components/shared/usage-meter";
 import { APP_STORE_URL, PLAY_STORE_URL } from "@/lib/seo";
 import { cn } from "@/lib/utils";
 import type { NavigationItem, NavigationSection } from "@/constants/navigation";
@@ -28,6 +29,8 @@ interface AppShellProps {
   /** Extra link at the bottom of the sidebar, e.g. back to the dashboard from admin. */
   footerLink?: NavigationItem;
   requireAdmin?: boolean;
+  /** Show the plan usage meter at the bottom of the sidebar (dashboard only). */
+  showUsage?: boolean;
 }
 
 function isActivePath(pathname: string, href: string, exact: boolean) {
@@ -39,7 +42,8 @@ function NavList({
   primaryAction,
   footerLink,
   homeHref,
-}: Pick<AppShellProps, "navigation" | "primaryAction" | "footerLink" | "homeHref">) {
+  showUsage,
+}: Pick<AppShellProps, "navigation" | "primaryAction" | "footerLink" | "homeHref" | "showUsage">) {
   const pathname = usePathname();
 
   return (
@@ -88,6 +92,7 @@ function NavList({
       ))}
 
       <div className="mt-auto space-y-3 border-t pt-4">
+        {showUsage && <UsageMeter />}
         {footerLink && (
           <Link
             href={footerLink.href}
@@ -135,6 +140,7 @@ export default function AppShell({
   badge,
   footerLink,
   requireAdmin = false,
+  showUsage = false,
 }: AppShellProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -166,7 +172,7 @@ export default function AppShell({
 
   if (!isAuthenticated || (requireAdmin && !user?.is_admin)) return null;
 
-  const navProps = { navigation, primaryAction, footerLink, homeHref };
+  const navProps = { navigation, primaryAction, footerLink, homeHref, showUsage };
 
   return (
     <ErrorBoundary>

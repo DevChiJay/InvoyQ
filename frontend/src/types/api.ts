@@ -315,6 +315,23 @@ export interface SubscriptionStatus {
   days_remaining: number | null;
 }
 
+// Plan usage (GET /v1/usage)
+export interface UsageCounter {
+  used: number;
+  /** null means unlimited */
+  limit: number | null;
+}
+
+export interface Usage {
+  plan: "free" | "pro";
+  period: string; // YYYY-MM
+  resets_at: string; // ISO, start of next month (UTC)
+  invoices: UsageCounter;
+  extractions: UsageCounter;
+  /** False until online payments are connected; the UI offers "contact us" instead. */
+  payments_enabled: boolean;
+}
+
 // Dashboard Types
 export interface DashboardStats {
   total_clients: number;
