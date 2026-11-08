@@ -2,6 +2,17 @@ import type { ExpoConfig } from "expo/config";
 
 // Project-specific identifiers come from env vars so the public repo holds no real values.
 // Locally: mobile/.env (git-ignored). On EAS: hosted environment variables.
+//
+// Expo's own commands load .env, but the EAS CLI (`eas build`, `eas credentials`, ...) evaluates
+// this file on your machine without it and would report "EAS project not configured". Load it
+// here so every tool sees the same values. Variables already set (shell, EAS) are never
+// overridden, and the file doesn't exist on EAS servers, so a missing file is fine.
+try {
+  process.loadEnvFile(".env");
+} catch {
+  // no local .env
+}
+
 const projectId = process.env.EAS_PROJECT_ID;
 const iosGoogleClientId = process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID_IOS ?? "";
 
@@ -14,7 +25,7 @@ const googleIosUrlScheme = iosGoogleClientId
 const config: ExpoConfig = {
   name: "Invoyq",
   slug: "invoyq",
-  version: "1.1.1",
+  version: "1.2.0",
   runtimeVersion: { policy: "appVersion" },
   orientation: "portrait",
   icon: "./assets/icon.png",
