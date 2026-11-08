@@ -26,7 +26,6 @@ import {
   UserPlus,
   Package,
   AlertCircle,
-  Search,
   Sparkles,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -45,6 +44,7 @@ function AiFilled({ label = "AI" }: { label?: string }) {
   );
 }
 import { ClientFormModal } from "@/components/clients/client-form-modal";
+import { ClientCombobox } from "@/components/invoices/client-combobox";
 import type {
   Invoice,
   InvoiceCreate,
@@ -54,7 +54,6 @@ import type {
   ProductItemReference,
 } from "@/types/api";
 import { useClients, useClientSearch } from "@/lib/hooks/use-clients";
-import { useDebounce } from "@/lib/hooks/use-debounce";
 import { useProductStore } from "@/stores/product-store";
 import { CURRENCIES, DEFAULT_CURRENCY } from "@/lib/currency";
 import { formatCurrency } from "@/lib/format";
@@ -109,15 +108,11 @@ export function InvoiceForm({
 
   const { data: defaultClients } = useClients(50, 0);
   // Search for the extracted client by name so the match isn't limited to the first page of clients.
-  const [clientSearchTerm, setClientSearchTerm] = useState(
-    extractedData?.client?.name ?? "",
-  );
-  const debouncedClientSearch = useDebounce(clientSearchTerm, 300);
-  const { data: searchedClients, isFetching: isClientSearching } =
-    useClientSearch(debouncedClientSearch);
+  const extractedClientName = extractedData?.client?.name ?? "";
+  const { data: searchedClients } = useClientSearch(extractedClientName);
 
   // Use search results when searching, fall back to first-page defaults
-  const clients = debouncedClientSearch ? searchedClients : defaultClients;
+  const clients = extractedClientName ? searchedClients : defaultClients;
 
   const [isClientModalOpen, setIsClientModalOpen] = useState(false);
   const [clientPrefill, setClientPrefill] = useState<{ name?: string; email?: string; address?: string } | undefined>();
@@ -535,35 +530,13 @@ export function InvoiceForm({
                 Add New Client
               </Button>
             </div>
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                aria-label="Search clients"
-                placeholder="Search clients..."
-                value={clientSearchTerm}
-                onChange={(e) => setClientSearchTerm(e.target.value)}
-                className="pl-10 mb-1"
-                disabled={isLoading}
-              />
-              {isClientSearching && (
-                <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
-              )}
-            </div>
-            <select
+            <ClientCombobox
               id="client_id"
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
               value={formData.client_id}
-              onChange={(e) => handleChange("client_id", e.target.value)}
+              onChange={(id) => handleChange("client_id", id)}
               disabled={isLoading}
-              size={Math.min((clients?.length ?? 0) + 1, 6)}
-            >
-              <option value="">Select a client</option>
-              {clients?.map((client) => (
-                <option key={client.id} value={client.id}>
-                  {client.name}
-                </option>
-              ))}
-            </select>
+              invalid={!!errors.client_id}
+            />
             {errors.client_id && (
               <p className="text-sm text-destructive">{errors.client_id}</p>
             )}
