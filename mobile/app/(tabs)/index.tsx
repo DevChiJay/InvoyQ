@@ -99,6 +99,7 @@ export default function DashboardScreen() {
   // Hide/show header title on scroll
   useEffect(() => {
     // Only update the header when crossing the threshold, not on every frame.
+    // Nothing is applied on mount, so the title shows until the first scroll.
     let scrolled: boolean | undefined;
     const apply = (isScrolled: boolean) => {
       if (scrolled === isScrolled) return;
@@ -110,7 +111,6 @@ export default function DashboardScreen() {
         },
       });
     };
-    apply(false);
     const listener = scrollY.addListener(({ value }) => apply(value > 50));
 
     return () => scrollY.removeListener(listener);
@@ -249,6 +249,8 @@ export default function DashboardScreen() {
                           { color: colors.textSecondary },
                         ]}
                         numberOfLines={1}
+                        adjustsFontSizeToFit
+                        minimumFontScale={0.7}
                       >
                         Invoices
                       </Text>
@@ -282,6 +284,8 @@ export default function DashboardScreen() {
                           { color: colors.textSecondary },
                         ]}
                         numberOfLines={1}
+                        adjustsFontSizeToFit
+                        minimumFontScale={0.7}
                       >
                         Clients
                       </Text>
@@ -315,6 +319,8 @@ export default function DashboardScreen() {
                           { color: colors.textSecondary },
                         ]}
                         numberOfLines={1}
+                        adjustsFontSizeToFit
+                        minimumFontScale={0.7}
                       >
                         Products
                       </Text>

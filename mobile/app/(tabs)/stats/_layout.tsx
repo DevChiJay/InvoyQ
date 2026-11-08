@@ -3,7 +3,7 @@ import { HeaderBackButton, ModuleStack } from "@/components/navigation/ModuleSta
 
 export default function StatsLayout() {
   return (
-    <ModuleStack>
+    <ModuleStack initialRouteName="monthly">
       <Stack.Screen
         name="monthly"
         options={{

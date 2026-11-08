@@ -56,6 +56,8 @@ export default function TabLayout() {
         tabBarAllowFontScaling: false,
         tabBarLabelStyle: { fontSize: 12, fontWeight: "600" },
         headerShown: false,
+        // The dashboard's JS header has a fixed height; scaled titles clip.
+        headerTitleAllowFontScaling: false,
         ...(Platform.OS === "android" && {
           headerStatusBarHeight: insets.top,
         }),

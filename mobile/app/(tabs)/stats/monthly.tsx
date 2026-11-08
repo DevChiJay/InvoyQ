@@ -104,7 +104,7 @@ export default function MonthlyStatsScreen() {
                       stats.currency,
                     )}
                   </Text>
-                  <Text style={styles.financialLabel}>Total Revenue</Text>
+                  <Text style={styles.financialLabel} numberOfLines={1} adjustsFontSizeToFit>Total Revenue</Text>
                 </GradientCard>
 
                 <GradientCard
@@ -123,7 +123,7 @@ export default function MonthlyStatsScreen() {
                       stats.currency,
                     )}
                   </Text>
-                  <Text style={styles.financialLabel}>Total Expenses</Text>
+                  <Text style={styles.financialLabel} numberOfLines={1} adjustsFontSizeToFit>Total Expenses</Text>
                 </GradientCard>
 
                 <GradientCard
@@ -154,7 +154,7 @@ export default function MonthlyStatsScreen() {
                       stats.currency,
                     )}
                   </Text>
-                  <Text style={styles.financialLabel}>Net Income</Text>
+                  <Text style={styles.financialLabel} numberOfLines={1} adjustsFontSizeToFit>Net Income</Text>
                 </GradientCard>
               </View>
             </View>

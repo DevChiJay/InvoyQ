@@ -27,6 +27,8 @@ export function HeaderBackButton() {
 interface ModuleStackProps {
   /** Route of the module's list screen, e.g. "/clients". */
   basePath?: string;
+  /** Screen to open first. Defaults to "index"; stacks without one must name their root. */
+  initialRouteName?: string;
   children: React.ReactNode;
 }
 
@@ -37,7 +39,11 @@ interface ModuleStackProps {
  * When `basePath` is set, returning to the module's tab while a detail screen
  * is open pushes the list back on top, so the tab always lands on the list.
  */
-export function ModuleStack({ basePath, children }: ModuleStackProps) {
+export function ModuleStack({
+  basePath,
+  initialRouteName = "index",
+  children,
+}: ModuleStackProps) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const segments = useSegments();
@@ -64,8 +70,8 @@ export function ModuleStack({ basePath, children }: ModuleStackProps) {
 
   return (
     <Stack
-      initialRouteName="index"
-      screenOptions={{
+      initialRouteName={initialRouteName}
+      screenOptions={({ route }) => ({
         headerShown: true,
         headerStyle: { backgroundColor: colors.surface },
         headerTintColor: colors.text,
@@ -76,9 +82,12 @@ export function ModuleStack({ basePath, children }: ModuleStackProps) {
         ...(Platform.OS === "android" && {
           headerStatusBarHeight: insets.top,
         }),
-        headerLeft: ({ canGoBack }) =>
-          canGoBack ? <HeaderBackButton /> : null,
-      }}
+        // Every screen except the stack's root gets a back button, even when
+        // it was opened directly (menu, deep link) and has nothing to pop:
+        // the tab bar is hidden on these screens, so it is the only way out.
+        headerLeft: () =>
+          route.name === initialRouteName ? null : <HeaderBackButton />,
+      })}
     >
       {children}
     </Stack>

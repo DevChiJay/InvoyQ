@@ -4,13 +4,23 @@ Branch `ui-refresh/2026-11-08-mobile`. Presentation layer only: no API calls, ro
 
 **Design direction.** A refinement, not a rebrand. The indigo palette and logo stay. The work went into fixing dark mode, giving the shared components real tokens (AA-contrast status colours, visible separation between surfaces, 44pt targets), and fixing layout (floating tab bar, large text).
 
-> **Verification status.** Type-check and a full Metro iOS bundle succeed. The **after-state has not been seen on a device**: `xcrun` started refusing to run mid-session (Xcode licence needs re-accepting with `sudo xcodebuild -license`), so no after screenshots exist. Every fix below is verified statically (code, `tsc`, bundle); the visual pass is still owed. See "Next steps".
+> **Verification status.** Verified on the iOS simulator (iPhone 17 Pro Max, iOS 26.4) against the local backend: light and dark for the dashboard, all four lists, create/edit forms, settings, profile/business/change-password, stats and the auth screens, plus `accessibility-extra-large` text on the dashboard, invoices, invoice form, stats, login and settings. Type-check, a full Metro iOS bundle and a clean Metro log after the final change also pass. Screenshots (before and after) are in the session scratchpad, not the repo. Not exercised: Android, tapping through modals/pickers with the keyboard open, submitting forms (so the Zod error rendering is verified by code and type-check, not on screen).
+
+### Defects the simulator caught that `tsc` and the bundle did not
+These were bugs in my own first pass, found and fixed during verification:
+1. **Stats crashed on open.** `ModuleStack` forced `initialRouteName="index"` but Stats has no `index` screen. It is now a prop.
+2. **Stats cards rendered as narrow slivers.** Percentage widths resolved against `GradientCard`'s shrink-to-fit wrapper (the original `flex`/`minWidth` hit the same cause, which is why the cards stopped short of the edge before). `GradientCard` now puts sizing props on its outer wrapper and fills it, so side-by-side cards match in height.
+3. **`FormField` threw a React warning on every render of screens whose child is a Fragment** (Edit Profile, Clients, Expenses). Fragments are no longer cloned.
+4. **A navigation trap.** I hid the tab bar on profile/business/change-password, but those screens only had a back button when the stack had history, and the hamburger menu opens Profile with none. Every non-root screen now gets a back button that falls back to the dashboard.
+5. **The dashboard title disappeared at rest** because my scroll-threshold code blanked it on mount.
+6. At large text: the dashboard title clipped (tab header has a fixed height), quick-stat labels truncated, the invoice total pushed its chevron off the card, Stats labels broke mid-word and the Select box clipped its text. All fixed.
 
 ## Before / after
 
 | Metric (app/ + components/) | Before | After |
 |---|---|---|
 | `tsc` errors | 51 | 7 (all pre-existing typing issues, none UI) |
+| Console errors on the exercised screens | n/a | 0 after the final change |
 | `accessibility*` props | 0 | 136 |
 | `hitSlop` uses | 1 | 15 |
 | Inputs with autofill / `returnKeyType` hints | 1 | 19 |
@@ -67,7 +77,7 @@ New: `FAB` rewritten to sit above the tab bar, `Logo` (wordmark is dark ink: sea
 - "Appearance: Matches your device's light or dark setting" replaces the old "Toggle dark mode"; confirm the wording.
 
 ## Next steps
-1. Accept the Xcode licence (`sudo xcodebuild -license`), then re-run the screenshot matrix (light/dark, plus `accessibility-extra-large` on dashboard, invoices, login) and compare with the "before" captures. Things most worth eyeballing: dark login/register, tab-bar clearance on all four lists, the stats grid, the invoice create sheets with the keyboard open, and the Select selected-row colour.
-2. Replace the 82 remaining `TouchableOpacity` with `Pressable` pressed-state styling if you want a more native feel.
+1. Still unexercised on a device: the invoice-create sheets and Select list with the keyboard open, submitting an invalid form (Zod errors), and Android.
+2. Replace the remaining `TouchableOpacity` with `Pressable` pressed-state styling if you want a more native feel.
 3. Supply a dark variant of the logo asset; `Logo` can then drop its light plate.
 4. Add Jest + RN Testing Library and `eslint` (neither is installed; `npm run lint` fails today).

@@ -17,8 +17,10 @@ export function FormField({ label, error, required, children, style }: FormField
 
   // Screen readers have no `htmlFor`: pass the visible label down to a single
   // child control (Input, TextArea, ...) unless it already names itself.
+  // Fragments can't take props, so only real elements are cloned.
   const control =
     React.isValidElement<{ accessibilityLabel?: string; accessibilityHint?: string }>(children) &&
+    children.type !== React.Fragment &&
     !children.props.accessibilityLabel
       ? React.cloneElement(children, {
           accessibilityLabel: required ? `${label}, required` : label,

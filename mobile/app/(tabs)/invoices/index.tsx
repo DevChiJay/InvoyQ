@@ -398,6 +398,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+    gap: Spacing.sm,
     paddingTop: Spacing.sm,
     borderTopWidth: 1,
   },
@@ -414,6 +415,7 @@ const styles = StyleSheet.create({
   totalAmount: {
     fontSize: Typography.sizes.xl,
     fontWeight: Typography.weights.bold,
+    flexShrink: 1,
   },
   errorText: {
     fontSize: Typography.sizes.md,

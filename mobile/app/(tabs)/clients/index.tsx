@@ -243,7 +243,7 @@ const styles = StyleSheet.create({
   },
   listContent: {
     padding: Spacing.md,
-    paddingTop: 0,
+    paddingTop: Spacing.sm,
   },
   loadingFooter: {
     paddingVertical: Spacing.md,
