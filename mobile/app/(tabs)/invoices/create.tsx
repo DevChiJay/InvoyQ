@@ -36,12 +36,14 @@ import { SearchBar } from "@/components/ui/SearchBar";
 import { BusinessReminderModal } from "@/components/ui/BusinessReminderModal";
 import { formatCurrency } from "@/utils/formatters";
 import { STORAGE_KEYS } from "@/constants/config";
+import { HIT_SLOP } from "@/constants/colors";
+import { useKeyboardOffset } from '@/hooks/useKeyboardOffset';
 
 // Validation schema
 const invoiceSchema = z.object({
   client_id: z.string().min(1, "Client is required"),
-  issued_date: z.date({ required_error: "Issue date is required" }),
-  due_date: z.date({ required_error: "Due date is required" }),
+  issued_date: z.date({ error: "Issue date is required" }),
+  due_date: z.date({ error: "Due date is required" }),
   currency: z.string().min(1, "Currency is required"),
 });
 
@@ -103,6 +105,7 @@ function isProductItem(item: LineItem): item is ProductItem {
 }
 
 export default function CreateInvoiceScreen() {
+  const keyboardOffset = useKeyboardOffset();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const createInvoice = useCreateInvoice();
@@ -255,7 +258,7 @@ export default function CreateInvoiceScreen() {
     } catch (error: any) {
       if (error instanceof z.ZodError) {
         const fieldErrors: Record<string, string> = {};
-        error.errors.forEach((err) => {
+        error.issues.forEach((err) => {
           if (err.path[0]) {
             fieldErrors[err.path[0].toString()] = err.message;
           }
@@ -310,7 +313,7 @@ export default function CreateInvoiceScreen() {
     } catch (error: any) {
       if (error instanceof z.ZodError) {
         const fieldErrors: Record<string, string> = {};
-        error.errors.forEach((err) => {
+        error.issues.forEach((err) => {
           if (err.path[0]) {
             fieldErrors[err.path[0].toString()] = err.message;
           }
@@ -582,7 +585,7 @@ export default function CreateInvoiceScreen() {
     } catch (error: any) {
       if (error instanceof z.ZodError) {
         const fieldErrors: Record<string, string> = {};
-        error.errors.forEach((err) => {
+        error.issues.forEach((err) => {
           if (err.path[0]) {
             fieldErrors[err.path[0].toString()] = err.message;
           }
@@ -603,7 +606,7 @@ export default function CreateInvoiceScreen() {
       <KeyboardAvoidingView
         style={styles.keyboardView}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
-        keyboardVerticalOffset={100}
+        keyboardVerticalOffset={keyboardOffset}
       >
         <ScrollView
           style={styles.content}
@@ -752,7 +755,7 @@ export default function CreateInvoiceScreen() {
                   <Ionicons
                     name="cube-outline"
                     size={18}
-                    color={colors.primary}
+                    color={colors.primaryText}
                   />
                 }
               />
@@ -766,7 +769,7 @@ export default function CreateInvoiceScreen() {
                     <Ionicons
                       name="folder-outline"
                       size={18}
-                      color={colors.primary}
+                      color={colors.primaryText}
                     />
                   }
                 />
@@ -780,7 +783,7 @@ export default function CreateInvoiceScreen() {
                   <Ionicons
                     name="add-outline"
                     size={18}
-                    color={colors.primary}
+                    color={colors.primaryText}
                   />
                 }
               />
@@ -819,19 +822,24 @@ export default function CreateInvoiceScreen() {
                         <Ionicons
                           name={isProductItem(item) ? "cube" : "document-text"}
                           size={14}
-                          color={colors.primary}
+                          color={colors.primaryText}
                         />
                         <Text
-                          style={[styles.itemType, { color: colors.primary }]}
+                          style={[styles.itemType, { color: colors.primaryText }]}
                         >
                           {isProductItem(item) ? "Product" : "Custom"}
                         </Text>
                       </View>
-                      <TouchableOpacity onPress={() => removeLineItem(item.id)}>
+                      <TouchableOpacity
+                        onPress={() => removeLineItem(item.id)}
+                        hitSlop={HIT_SLOP}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Remove ${isProductItem(item) ? item.name : item.description}`}
+                      >
                         <Ionicons
                           name="trash-outline"
                           size={20}
-                          color={colors.error}
+                          color={colors.errorText}
                         />
                       </TouchableOpacity>
                     </View>
@@ -929,7 +937,7 @@ export default function CreateInvoiceScreen() {
                   >
                     Discount ({formData.discount}%)
                   </Text>
-                  <Text style={[styles.totalValue, { color: colors.error }]}>
+                  <Text style={[styles.totalValue, { color: colors.errorText }]}>
                     -{formatCurrency(totals.discountAmount, formData.currency)}
                   </Text>
                 </View>
@@ -957,7 +965,7 @@ export default function CreateInvoiceScreen() {
                   Total
                 </Text>
                 <Text
-                  style={[styles.grandTotalValue, { color: colors.primary }]}
+                  style={[styles.grandTotalValue, { color: colors.primaryText }]}
                 >
                   {formatCurrency(totals.total, formData.currency)}
                 </Text>
@@ -993,7 +1001,10 @@ export default function CreateInvoiceScreen() {
       </View>
 
       <Modal visible={showProductModal} animationType="slide" transparent>
-        <View style={styles.modalOverlay}>
+        <KeyboardAvoidingView
+          style={styles.modalOverlay}
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+        >
           <View
             style={[
               styles.modalContent,
@@ -1007,6 +1018,9 @@ export default function CreateInvoiceScreen() {
                 Select Product
               </Text>
               <TouchableOpacity
+                hitSlop={HIT_SLOP}
+                accessibilityRole="button"
+                accessibilityLabel="Close"
                 onPress={() => {
                   setShowProductModal(false);
                   setProductSearchQuery(""); // Reset search
@@ -1067,12 +1081,12 @@ export default function CreateInvoiceScreen() {
                         <Ionicons
                           name="add-circle"
                           size={20}
-                          color={colors.primary}
+                          color={colors.primaryText}
                         />
                         <Text
                           style={[
                             styles.productName,
-                            { color: colors.primary, fontWeight: "600" },
+                            { color: colors.primaryText, fontWeight: "600" },
                           ]}
                         >
                           {item.name}
@@ -1113,7 +1127,7 @@ export default function CreateInvoiceScreen() {
                       <Ionicons
                         name="add-circle-outline"
                         size={24}
-                        color={colors.primary}
+                        color={colors.primaryText}
                       />
                     </>
                   )}
@@ -1121,7 +1135,7 @@ export default function CreateInvoiceScreen() {
               )}
             />
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
 
       {/* Create Product Modal */}
@@ -1143,6 +1157,9 @@ export default function CreateInvoiceScreen() {
                 Create New Product
               </Text>
               <TouchableOpacity
+                hitSlop={HIT_SLOP}
+                accessibilityRole="button"
+                accessibilityLabel="Close"
                 onPress={() => setShowCreateProductModal(false)}
               >
                 <Ionicons name="close" size={24} color={colors.text} />
@@ -1267,7 +1284,10 @@ export default function CreateInvoiceScreen() {
 
       {/* Custom Item Modal */}
       <Modal visible={showCustomItemModal} animationType="slide" transparent>
-        <View style={styles.modalOverlay}>
+        <KeyboardAvoidingView
+          style={styles.modalOverlay}
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+        >
           <View
             style={[
               styles.modalContent,
@@ -1280,12 +1300,17 @@ export default function CreateInvoiceScreen() {
               <Text style={[styles.modalTitle, { color: colors.text }]}>
                 Add Custom Item
               </Text>
-              <TouchableOpacity onPress={() => setShowCustomItemModal(false)}>
+              <TouchableOpacity
+                onPress={() => setShowCustomItemModal(false)}
+                hitSlop={HIT_SLOP}
+                accessibilityRole="button"
+                accessibilityLabel="Close"
+              >
                 <Ionicons name="close" size={24} color={colors.text} />
               </TouchableOpacity>
             </View>
 
-            <ScrollView style={styles.modalBody}>
+            <ScrollView style={styles.modalBody} keyboardShouldPersistTaps="handled">
               <FormField
                 label="Description"
                 error={customItemErrors.description}
@@ -1366,7 +1391,7 @@ export default function CreateInvoiceScreen() {
               />
             </View>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
 
       {/* Category Modal */}
@@ -1384,7 +1409,12 @@ export default function CreateInvoiceScreen() {
               <Text style={[styles.modalTitle, { color: colors.text }]}>
                 Select Category
               </Text>
-              <TouchableOpacity onPress={() => setShowCategoryModal(false)}>
+              <TouchableOpacity
+                onPress={() => setShowCategoryModal(false)}
+                hitSlop={HIT_SLOP}
+                accessibilityRole="button"
+                accessibilityLabel="Close"
+              >
                 <Ionicons name="close" size={24} color={colors.text} />
               </TouchableOpacity>
             </View>
@@ -1400,7 +1430,7 @@ export default function CreateInvoiceScreen() {
                   return (
                     <TouchableOpacity
                       style={[
-                        styles.listItem,
+                        styles.productItem,
                         { borderBottomColor: colors.border },
                       ]}
                       onPress={() => handleAddCategory(category)}
@@ -1409,7 +1439,7 @@ export default function CreateInvoiceScreen() {
                         <Ionicons
                           name="folder"
                           size={24}
-                          color={colors.primary}
+                          color={colors.primaryText}
                         />
                         <View style={styles.categoryInfo}>
                           <Text
@@ -1433,7 +1463,7 @@ export default function CreateInvoiceScreen() {
                         <Ionicons
                           name="add-circle-outline"
                           size={24}
-                          color={colors.primary}
+                          color={colors.primaryText}
                         />
                       </View>
                     </TouchableOpacity>
@@ -1475,7 +1505,12 @@ export default function CreateInvoiceScreen() {
               <Text style={[styles.modalTitle, { color: colors.text }]}>
                 Create New Client
               </Text>
-              <TouchableOpacity onPress={() => setShowCreateClientModal(false)}>
+              <TouchableOpacity
+                onPress={() => setShowCreateClientModal(false)}
+                hitSlop={HIT_SLOP}
+                accessibilityRole="button"
+                accessibilityLabel="Close"
+              >
                 <Ionicons name="close" size={24} color={colors.text} />
               </TouchableOpacity>
             </View>

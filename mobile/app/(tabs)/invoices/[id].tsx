@@ -7,10 +7,11 @@ import * as Sharing from 'expo-sharing';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/hooks/useTheme';
 import { useInvoice, useDeleteInvoice, useUpdateInvoice, useSendInvoiceEmail } from '@/hooks/useInvoices';
-import { Card } from '@/components/ui';
+import { Card, ErrorState } from '@/components/ui';
 import { confirmDelete, showError, confirmAction } from '@/utils/alerts';
 import { formatCurrency, formatDate } from '@/utils/formatters';
 import { generateInvoiceHTML } from '@/utils/invoicePrint';
+import { MIN_TOUCH_TARGET } from '@/constants/colors';
 
 const getStatusColor = (status: string, colors: any) => {
   switch (status) {
@@ -50,7 +51,7 @@ export default function InvoiceDetailScreen() {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const { id, from } = useLocalSearchParams<{ id: string; from?: string }>();
-  const { data: invoice, isLoading } = useInvoice(id);
+  const { data: invoice, isLoading, refetch } = useInvoice(id);
   const deleteInvoice = useDeleteInvoice();
   const updateInvoice = useUpdateInvoice();
   const sendInvoiceEmail = useSendInvoiceEmail();
@@ -175,7 +176,7 @@ export default function InvoiceDetailScreen() {
   if (isLoading) {
     return (
       <View style={[styles.container, styles.centered, { backgroundColor: colors.background }]}>
-        <ActivityIndicator size="large" color={colors.primary} />
+        <ActivityIndicator size="large" color={colors.primaryText} />
       </View>
     );
   }
@@ -183,7 +184,11 @@ export default function InvoiceDetailScreen() {
   if (!invoice) {
     return (
       <View style={[styles.container, styles.centered, { backgroundColor: colors.background }]}>
-        <Text style={[styles.errorText, { color: colors.textSecondary }]}>Invoice not found</Text>
+        <ErrorState
+          title="Invoice not found"
+          message="It may have been deleted, or it couldn't be loaded. Check your connection and try again."
+          onRetry={() => refetch()}
+        />
       </View>
     );
   }
@@ -200,7 +205,9 @@ export default function InvoiceDetailScreen() {
           headerTintColor: colors.text,
           gestureEnabled: from !== 'dashboard',
           headerLeft: () => (
-            <TouchableOpacity onPress={handleBack} style={styles.headerButton}>
+            <TouchableOpacity onPress={handleBack} accessibilityRole="button"
+                accessibilityLabel="Go back"
+                style={styles.headerButton}>
               <Ionicons name="arrow-back" size={24} color={colors.text} />
             </TouchableOpacity>
           ),
@@ -208,20 +215,26 @@ export default function InvoiceDetailScreen() {
             <View style={styles.headerActions}>
               <TouchableOpacity 
                 onPress={handlePrint} 
+                accessibilityRole="button"
+                accessibilityLabel="Print invoice"
                 style={styles.headerButton}
                 disabled={isPrinting}
               >
                 <Ionicons 
                   name={isPrinting ? "hourglass-outline" : "print-outline"} 
                   size={22} 
-                  color={isPrinting ? colors.textSecondary : colors.primary} 
+                  color={isPrinting ? colors.textSecondary : colors.primaryText} 
                 />
               </TouchableOpacity>
-              <TouchableOpacity onPress={handleEdit} style={styles.headerButton}>
-                <Ionicons name="pencil" size={22} color={colors.primary} />
+              <TouchableOpacity onPress={handleEdit} accessibilityRole="button"
+                accessibilityLabel="Edit invoice"
+                style={styles.headerButton}>
+                <Ionicons name="pencil" size={22} color={colors.primaryText} />
               </TouchableOpacity>
-              <TouchableOpacity onPress={handleDelete} style={styles.headerButton}>
-                <Ionicons name="trash-outline" size={22} color={colors.error} />
+              <TouchableOpacity onPress={handleDelete} accessibilityRole="button"
+                accessibilityLabel="Delete invoice"
+                style={styles.headerButton}>
+                <Ionicons name="trash-outline" size={22} color={colors.errorText} />
               </TouchableOpacity>
             </View>
           ),
@@ -237,7 +250,7 @@ export default function InvoiceDetailScreen() {
         {/* Total Amount Card */}
         <Card style={styles.totalCard}>
           <Text style={[styles.totalLabel, { color: colors.textSecondary }]}>Total Amount</Text>
-          <Text style={[styles.totalAmount, { color: colors.primary }]}>
+          <Text style={[styles.totalAmount, { color: colors.primaryText }]}>
             {formatCurrency(parseFloat(invoice.total || '0'), invoice.currency)}
           </Text>
         </Card>
@@ -247,24 +260,24 @@ export default function InvoiceDetailScreen() {
           <Card style={styles.card}>
             <Text style={[styles.cardTitle, { color: colors.text }]}>Client</Text>
             <View style={styles.detailRow}>
-              <Ionicons name="person-outline" size={20} color={colors.primary} />
+              <Ionicons name="person-outline" size={20} color={colors.primaryText} />
               <Text style={[styles.detailText, { color: colors.text }]}>{invoice.client.name}</Text>
             </View>
             {invoice.client.email && (
               <View style={styles.detailRow}>
-                <Ionicons name="mail-outline" size={20} color={colors.primary} />
+                <Ionicons name="mail-outline" size={20} color={colors.primaryText} />
                 <Text style={[styles.detailText, { color: colors.text }]}>{invoice.client.email}</Text>
               </View>
             )}
             {invoice.client.phone && (
               <View style={styles.detailRow}>
-                <Ionicons name="call-outline" size={20} color={colors.primary} />
+                <Ionicons name="call-outline" size={20} color={colors.primaryText} />
                 <Text style={[styles.detailText, { color: colors.text }]}>{invoice.client.phone}</Text>
               </View>
             )}
             {invoice.client.address && (
               <View style={styles.detailRow}>
-                <Ionicons name="location-outline" size={20} color={colors.primary} />
+                <Ionicons name="location-outline" size={20} color={colors.primaryText} />
                 <Text style={[styles.detailText, { color: colors.text }]}>{invoice.client.address}</Text>
               </View>
             )}
@@ -340,7 +353,7 @@ export default function InvoiceDetailScreen() {
           {parseFloat(invoice.discount || '0') > 0 && (
             <View style={styles.totalRow}>
               <Text style={[styles.totalRowLabel, { color: colors.textSecondary }]}>Discount ({invoice.discount}%)</Text>
-              <Text style={[styles.totalRowValue, { color: colors.error }]}>
+              <Text style={[styles.totalRowValue, { color: colors.errorText }]}>
                 -{formatCurrency((parseFloat(invoice.subtotal || '0') * parseFloat(invoice.discount || '0')) / 100, invoice.currency)}
               </Text>
             </View>
@@ -360,7 +373,7 @@ export default function InvoiceDetailScreen() {
 
           <View style={[styles.totalRow, styles.grandTotal, { borderTopColor: colors.border }]}>
             <Text style={[styles.grandTotalLabel, { color: colors.text }]}>Total</Text>
-            <Text style={[styles.grandTotalValue, { color: colors.primary }]}>
+            <Text style={[styles.grandTotalValue, { color: colors.primaryText }]}>
               {formatCurrency(parseFloat(invoice.total || '0'), invoice.currency)}
             </Text>
           </View>
@@ -412,10 +425,12 @@ const styles = StyleSheet.create({
   },
   headerActions: {
     flexDirection: 'row',
-    gap: 8,
   },
   headerButton: {
-    padding: 8,
+    minWidth: MIN_TOUCH_TARGET,
+    minHeight: MIN_TOUCH_TARGET,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   content: {
     flex: 1,

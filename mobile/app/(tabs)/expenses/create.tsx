@@ -31,13 +31,14 @@ import {
 } from "@/utils/formHelpers";
 import { showError } from "@/utils/alerts";
 import { z } from "zod";
+import { useKeyboardOffset } from '@/hooks/useKeyboardOffset';
 
 const expenseSchema = z.object({
   category: z.string().min(1, "Category is required"),
   description: z.string().min(1, "Description is required"),
   amount: z.string().min(1, "Amount is required"),
   currency: z.string().min(1, "Currency is required"),
-  expense_date: z.date({ required_error: "Date is required" }),
+  expense_date: z.date({ error: "Date is required" }),
 });
 
 const categoryOptions: SelectOption[] = [
@@ -59,6 +60,7 @@ const currencyOptions: SelectOption[] = [
 ];
 
 export default function CreateExpenseScreen() {
+  const keyboardOffset = useKeyboardOffset();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const createExpense = useCreateExpense();
@@ -130,7 +132,7 @@ export default function CreateExpenseScreen() {
       <KeyboardAvoidingView
         style={styles.keyboardView}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
-        keyboardVerticalOffset={100}
+        keyboardVerticalOffset={keyboardOffset}
       >
         <ScrollView
           style={styles.content}

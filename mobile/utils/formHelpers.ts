@@ -1,11 +1,11 @@
-import { ZodSchema, ZodError } from 'zod';
+import { ZodError, ZodType } from 'zod';
 
 /**
  * Validate form data against a Zod schema
  * Returns an object with field names as keys and error messages as values
  */
 export function validateForm<T>(
-  schema: ZodSchema<T>,
+  schema: ZodType<T>,
   data: unknown
 ): Record<string, string> {
   try {
@@ -14,9 +14,11 @@ export function validateForm<T>(
   } catch (error) {
     if (error instanceof ZodError) {
       const errors: Record<string, string> = {};
-      error.errors.forEach((err) => {
-        const path = err.path.join('.');
-        errors[path] = err.message;
+      // Zod 4 exposes `issues` (the `errors` alias was removed). Keep the first
+      // message per field so the most specific rule wins.
+      error.issues.forEach((issue) => {
+        const path = issue.path.join('.');
+        if (!(path in errors)) errors[path] = issue.message;
       });
       return errors;
     }
@@ -35,7 +37,7 @@ export function hasErrors(errors: Record<string, string>): boolean {
  * Sanitize form data by removing empty strings and trimming values
  */
 export function sanitizeFormData<T extends Record<string, any>>(data: T): T {
-  const sanitized = { ...data };
+  const sanitized: Record<string, any> = { ...data };
 
   Object.keys(sanitized).forEach((key) => {
     const value = sanitized[key];
@@ -53,7 +55,7 @@ export function sanitizeFormData<T extends Record<string, any>>(data: T): T {
     }
   });
 
-  return sanitized;
+  return sanitized as T;
 }
 
 /**

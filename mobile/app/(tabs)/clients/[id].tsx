@@ -12,14 +12,15 @@ import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "@/hooks/useTheme";
 import { useClient, useDeleteClient } from "@/hooks/useClients";
-import { Card, Button } from "@/components/ui";
+import { Card, Button, ErrorState } from "@/components/ui";
 import { confirmDelete, showError } from "@/utils/alerts";
+import { MIN_TOUCH_TARGET } from '@/constants/colors';
 
 export default function ClientDetailScreen() {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const { id, from } = useLocalSearchParams<{ id: string; from?: string }>();
-  const { data: client, isLoading } = useClient(id);
+  const { data: client, isLoading, refetch } = useClient(id);
   const deleteClient = useDeleteClient();
 
   const handleBack = () => {
@@ -56,7 +57,7 @@ export default function ClientDetailScreen() {
           { backgroundColor: colors.background },
         ]}
       >
-        <ActivityIndicator size="large" color={colors.primary} />
+        <ActivityIndicator size="large" color={colors.primaryText} />
       </View>
     );
   }
@@ -70,9 +71,11 @@ export default function ClientDetailScreen() {
           { backgroundColor: colors.background },
         ]}
       >
-        <Text style={[styles.errorText, { color: colors.textSecondary }]}>
-          Client not found
-        </Text>
+        <ErrorState
+          title="Client not found"
+          message="It may have been deleted, or it couldn't be loaded. Check your connection and try again."
+          onRetry={() => refetch()}
+        />
       </View>
     );
   }
@@ -95,15 +98,19 @@ export default function ClientDetailScreen() {
             <View style={styles.headerActions}>
               <TouchableOpacity
                 onPress={handleEdit}
+                accessibilityRole="button"
+                accessibilityLabel="Edit client"
                 style={styles.headerButton}
               >
-                <Ionicons name="pencil" size={22} color={colors.primary} />
+                <Ionicons name="pencil" size={22} color={colors.primaryText} />
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={handleDelete}
+                accessibilityRole="button"
+                accessibilityLabel="Delete client"
                 style={styles.headerButton}
               >
-                <Ionicons name="trash-outline" size={22} color={colors.error} />
+                <Ionicons name="trash-outline" size={22} color={colors.errorText} />
               </TouchableOpacity>
             </View>
           ),
@@ -196,7 +203,10 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   headerButton: {
-    padding: 8,
+    minWidth: MIN_TOUCH_TARGET,
+    minHeight: MIN_TOUCH_TARGET,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   content: {
     flex: 1,
