@@ -21,8 +21,11 @@ import {
   EmptyState,
   SkeletonList,
   ErrorState,
+  FAB,
 } from "@/components/ui";
+import { useTabBarInset } from "@/hooks/useTabBarInset";
 import { Spacing } from "@/constants/colors";
+import { formatCurrency } from "@/utils/formatters";
 import { Typography } from "@/constants/typography";
 import { Ionicons } from "@expo/vector-icons";
 import { useState, useMemo, useEffect } from "react";
@@ -37,6 +40,7 @@ type FilterType =
 
 export default function ProductsScreen() {
   const { colors } = useTheme();
+  const { contentBottom } = useTabBarInset();
   const { filterState, isLoaded, updateFilter } = useFilterState("products");
   const [searchQuery, setSearchQuery] = useState("");
   const [filter, setFilter] = useState<FilterType>("all");
@@ -128,40 +132,6 @@ export default function ProductsScreen() {
     }).length;
   };
 
-  if (isLoading) {
-    return (
-      <View style={[styles.container, { backgroundColor: colors.background }]}>
-        <Stack.Screen
-          options={{
-            title: "Products",
-            headerStyle: { backgroundColor: colors.surface },
-            headerTintColor: colors.text,
-          }}
-        />
-        <SkeletonList count={6} />
-      </View>
-    );
-  }
-
-  if (error) {
-    return (
-      <View style={[styles.container, { backgroundColor: colors.background }]}>
-        <Stack.Screen
-          options={{
-            title: "Products",
-            headerStyle: { backgroundColor: colors.surface },
-            headerTintColor: colors.text,
-          }}
-        />
-        <ErrorState
-          title="Failed to load products"
-          message="We couldn't fetch your products. Please check your connection and try again."
-          onRetry={refetch}
-        />
-      </View>
-    );
-  }
-
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <Stack.Screen
@@ -169,14 +139,6 @@ export default function ProductsScreen() {
           title: "Products",
           headerStyle: { backgroundColor: colors.surface },
           headerTintColor: colors.text,
-          headerRight: () => (
-            <TouchableOpacity
-              onPress={() => router.push("/products/create")}
-              style={styles.headerButton}
-            >
-              <Ionicons name="add" size={24} color={colors.primary} />
-            </TouchableOpacity>
-          ),
         }}
       />
 
@@ -238,10 +200,21 @@ export default function ProductsScreen() {
         />
       </ScrollView>
 
+      {isLoading ? (
+        <SkeletonList count={6} />
+      ) : error ? (
+        <ErrorState
+          title="Failed to load products"
+          message="We couldn't fetch your products. Please check your connection and try again."
+          onRetry={refetch}
+        />
+      ) : (
       <FlatList
         data={filteredProducts}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
         keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.listContent}
+        contentContainerStyle={[styles.listContent, { paddingBottom: contentBottom }]}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -281,12 +254,14 @@ export default function ProductsScreen() {
         ListFooterComponent={
           isFetchingNextPage ? (
             <View style={styles.footer}>
-              <ActivityIndicator size="small" color={colors.primary} />
+              <ActivityIndicator size="small" color={colors.primaryText} />
             </View>
           ) : null
         }
         renderItem={({ item }) => (
           <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel={`Product ${item.name}`}
             onPress={() =>
               router.push({
                 pathname: `/products/${item.id}`,
@@ -309,6 +284,12 @@ export default function ProductsScreen() {
                   variant={item.is_active ? "success" : "default"}
                   size="sm"
                 />
+                <Ionicons
+                  name="chevron-forward"
+                  size={20}
+                  color={colors.textSecondary}
+                  style={styles.chevron}
+                />
               </View>
 
               <View style={styles.productDetails}>
@@ -317,7 +298,7 @@ export default function ProductsScreen() {
                     Price:
                   </Text>
                   <Text style={[styles.value, { color: colors.text }]}>
-                    {item.currency} {parseFloat(item.unit_price).toFixed(2)}
+                    {formatCurrency(parseFloat(item.unit_price), item.currency)}
                   </Text>
                 </View>
                 <View style={styles.detailRow}>
@@ -330,10 +311,10 @@ export default function ProductsScreen() {
                       {
                         color:
                           item.quantity_available > 10
-                            ? colors.success
+                            ? colors.successText
                             : item.quantity_available > 0
-                              ? colors.warning
-                              : colors.error,
+                              ? colors.warningText
+                              : colors.errorText,
                       },
                     ]}
                   >
@@ -341,25 +322,16 @@ export default function ProductsScreen() {
                   </Text>
                 </View>
               </View>
-              <Ionicons
-                name="chevron-forward"
-                size={20}
-                color={colors.textSecondary}
-                style={styles.chevron}
-              />
             </Card>
           </TouchableOpacity>
         )}
       />
+      )}
 
-      {/* Floating Action Button */}
-      <TouchableOpacity
-        style={[styles.fab, { backgroundColor: colors.primary }]}
+      <FAB
         onPress={() => router.push("/products/create")}
-        activeOpacity={0.8}
-      >
-        <Ionicons name="add" size={28} color="#FFFFFF" />
-      </TouchableOpacity>
+        accessibilityLabel="Add product"
+      />
     </View>
   );
 }
@@ -373,30 +345,12 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  headerButton: {
-    padding: 8,
-  },
-  fab: {
-    position: "absolute",
-    right: 20,
-    bottom: 120,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    justifyContent: "center",
-    alignItems: "center",
-    elevation: 6,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-  },
   searchContainer: {
     padding: Spacing.md,
     paddingBottom: Spacing.sm,
   },
   filterContainer: {
-    maxHeight: 50,
+    flexGrow: 0,
   },
   filterContent: {
     paddingHorizontal: Spacing.md,
@@ -414,7 +368,7 @@ const styles = StyleSheet.create({
   productHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "flex-start",
+    alignItems: "center",
     marginBottom: Spacing.sm,
   },
   productInfo: {
@@ -444,10 +398,7 @@ const styles = StyleSheet.create({
     fontWeight: Typography.weights.medium,
   },
   chevron: {
-    position: "absolute",
-    right: 16,
-    top: "50%",
-    marginTop: -10,
+    marginLeft: Spacing.xs,
   },
   footer: {
     paddingVertical: Spacing.md,

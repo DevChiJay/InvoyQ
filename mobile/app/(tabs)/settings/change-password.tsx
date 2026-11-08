@@ -1,5 +1,6 @@
-import { View, Text, StyleSheet, ScrollView, Alert } from "react-native";
+import { View, Text, StyleSheet, ScrollView, KeyboardAvoidingView, Platform, Alert } from "react-native";
 import { useState } from "react";
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Stack, router } from "expo-router";
 import { useTheme } from "@/hooks/useTheme";
 import { useAuth } from "@/hooks/useAuth";
@@ -10,8 +11,11 @@ import { Button } from "@/components/ui/Button";
 import { Spacing } from "@/constants/colors";
 import { Typography } from "@/constants/typography";
 import { userApi } from "@/services/api/user";
+import { useKeyboardOffset } from '@/hooks/useKeyboardOffset';
 
 export default function ChangePasswordScreen() {
+  const keyboardOffset = useKeyboardOffset();
+  const insets = useSafeAreaInsets();
   const { colors } = useTheme();
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
@@ -97,7 +101,11 @@ export default function ChangePasswordScreen() {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <KeyboardAvoidingView
+      style={[styles.container, { backgroundColor: colors.background }]}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      keyboardVerticalOffset={keyboardOffset}
+    >
       <Stack.Screen
         options={{
           title: isOAuthUser ? "Set Password" : "Change Password",
@@ -106,7 +114,12 @@ export default function ChangePasswordScreen() {
         }}
       />
 
-      <ScrollView style={styles.content}>
+      <ScrollView
+        style={styles.content}
+        contentContainerStyle={{ paddingBottom: insets.bottom + 32 }}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
+      >
         <Text style={[styles.description, { color: colors.textSecondary }]}>
           {isOAuthUser
             ? "Set a password to login with email and password on mobile. Your password must be at least 6 characters long and contain at least 1 number."
@@ -166,7 +179,7 @@ export default function ChangePasswordScreen() {
           style={styles.changeButton}
         />
       </ScrollView>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 

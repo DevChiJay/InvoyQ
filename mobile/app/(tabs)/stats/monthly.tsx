@@ -37,6 +37,7 @@ export default function MonthlyStatsScreen() {
     goToPreviousMonth,
     goToNextMonth,
     setMonthYear,
+    refetch,
   } = useMonthlyStats();
 
   if (error) {
@@ -44,7 +45,7 @@ export default function MonthlyStatsScreen() {
       <View style={[styles.container, { backgroundColor: colors.background }]}>
         <ErrorState
           message="Failed to load monthly statistics"
-          onRetry={() => {}}
+          onRetry={() => refetch()}
         />
       </View>
     );
@@ -76,7 +77,8 @@ export default function MonthlyStatsScreen() {
         ) : !stats ? (
           <EmptyState
             icon="bar-chart-outline"
-            message="No data available for this month"
+            title="No activity this month"
+            message="Invoices and expenses you record for this month will show up here."
           />
         ) : (
           <>
@@ -91,7 +93,12 @@ export default function MonthlyStatsScreen() {
                   style={styles.financialCard}
                 >
                   <Ionicons name="trending-up" size={24} color="#FFFFFF" />
-                  <Text style={styles.financialValue}>
+                  <Text
+                    style={styles.financialValue}
+                    numberOfLines={1}
+                    adjustsFontSizeToFit
+                    minimumFontScale={0.6}
+                  >
                     {formatCurrency(
                       parseFloat(stats.total_revenue),
                       stats.currency,
@@ -105,7 +112,12 @@ export default function MonthlyStatsScreen() {
                   style={styles.financialCard}
                 >
                   <Ionicons name="trending-down" size={24} color="#FFFFFF" />
-                  <Text style={styles.financialValue}>
+                  <Text
+                    style={styles.financialValue}
+                    numberOfLines={1}
+                    adjustsFontSizeToFit
+                    minimumFontScale={0.6}
+                  >
                     {formatCurrency(
                       parseFloat(stats.total_expenses),
                       stats.currency,
@@ -131,7 +143,12 @@ export default function MonthlyStatsScreen() {
                     size={24}
                     color="#FFFFFF"
                   />
-                  <Text style={styles.financialValue}>
+                  <Text
+                    style={styles.financialValue}
+                    numberOfLines={1}
+                    adjustsFontSizeToFit
+                    minimumFontScale={0.6}
+                  >
                     {formatCurrency(
                       parseFloat(stats.net_income),
                       stats.currency,
@@ -153,8 +170,8 @@ export default function MonthlyStatsScreen() {
                 >
                   <IconBadge
                     icon="document-text"
-                    backgroundColor={colors.primaryLight}
-                    iconColor={colors.primary}
+                    backgroundColor={colors.primarySoft}
+                    iconColor={colors.primaryText}
                   />
                   <Text style={[styles.statValue, { color: colors.text }]}>
                     {stats.total_invoices}
@@ -171,8 +188,8 @@ export default function MonthlyStatsScreen() {
                 >
                   <IconBadge
                     icon="checkmark-circle"
-                    backgroundColor={colors.successLight || "#D1FAE5"}
-                    iconColor={colors.success}
+                    backgroundColor={colors.successLight}
+                    iconColor={colors.successText}
                   />
                   <Text style={[styles.statValue, { color: colors.text }]}>
                     {stats.paid_invoices}
@@ -189,8 +206,8 @@ export default function MonthlyStatsScreen() {
                 >
                   <IconBadge
                     icon="time"
-                    backgroundColor={colors.warningLight || "#FEF3C7"}
-                    iconColor={colors.warning}
+                    backgroundColor={colors.warningLight}
+                    iconColor={colors.warningText}
                   />
                   <Text style={[styles.statValue, { color: colors.text }]}>
                     {stats.unpaid_invoices}
@@ -261,7 +278,7 @@ export default function MonthlyStatsScreen() {
                     >
                       <View style={styles.topProductRank}>
                         <Text
-                          style={[styles.rankNumber, { color: colors.primary }]}
+                          style={[styles.rankNumber, { color: colors.primaryText }]}
                         >
                           {index + 1}
                         </Text>
@@ -309,7 +326,7 @@ export default function MonthlyStatsScreen() {
                 <View style={styles.productsSoldHeader}>
                   <IconBadge
                     icon="people"
-                    backgroundColor={colors.secondaryLight || "#E0E7FF"}
+                    backgroundColor={colors.secondaryLight}
                     iconColor={colors.secondary}
                   />
                   <View style={styles.productsSoldInfo}>
@@ -358,17 +375,16 @@ const styles = StyleSheet.create({
   financialGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: Spacing.md,
+    justifyContent: "space-between",
+    rowGap: Spacing.md,
   },
   financialCard: {
-    flex: 1,
-    minWidth: "45%",
+    width: "48%",
     padding: Spacing.lg,
     minHeight: 120,
   },
   fullWidth: {
     width: "100%",
-    minWidth: "100%",
   },
   financialValue: {
     fontSize: Typography.sizes["2xl"],

@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, ActivityIndicator, Image } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, KeyboardAvoidingView, Platform, TouchableOpacity, Alert, ActivityIndicator, Image } from 'react-native';
 import { useState } from 'react';
 import { Stack, router } from 'expo-router';
 import { useTheme } from '@/hooks/useTheme';
@@ -14,8 +14,10 @@ import { Typography } from '@/constants/typography';
 import { Ionicons } from '@expo/vector-icons';
 import { userApi } from '@/services/api/user';
 import * as ImagePicker from 'expo-image-picker';
+import { useKeyboardOffset } from '@/hooks/useKeyboardOffset';
 
 export default function BusinessEditScreen() {
+  const keyboardOffset = useKeyboardOffset();
   const { colors } = useTheme();
   const { user, fetchUser } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
@@ -95,7 +97,11 @@ export default function BusinessEditScreen() {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background, paddingBottom: Math.max(insets.bottom + 80, 100) }]}>
+    <KeyboardAvoidingView
+      style={[styles.container, { backgroundColor: colors.background }]}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      keyboardVerticalOffset={keyboardOffset}
+    >
       <Stack.Screen
         options={{
           title: 'Business Info',
@@ -104,7 +110,12 @@ export default function BusinessEditScreen() {
         }}
       />
 
-      <ScrollView style={styles.content}>
+      <ScrollView
+        style={styles.content}
+        contentContainerStyle={{ paddingBottom: insets.bottom + 32 }}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
+      >
         {/* Logo Section */}
         <Card style={styles.logoCard}>
           <Text style={[styles.logoLabel, { color: colors.text }]}>Company Logo</Text>
@@ -132,7 +143,7 @@ export default function BusinessEditScreen() {
             variant="outline"
             loading={uploadingLogo}
             style={styles.uploadButton}
-            leftIcon={<Ionicons name="cloud-upload-outline" size={20} color={colors.primary} />}
+            leftIcon={<Ionicons name="cloud-upload-outline" size={20} color={colors.primaryText} />}
           />
           
           <Text style={[styles.logoHint, { color: colors.textSecondary }]}>
@@ -194,7 +205,7 @@ export default function BusinessEditScreen() {
           style={styles.saveButton}
         />
       </ScrollView>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 

@@ -9,7 +9,7 @@ import {
   Linking,
 } from "react-native";
 import { Stack, router } from "expo-router";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useTabBarInset } from "@/hooks/useTabBarInset";
 import * as Updates from "expo-updates";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
@@ -23,7 +23,7 @@ import { Ionicons } from "@expo/vector-icons";
 export default function SettingsScreen() {
   const { user, logout } = useAuth();
   const { colors } = useTheme();
-  const insets = useSafeAreaInsets();
+  const { contentBottom } = useTabBarInset();
   const [isChecking, setIsChecking] = useState(false);
   const [updateMessage, setUpdateMessage] = useState<string | null>(null);
 
@@ -97,7 +97,7 @@ export default function SettingsScreen() {
       style={[styles.container, { backgroundColor: colors.background }]}
       contentContainerStyle={[
         styles.content,
-        { paddingBottom: Math.max(insets.bottom + 80, 100) },
+        { paddingBottom: contentBottom },
       ]}
     >
       <Stack.Screen
@@ -171,12 +171,10 @@ export default function SettingsScreen() {
       </Text>
 
       <Card variant="elevated" style={styles.section}>
-        <View style={[styles.divider, { backgroundColor: colors.border }]} />
         <SettingItem
           icon="moon-outline"
-          title="Dark Mode"
-          subtitle="Toggle dark mode"
-          onPress={() => {}}
+          title="Appearance"
+          subtitle="Matches your device's light or dark setting"
           colors={colors}
         />
       </Card>
@@ -221,7 +219,7 @@ export default function SettingsScreen() {
       <Card variant="elevated" style={styles.updateCard}>
         <View style={styles.updateContent}>
           <View style={styles.updateHeader}>
-            <Ionicons name="sync-outline" size={24} color={colors.primary} />
+            <Ionicons name="sync-outline" size={24} color={colors.primaryText} />
             <View style={styles.updateInfo}>
               <Text style={[styles.updateTitle, { color: colors.text }]}>
                 App Updates
@@ -240,10 +238,10 @@ export default function SettingsScreen() {
             <View
               style={[
                 styles.updateMessageContainer,
-                { backgroundColor: colors.primaryLight + "20" },
+                { backgroundColor: colors.primarySoft },
               ]}
             >
-              <Text style={[styles.updateMessage, { color: colors.primary }]}>
+              <Text style={[styles.updateMessage, { color: colors.primaryText }]}>
                 {updateMessage}
               </Text>
             </View>
@@ -270,8 +268,9 @@ interface SettingItemProps {
   icon: keyof typeof Ionicons.glyphMap;
   title: string;
   subtitle: string;
-  onPress: () => void;
-  colors: any;
+  /** Omit for an informational row: no chevron and not tappable. */
+  onPress?: () => void;
+  colors: ReturnType<typeof useTheme>["colors"];
 }
 
 function SettingItem({
@@ -281,15 +280,23 @@ function SettingItem({
   onPress,
   colors,
 }: SettingItemProps) {
+  const Row = onPress ? TouchableOpacity : View;
+
   return (
-    <TouchableOpacity style={styles.settingItem} onPress={onPress}>
+    <Row
+      style={styles.settingItem}
+      {...(onPress
+        ? {
+            onPress,
+            accessibilityRole: "button" as const,
+            accessibilityLabel: `${title}. ${subtitle}`,
+          }
+        : { accessible: true, accessibilityLabel: `${title}. ${subtitle}` })}
+    >
       <View
-        style={[
-          styles.iconContainer,
-          { backgroundColor: colors.primaryLight + "20" },
-        ]}
+        style={[styles.iconContainer, { backgroundColor: colors.primarySoft }]}
       >
-        <Ionicons name={icon} size={20} color={colors.primary} />
+        <Ionicons name={icon} size={20} color={colors.primaryText} />
       </View>
       <View style={styles.settingInfo}>
         <Text style={[styles.settingTitle, { color: colors.text }]}>
@@ -299,8 +306,10 @@ function SettingItem({
           {subtitle}
         </Text>
       </View>
-      <Ionicons name="chevron-forward" size={20} color={colors.textTertiary} />
-    </TouchableOpacity>
+      {onPress && (
+        <Ionicons name="chevron-forward" size={20} color={colors.textTertiary} />
+      )}
+    </Row>
   );
 }
 

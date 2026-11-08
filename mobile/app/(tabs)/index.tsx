@@ -25,6 +25,9 @@ import { CircularProgress } from "@/components/ui/CircularProgress";
 import { IconBadge } from "@/components/ui/IconBadge";
 import { Badge } from "@/components/ui/Badge";
 import { Spacing } from "@/constants/colors";
+import { FAB } from "@/components/ui/FAB";
+import { useTabBarInset } from "@/hooks/useTabBarInset";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Typography } from "@/constants/typography";
 import { Ionicons } from "@expo/vector-icons";
 import { useEffect } from "react";
@@ -33,6 +36,8 @@ export default function DashboardScreen() {
   const { user } = useAuth();
   const { colors } = useTheme();
   const navigation = useNavigation();
+  const insets = useSafeAreaInsets();
+  const { contentBottom } = useTabBarInset();
   const scrollY = useRef(new Animated.Value(0)).current;
 
   // Fetch accurate stats from dedicated endpoints
@@ -93,14 +98,20 @@ export default function DashboardScreen() {
 
   // Hide/show header title on scroll
   useEffect(() => {
-    const listener = scrollY.addListener(({ value }) => {
+    // Only update the header when crossing the threshold, not on every frame.
+    let scrolled: boolean | undefined;
+    const apply = (isScrolled: boolean) => {
+      if (scrolled === isScrolled) return;
+      scrolled = isScrolled;
       navigation.setOptions({
-        headerTitle: value > 50 ? "Dashboard" : "",
+        headerTitle: isScrolled ? "Dashboard" : "",
         headerStyle: {
-          backgroundColor: value > 50 ? colors.surface : "transparent",
+          backgroundColor: isScrolled ? colors.surface : "transparent",
         },
       });
-    });
+    };
+    apply(false);
+    const listener = scrollY.addListener(({ value }) => apply(value > 50));
 
     return () => scrollY.removeListener(listener);
   }, [scrollY, navigation, colors]);
@@ -108,7 +119,7 @@ export default function DashboardScreen() {
   if (isLoading) {
     return (
       <View style={[styles.centered, { backgroundColor: colors.background }]}>
-        <ActivityIndicator size="large" color={colors.primary} />
+        <ActivityIndicator size="large" color={colors.primaryText} />
       </View>
     );
   }
@@ -117,7 +128,10 @@ export default function DashboardScreen() {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <Animated.ScrollView
         style={styles.scrollContent}
-        contentContainerStyle={styles.scrollContentContainer}
+        contentContainerStyle={[
+          styles.scrollContentContainer,
+          { paddingTop: insets.top + 44, paddingBottom: contentBottom },
+        ]}
         onScroll={Animated.event(
           [{ nativeEvent: { contentOffset: { y: scrollY } } }],
           { useNativeDriver: false },
@@ -153,6 +167,8 @@ export default function DashboardScreen() {
                 onPress={() => router.push("/(tabs)/invoices")}
                 activeOpacity={0.8}
                 style={styles.statCardWrapper}
+                accessibilityRole="button"
+                accessibilityLabel={`Total revenue ${formatCurrency(totalRevenue)}. Open invoices`}
               >
                 <GradientCard
                   colors={[colors.primary, colors.primaryDark]}
@@ -162,10 +178,17 @@ export default function DashboardScreen() {
                   <View style={styles.statIconWrapper}>
                     <Ionicons name="trending-up" size={26} color="#FFFFFF" />
                   </View>
-                  <Text style={styles.statValue}>
+                  <Text
+                    style={styles.statValue}
+                    numberOfLines={1}
+                    adjustsFontSizeToFit
+                    minimumFontScale={0.6}
+                  >
                     {formatCurrency(totalRevenue)}
                   </Text>
-                  <Text style={styles.statLabel}>Total Revenue</Text>
+                  <Text style={styles.statLabel} numberOfLines={1} adjustsFontSizeToFit>
+                    Total Revenue
+                  </Text>
                 </GradientCard>
               </TouchableOpacity>
 
@@ -173,6 +196,8 @@ export default function DashboardScreen() {
                 onPress={() => router.push("/(tabs)/expenses")}
                 activeOpacity={0.8}
                 style={styles.statCardWrapper}
+                accessibilityRole="button"
+                accessibilityLabel={`Total expenses ${formatCurrency(totalExpenses)}. Open expenses`}
               >
                 <GradientCard
                   colors={[colors.error, "#DC2626"]}
@@ -182,10 +207,17 @@ export default function DashboardScreen() {
                   <View style={styles.statIconWrapper}>
                     <Ionicons name="trending-down" size={26} color="#FFFFFF" />
                   </View>
-                  <Text style={styles.statValue}>
+                  <Text
+                    style={styles.statValue}
+                    numberOfLines={1}
+                    adjustsFontSizeToFit
+                    minimumFontScale={0.6}
+                  >
                     {formatCurrency(totalExpenses)}
                   </Text>
-                  <Text style={styles.statLabel}>Total Expenses</Text>
+                  <Text style={styles.statLabel} numberOfLines={1} adjustsFontSizeToFit>
+                    Total Expenses
+                  </Text>
                 </GradientCard>
               </TouchableOpacity>
             </View>
@@ -216,6 +248,7 @@ export default function DashboardScreen() {
                           styles.quickStatLabel,
                           { color: colors.textSecondary },
                         ]}
+                        numberOfLines={1}
                       >
                         Invoices
                       </Text>
@@ -234,7 +267,7 @@ export default function DashboardScreen() {
                     <IconBadge
                       icon="people-outline"
                       backgroundColor={colors.primaryLight + "20"}
-                      iconColor={colors.primary}
+                      iconColor={colors.primaryText}
                       size={40}
                     />
                     <View style={styles.quickStatInfo}>
@@ -248,6 +281,7 @@ export default function DashboardScreen() {
                           styles.quickStatLabel,
                           { color: colors.textSecondary },
                         ]}
+                        numberOfLines={1}
                       >
                         Clients
                       </Text>
@@ -280,6 +314,7 @@ export default function DashboardScreen() {
                           styles.quickStatLabel,
                           { color: colors.textSecondary },
                         ]}
+                        numberOfLines={1}
                       >
                         Products
                       </Text>
@@ -303,10 +338,10 @@ export default function DashboardScreen() {
                 <View
                   style={[
                     styles.monthlyStatsIconContainer,
-                    { backgroundColor: colors.primaryLight },
+                    { backgroundColor: colors.primarySoft },
                   ]}
                 >
-                  <Ionicons name="bar-chart" size={28} color={colors.primary} />
+                  <Ionicons name="bar-chart" size={28} color={colors.primaryText} />
                 </View>
                 <View style={styles.monthlyStatsText}>
                   <Text
@@ -350,7 +385,7 @@ export default function DashboardScreen() {
               percentage={collectionRate}
               size={100}
               strokeWidth={10}
-              color={colors.success}
+              color={colors.successText}
               showPercentage
             />
             <View style={styles.collectionStats}>
@@ -358,7 +393,7 @@ export default function DashboardScreen() {
                 <Text
                   style={[
                     styles.collectionStatValue,
-                    { color: colors.success },
+                    { color: colors.successText },
                   ]}
                 >
                   {formatCurrency(collectedAmount)}
@@ -374,7 +409,7 @@ export default function DashboardScreen() {
               </View>
               <View style={styles.collectionStat}>
                 <Text
-                  style={[styles.collectionStatValue, { color: colors.error }]}
+                  style={[styles.collectionStatValue, { color: colors.errorText }]}
                 >
                   {formatCurrency(pendingAmount)}
                 </Text>
@@ -404,7 +439,7 @@ export default function DashboardScreen() {
                   { backgroundColor: colors.warningLight },
                 ]}
               >
-                <Ionicons name="warning" size={24} color={colors.warning} />
+                <Ionicons name="warning" size={24} color={colors.warningText} />
                 <View style={styles.alertText}>
                   <Text style={[styles.alertTitle, { color: colors.text }]}>
                     Low Stock Alert
@@ -436,7 +471,7 @@ export default function DashboardScreen() {
               Recent Invoices
             </Text>
             <TouchableOpacity onPress={() => router.push("/(tabs)/invoices")}>
-              <Text style={[styles.sectionLink, { color: colors.primary }]}>
+              <Text style={[styles.sectionLink, { color: colors.primaryText }]}>
                 View All
               </Text>
             </TouchableOpacity>
@@ -463,7 +498,7 @@ export default function DashboardScreen() {
                   </View>
                   <View style={styles.listItemRight}>
                     <Text
-                      style={[styles.listItemAmount, { color: colors.primary }]}
+                      style={[styles.listItemAmount, { color: colors.primaryText }]}
                     >
                       {formatCurrency(invoice.total || "0", invoice.currency)}
                     </Text>
@@ -498,7 +533,7 @@ export default function DashboardScreen() {
               Recent Expenses
             </Text>
             <TouchableOpacity onPress={() => router.push("/(tabs)/expenses")}>
-              <Text style={[styles.sectionLink, { color: colors.primary }]}>
+              <Text style={[styles.sectionLink, { color: colors.primaryText }]}>
                 View All
               </Text>
             </TouchableOpacity>
@@ -531,7 +566,7 @@ export default function DashboardScreen() {
                       </Text>
                     </View>
                   </View>
-                  <Text style={[styles.expenseAmount, { color: colors.error }]}>
+                  <Text style={[styles.expenseAmount, { color: colors.errorText }]}>
                     -{formatCurrency(expense.amount, expense.currency)}
                   </Text>
                 </View>
@@ -545,14 +580,10 @@ export default function DashboardScreen() {
         </View>
       </Animated.ScrollView>
 
-      {/* Floating Action Button */}
-      <TouchableOpacity
-        style={[styles.fab, { backgroundColor: colors.primary }]}
+      <FAB
         onPress={() => router.push("/(tabs)/invoices/create")}
-        activeOpacity={0.8}
-      >
-        <Ionicons name="add" size={28} color="#FFFFFF" />
-      </TouchableOpacity>
+        accessibilityLabel="Create invoice"
+      />
     </View>
   );
 }
@@ -565,8 +596,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContentContainer: {
-    paddingTop: Platform.OS === "ios" ? 100 : 80, // Account for header space
-    paddingBottom: 110, // Extra padding for floating tab bar
   },
   centered: {
     flex: 1,
@@ -799,20 +828,5 @@ const styles = StyleSheet.create({
     fontSize: Typography.sizes.sm,
     textAlign: "center",
     padding: Spacing.lg,
-  },
-  fab: {
-    position: "absolute",
-    right: 20,
-    bottom: 120, // Above floating tab bar
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    justifyContent: "center",
-    alignItems: "center",
-    elevation: 6,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
   },
 });

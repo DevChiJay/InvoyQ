@@ -18,7 +18,9 @@ import {
   EmptyState,
   SkeletonList,
   ErrorState,
+  FAB,
 } from "@/components/ui";
+import { useTabBarInset } from "@/hooks/useTabBarInset";
 import { Spacing, BorderRadius } from "@/constants/colors";
 import { Typography } from "@/constants/typography";
 import { Ionicons } from "@expo/vector-icons";
@@ -26,6 +28,7 @@ import { useState, useEffect, useCallback } from "react";
 
 export default function ClientsScreen() {
   const { colors } = useTheme();
+  const { contentBottom } = useTabBarInset();
   const { filterState, isLoaded, updateFilter } = useFilterState("clients");
   const [searchQuery, setSearchQuery] = useState("");
   const debouncedSearch = useDebounce(searchQuery, 300);
@@ -70,40 +73,6 @@ export default function ClientsScreen() {
     }
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
-  if (isLoading) {
-    return (
-      <View style={[styles.container, { backgroundColor: colors.background }]}>
-        <Stack.Screen
-          options={{
-            title: "Clients",
-            headerStyle: { backgroundColor: colors.surface },
-            headerTintColor: colors.text,
-          }}
-        />
-        <SkeletonList count={6} />
-      </View>
-    );
-  }
-
-  if (error) {
-    return (
-      <View style={[styles.container, { backgroundColor: colors.background }]}>
-        <Stack.Screen
-          options={{
-            title: "Clients",
-            headerStyle: { backgroundColor: colors.surface },
-            headerTintColor: colors.text,
-          }}
-        />
-        <ErrorState
-          title="Failed to load clients"
-          message="We couldn't fetch your clients. Please check your connection and try again."
-          onRetry={refetch}
-        />
-      </View>
-    );
-  }
-
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <Stack.Screen
@@ -111,14 +80,6 @@ export default function ClientsScreen() {
           title: "Clients",
           headerStyle: { backgroundColor: colors.surface },
           headerTintColor: colors.text,
-          headerRight: () => (
-            <TouchableOpacity
-              onPress={() => router.push("/clients/create")}
-              style={styles.headerButton}
-            >
-              <Ionicons name="add" size={24} color={colors.primary} />
-            </TouchableOpacity>
-          ),
         }}
       />
 
@@ -132,10 +93,21 @@ export default function ClientsScreen() {
         />
       </View>
 
+      {isLoading ? (
+        <SkeletonList count={6} />
+      ) : error ? (
+        <ErrorState
+          title="Failed to load clients"
+          message="We couldn't fetch your clients. Please check your connection and try again."
+          onRetry={refetch}
+        />
+      ) : (
       <FlatList
         data={clients}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
         keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.listContent}
+        contentContainerStyle={[styles.listContent, { paddingBottom: contentBottom }]}
         onEndReached={onEndReached}
         onEndReachedThreshold={0.3}
         refreshControl={
@@ -148,7 +120,7 @@ export default function ClientsScreen() {
         ListFooterComponent={
           isFetchingNextPage ? (
             <ActivityIndicator
-              color={colors.primary}
+              color={colors.primaryText}
               style={styles.loadingFooter}
             />
           ) : null
@@ -170,6 +142,8 @@ export default function ClientsScreen() {
         }
         renderItem={({ item }) => (
           <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel={`Client ${item.name}`}
             onPress={() =>
               router.push({
                 pathname: `/clients/${item.id}`,
@@ -182,10 +156,10 @@ export default function ClientsScreen() {
                 <View
                   style={[
                     styles.avatar,
-                    { backgroundColor: colors.primary + "20" },
+                    { backgroundColor: colors.primarySoft },
                   ]}
                 >
-                  <Text style={[styles.avatarText, { color: colors.primary }]}>
+                  <Text style={[styles.avatarText, { color: colors.primaryText }]}>
                     {item.name
                       .split(" ")
                       .map((n) => n[0])
@@ -244,15 +218,12 @@ export default function ClientsScreen() {
           </TouchableOpacity>
         )}
       />
+      )}
 
-      {/* Floating Action Button */}
-      <TouchableOpacity
-        style={[styles.fab, { backgroundColor: colors.primary }]}
+      <FAB
         onPress={() => router.push("/clients/create")}
-        activeOpacity={0.8}
-      >
-        <Ionicons name="add" size={28} color="#FFFFFF" />
-      </TouchableOpacity>
+        accessibilityLabel="Add client"
+      />
     </View>
   );
 }
@@ -265,24 +236,6 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-  },
-  headerButton: {
-    padding: 8,
-  },
-  fab: {
-    position: "absolute",
-    right: 20,
-    bottom: 120,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    justifyContent: "center",
-    alignItems: "center",
-    elevation: 6,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
   },
   searchContainer: {
     padding: Spacing.md,

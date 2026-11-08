@@ -18,7 +18,9 @@ import {
   EmptyState,
   SkeletonList,
   ErrorState,
+  FAB,
 } from "@/components/ui";
+import { useTabBarInset } from "@/hooks/useTabBarInset";
 import { useDebounce } from "@/hooks/useDebounce";
 import { useFilterState } from "@/hooks/useFilterState";
 import { Spacing } from "@/constants/colors";
@@ -37,6 +39,7 @@ const statusFilters = [
 
 export default function InvoicesScreen() {
   const { colors } = useTheme();
+  const { contentBottom } = useTabBarInset();
   const { filterState, isLoaded, updateFilter } = useFilterState("invoices");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("all");
@@ -125,40 +128,6 @@ export default function InvoicesScreen() {
     }
   };
 
-  if (isLoading) {
-    return (
-      <View style={[styles.container, { backgroundColor: colors.background }]}>
-        <Stack.Screen
-          options={{
-            title: "Invoices",
-            headerStyle: { backgroundColor: colors.surface },
-            headerTintColor: colors.text,
-          }}
-        />
-        <SkeletonList count={6} />
-      </View>
-    );
-  }
-
-  if (error) {
-    return (
-      <View style={[styles.container, { backgroundColor: colors.background }]}>
-        <Stack.Screen
-          options={{
-            title: "Invoices",
-            headerStyle: { backgroundColor: colors.surface },
-            headerTintColor: colors.text,
-          }}
-        />
-        <ErrorState
-          title="Failed to load invoices"
-          message="We couldn't fetch your invoices. Please check your connection and try again."
-          onRetry={refetch}
-        />
-      </View>
-    );
-  }
-
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <Stack.Screen
@@ -166,14 +135,6 @@ export default function InvoicesScreen() {
           title: "Invoices",
           headerStyle: { backgroundColor: colors.surface },
           headerTintColor: colors.text,
-          headerRight: () => (
-            <TouchableOpacity
-              onPress={() => router.push("/invoices/create")}
-              style={styles.headerButton}
-            >
-              <Ionicons name="add" size={28} color={colors.primary} />
-            </TouchableOpacity>
-          ),
         }}
       />
 
@@ -205,10 +166,21 @@ export default function InvoicesScreen() {
       </View>
 
       {/* Invoice List */}
+      {isLoading ? (
+        <SkeletonList count={6} />
+      ) : error ? (
+        <ErrorState
+          title="Failed to load invoices"
+          message="We couldn't fetch your invoices. Please check your connection and try again."
+          onRetry={refetch}
+        />
+      ) : (
       <FlatList
         data={invoices}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
         keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.listContent}
+        contentContainerStyle={[styles.listContent, { paddingBottom: contentBottom }]}
         onEndReached={onEndReached}
         onEndReachedThreshold={0.3}
         refreshControl={
@@ -221,7 +193,7 @@ export default function InvoicesScreen() {
         ListFooterComponent={
           isFetchingNextPage ? (
             <ActivityIndicator
-              color={colors.primary}
+              color={colors.primaryText}
               style={styles.loadingFooter}
             />
           ) : null
@@ -244,7 +216,7 @@ export default function InvoicesScreen() {
                 ? "Create Invoice"
                 : undefined
             }
-            onActionPress={
+            onAction={
               !searchQuery && selectedStatus === "all"
                 ? () => router.push("/invoices/create")
                 : undefined
@@ -252,11 +224,20 @@ export default function InvoicesScreen() {
           />
         }
         renderItem={({ item }) => (
-          <TouchableOpacity onPress={() => handleInvoicePress(item.id)}>
+          <TouchableOpacity
+            onPress={() => handleInvoicePress(item.id)}
+            accessibilityRole="button"
+            accessibilityLabel={`Invoice ${item.number || item.id.slice(-6)}, ${item.status}`}
+          >
             <Card variant="elevated" style={styles.invoiceCard}>
               <View style={styles.invoiceHeader}>
                 <View style={styles.invoiceInfo}>
-                  <Text style={[styles.invoiceNumber, { color: colors.text }]}>
+                  <Text
+                    style={[styles.invoiceNumber, { color: colors.text }]}
+                    numberOfLines={1}
+                    adjustsFontSizeToFit
+                    minimumFontScale={0.75}
+                  >
                     {item.number || `INV-${item.id.slice(-6)}`}
                   </Text>
                   {item.client && (
@@ -314,14 +295,19 @@ export default function InvoicesScreen() {
                 )}
               </View>
 
-              <View style={styles.totalContainer}>
+              <View style={[styles.totalContainer, { borderTopColor: colors.border }]}>
                 <Text
                   style={[styles.totalLabel, { color: colors.textSecondary }]}
                 >
                   Total
                 </Text>
                 <View style={styles.totalRow}>
-                  <Text style={[styles.totalAmount, { color: colors.primary }]}>
+                  <Text
+                    style={[styles.totalAmount, { color: colors.primaryText }]}
+                    numberOfLines={1}
+                    adjustsFontSizeToFit
+                    minimumFontScale={0.7}
+                  >
                     {formatCurrency(
                       parseFloat(item.total || "0"),
                       item.currency,
@@ -338,15 +324,12 @@ export default function InvoicesScreen() {
           </TouchableOpacity>
         )}
       />
+      )}
 
-      {/* Floating Action Button */}
-      <TouchableOpacity
-        style={[styles.fab, { backgroundColor: colors.primary }]}
+      <FAB
         onPress={() => router.push("/invoices/create")}
-        activeOpacity={0.8}
-      >
-        <Ionicons name="add" size={28} color="#FFFFFF" />
-      </TouchableOpacity>
+        accessibilityLabel="Create invoice"
+      />
     </View>
   );
 }
@@ -359,24 +342,6 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-  },
-  headerButton: {
-    padding: 8,
-  },
-  fab: {
-    position: "absolute",
-    right: 20,
-    bottom: 120,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    justifyContent: "center",
-    alignItems: "center",
-    elevation: 6,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
   },
   searchContainer: {
     paddingHorizontal: Spacing.md,
@@ -435,7 +400,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingTop: Spacing.sm,
     borderTopWidth: 1,
-    borderTopColor: "#E2E8F0",
   },
   totalLabel: {
     fontSize: Typography.sizes.md,
@@ -445,6 +409,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
+    flexShrink: 1,
   },
   totalAmount: {
     fontSize: Typography.sizes.xl,
