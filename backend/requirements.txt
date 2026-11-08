@@ -11,7 +11,6 @@ pytest
 pytest-asyncio
 httpx
 python-dotenv
-stripe
 google-auth
 google-auth-oauthlib
 google-auth-httplib2

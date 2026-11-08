@@ -6,6 +6,7 @@ const footerLinks = {
   product: [
     { name: "Features", href: "/#features" },
     { name: "How it works", href: "/#how-it-works" },
+    { name: "Pricing", href: "/#pricing" },
     { name: "Free invoice generator", href: "/invoice-generator" },
     { name: "How to use", href: "/how-to-use" },
     { name: "Contact", href: "/contact" },

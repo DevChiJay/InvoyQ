@@ -318,7 +318,7 @@ export const generateAPI = {
     tax?: string;
     total?: string;
     number?: string;
-    payment_provider?: "paystack" | "stripe";
+    payment_provider?: "paystack";
     payment_link?: string;
     currency?: string;
   }) => api.post<Invoice>("/v1/generate-invoice", data),
@@ -347,7 +347,7 @@ export const freeExtractionAPI = {
 
 export const paymentsAPI = {
   createSubscription: (data: {
-    provider: "paystack" | "stripe";
+    provider: "paystack";
     currency: string;
     callback_url?: string;
   }) =>
@@ -358,7 +358,7 @@ export const paymentsAPI = {
 
   verifyPayment: (data: {
     reference: string;
-    provider: "paystack" | "stripe";
+    provider: "paystack";
   }) =>
     api.post<{ message: string; is_pro: boolean }>(
       "/v1/payments/subscription/verify",

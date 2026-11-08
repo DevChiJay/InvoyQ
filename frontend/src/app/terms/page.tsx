@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { FREE_EXTRACTIONS_PER_MONTH, FREE_INVOICES_PER_MONTH } from "@/constants/plans";
+import { FREE_EXTRACTIONS_PER_MONTH, FREE_INVOICES_PER_MONTH, PRO_PRICE_NGN, PRO_PRICE_USD } from "@/constants/plans";
 import { pageMetadata } from "@/lib/seo";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -122,8 +122,9 @@ export default function TermsOfService() {
                       Pro Plan
                     </h3>
                     <p className="text-muted-foreground text-sm">
-                      Unlimited invoices and AI extractions. The price is shown
-                      before you pay.
+                      Unlimited invoices and AI extractions. ${PRO_PRICE_USD} per
+                      month, or ₦{PRO_PRICE_NGN.toLocaleString("en-NG")} per
+                      month, shown again before you pay.
                     </p>
                   </div>
                   <p className="text-muted-foreground leading-relaxed">

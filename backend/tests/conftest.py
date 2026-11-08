@@ -155,7 +155,7 @@ async def test_user_pro(test_db: AsyncIOMotorDatabase) -> UserInDB:
         user_id=user.id,
         is_pro=True,
         subscription_status="active",
-        subscription_provider="stripe",
+        subscription_provider="paystack",
         subscription_start_date=datetime.utcnow(),
         subscription_end_date=datetime.utcnow() + timedelta(days=30)
     )

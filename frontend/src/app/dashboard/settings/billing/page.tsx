@@ -20,7 +20,7 @@ export default function BillingPage() {
   useEffect(() => {
     const shouldVerify = searchParams.get("verify");
     const reference = searchParams.get("reference");
-    const provider = searchParams.get("provider") as "paystack" | "stripe" | null;
+    const provider = searchParams.get("provider") as "paystack" | null;
 
     if (shouldVerify === "true" && reference && provider) {
       toast.promise(

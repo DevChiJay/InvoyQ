@@ -69,7 +69,7 @@ export default function PrivacyPolicyPage() {
                 </li>
                 <li>
                   <strong>Payment Information:</strong> Billing details
-                  (processed securely via Stripe and Paystack — we do not store
+                  (processed securely via Paystack — we do not store
                   your full card details)
                 </li>
               </ul>
@@ -184,7 +184,7 @@ export default function PrivacyPolicyPage() {
               </p>
               <ul className="list-disc pl-6 mt-3 space-y-2 text-muted-foreground">
                 <li>
-                  <strong>Payment Processors:</strong> Stripe and Paystack for
+                  <strong>Payment Processors:</strong> Paystack for
                   subscription and payment processing
                 </li>
                 <li>

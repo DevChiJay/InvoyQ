@@ -1,5 +1,7 @@
 'use client';
 
+import { PRO_PRICE_USD, PRO_PRICE_NGN } from '@/constants/plans';
+
 interface GeolocationData {
   country?: string;
   countryCode?: string;
@@ -68,18 +70,18 @@ export const getCurrencyInfo = async () => {
     return {
       currency: 'NGN',
       symbol: '₦',
-      price: 20000,
+      price: PRO_PRICE_NGN,
       period: '/month',
-      paymentProviders: ['paystack'], // Only Paystack for Nigerian users
+      paymentProviders: ['paystack'],
     };
   }
 
   return {
     currency: 'USD',
     symbol: '$',
-    price: 19,
+    price: PRO_PRICE_USD,
     period: '/month',
-    paymentProviders: ['stripe', 'paystack'], // Both for international users
+    paymentProviders: ['paystack'],
   };
 };
 

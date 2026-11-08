@@ -11,7 +11,7 @@ AI-powered invoice and client management system backend built with FastAPI, Moto
 - **Expense Tracking**: Track business expenses with categories, tags, and period-based aggregation
 - **AI Extraction**: Extract job details from chat screenshots or text using OpenAI
 - **PDF Generation**: Generate professional invoice PDFs
-- **Payment Integration**: Paystack and Stripe subscription management
+- **Payment Integration**: Paystack subscription management ($20/month or ₦15,000/month)
 - **Pro Features**: Subscription-based premium features
 - **Reminders**: Send invoice payment reminders
 - **Period Filters**: Week/month/year filtering for expenses and analytics
@@ -21,7 +21,7 @@ AI-powered invoice and client management system backend built with FastAPI, Moto
 - Python 3.9+
 - **MongoDB 4.4+** (local installation or MongoDB Atlas)
 - OpenAI API key (for extraction features)
-- Paystack/Stripe API keys (for payment features)
+- Paystack API key (for payment features)
 
 ## 🛠️ Installation
 
@@ -118,7 +118,6 @@ STORAGE_LOCAL_DIR=./generated
 ```env
 PAYSTACK_SECRET_KEY=your-paystack-secret-key
 PAYSTACK_BASE_URL=https://api.paystack.co
-STRIPE_SECRET_KEY=your-stripe-secret-key
 ```
 
 ### Email (for verification emails)
@@ -239,7 +238,6 @@ SMTP_FROM=noreply@invoiq.com
 | POST | `/v1/payments/subscription/verify` | Verify subscription | Yes |
 | GET | `/v1/payments/subscription/status` | Get subscription status | Yes |
 | POST | `/v1/payments/webhook/paystack` | Paystack webhook | No |
-| POST | `/v1/payments/webhook/stripe` | Stripe webhook | No |
 
 ### Reminders
 

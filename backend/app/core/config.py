@@ -32,7 +32,6 @@ class Settings(BaseModel):
     PAYMENTS_ENABLED: bool = os.getenv("PAYMENTS_ENABLED", "false").lower() == "true"
     PAYSTACK_SECRET_KEY: str | None = os.getenv("PAYSTACK_SECRET_KEY")
     PAYSTACK_BASE_URL: str = os.getenv("PAYSTACK_BASE_URL", "https://api.paystack.co")
-    STRIPE_SECRET_KEY: str | None = os.getenv("STRIPE_SECRET_KEY")
     
     # Email/SMTP settings for email verification
     SMTP_HOST: str = os.getenv("SMTP_HOST", "smtp.gmail.com")

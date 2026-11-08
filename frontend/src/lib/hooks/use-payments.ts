@@ -12,7 +12,7 @@ export interface SubscriptionStatus {
 }
 
 export interface CreateSubscriptionRequest {
-  provider: 'paystack' | 'stripe';
+  provider: 'paystack';
   currency: string;
   callback_url?: string;
 }
@@ -24,7 +24,7 @@ export interface SubscriptionResponse {
 
 export interface VerifyPaymentRequest {
   reference: string;
-  provider: 'paystack' | 'stripe';
+  provider: 'paystack';
 }
 
 // Subscription status, read from the signed-in user's own record (GET /v1/me).

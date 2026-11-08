@@ -36,7 +36,7 @@ Layering: `app/api/v1/*` (routers) → `app/repositories/*` (Mongo access) → `
 - **Indexes** are declared in `app/db/indexes_spec.py` and created on startup by `create_all_indexes` in the lifespan hook.
 - **Transactions**: `app/utils/transactions.py` wraps Mongo sessions (`transaction_session`, `with_transaction` with retry) for multi-document operations such as invoice creation + stock decrement. Requires a replica set.
 - **Extraction**: `services/openai_extractor.py` calls OpenAI chat completions with a JSON-only system prompt (extracts jobs, deadlines, client and sender details, amount, status, confidence). `api/v1/extraction.py` exposes it, including a free/unauthenticated demo endpoint used by the landing page. Model comes from `EXTRACTOR_MODEL`, key from `OPENAI_API_KEY`.
-- **Other services**: `email.py` (SMTP, verification/reminders), `paystack.py` / `stripe.py` (payments & subscriptions), `storage.py` (local or remote file storage via `STORAGE_PROVIDER`).
+- **Other services**: `email.py` (SMTP, verification/reminders), `paystack.py` (payments & subscriptions; Stripe was removed), `storage.py` (local or remote file storage via `STORAGE_PROVIDER`).
 - `core/rate_limiter.py` is an in-memory per-IP limiter — single-instance only.
 - CORS is `*` unless `ENV=production`, in which case only `invoyq.com` origins are allowed.
 - Admin endpoints live under `api/v1/admin/`; the frontend has matching `/admin` routes. Granting Pro there (single or `POST /bulk-pro`, or `backend/scripts/grant_pro.py`, dry-run by default) writes the same subscription fields a paid plan would, with an optional end date.

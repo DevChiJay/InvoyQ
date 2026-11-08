@@ -45,7 +45,7 @@ const slides: OnboardingSlide[] = [
   {
     id: '3',
     title: 'Get Paid Faster',
-    description: 'Accept payments through Stripe and Paystack. Automate reminders for overdue invoices',
+    description: 'Accept payments through Paystack. Automate reminders for overdue invoices',
     icon: 'cash',
     color: '#10B981',
   },

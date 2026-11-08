@@ -11,6 +11,7 @@ import { ThemeSegmented, ThemeToggle } from "@/components/shared/theme-toggle";
 import { cn } from "@/lib/utils";
 
 const links = [
+  { name: "Pricing", href: "/#pricing" },
   { name: "How to Use", href: "/how-to-use" },
   { name: "Invoice Generator", href: "/invoice-generator" },
   { name: "Contact", href: "/contact" },

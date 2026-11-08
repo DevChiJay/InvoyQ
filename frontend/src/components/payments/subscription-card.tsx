@@ -11,7 +11,7 @@ import { useSubscriptionStatus } from "@/lib/hooks/use-payments";
 import { useUsage } from "@/lib/hooks/use-usage";
 import { formatISODate } from "@/lib/format";
 import { formatResetDate, isProActive } from "@/lib/plan";
-import { FREE_EXTRACTIONS_PER_MONTH, FREE_INVOICES_PER_MONTH } from "@/constants/plans";
+import { FREE_EXTRACTIONS_PER_MONTH, FREE_INVOICES_PER_MONTH, PRO_PRICE_NGN, PRO_PRICE_USD } from "@/constants/plans";
 import type { UsageCounter } from "@/types/api";
 
 interface SubscriptionCardProps {
@@ -126,8 +126,11 @@ export function SubscriptionCard({ onUpgrade }: SubscriptionCardProps) {
 
             <div className="rounded-lg bg-accent p-4">
               <h4 className="mb-2 font-semibold">Upgrade to Pro</h4>
-              <p className="mb-3 text-sm text-muted-foreground">
+              <p className="text-sm text-muted-foreground">
                 Unlimited invoices and unlimited AI extractions.
+              </p>
+              <p className="mb-3 mt-1 text-sm font-medium tabular-nums">
+                ${PRO_PRICE_USD}/month or ₦{PRO_PRICE_NGN.toLocaleString("en-NG")}/month
               </p>
               {paymentsEnabled ? (
                 <Button onClick={onUpgrade} className="w-full">

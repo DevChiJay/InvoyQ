@@ -11,5 +11,9 @@ export const ANONYMOUS_GENERATIONS_PER_DAY = 3;
 /** "100 free invoices and 10 AI extractions a month" */
 export const FREE_PLAN_SUMMARY = `${FREE_INVOICES_PER_MONTH} free invoices and ${FREE_EXTRACTIONS_PER_MONTH} AI extractions a month`;
 
+/** Pro plan price per month. Keep in sync with backend/app/api/v1/payments.py. */
+export const PRO_PRICE_USD = 20;
+export const PRO_PRICE_NGN = 15000;
+
 /** Where the upgrade options live. */
 export const BILLING_HREF = "/dashboard/settings/billing";
