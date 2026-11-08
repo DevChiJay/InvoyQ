@@ -1,10 +1,11 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
   ActivityIndicator,
+  RefreshControl,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
@@ -21,6 +22,10 @@ import {
   SkeletonCard,
   IconBadge,
 } from "@/components/ui";
+import { TrendBarChart } from "@/components/stats/TrendBarChart";
+import { DailyAreaChart } from "@/components/stats/DailyAreaChart";
+import { StatusBreakdown } from "@/components/stats/StatusBreakdown";
+import { relativeChange, toNumber } from "@/components/stats/chartUtils";
 import { formatCurrency } from "@/utils/formatters";
 import { Typography } from "@/constants/typography";
 import { Spacing, BorderRadius } from "@/constants/colors";
@@ -30,6 +35,7 @@ export default function MonthlyStatsScreen() {
   const insets = useSafeAreaInsets();
   const {
     stats,
+    trend,
     isLoading,
     error,
     month,
@@ -38,7 +44,25 @@ export default function MonthlyStatsScreen() {
     goToNextMonth,
     setMonthYear,
     refetch,
+    refetchAll,
+    currency,
   } = useMonthlyStats();
+  const [refreshing, setRefreshing] = useState(false);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await refetchAll();
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  // The trend ends at the selected month, so the one before it is last month.
+  const previous =
+    trend && trend.months.length >= 2
+      ? trend.months[trend.months.length - 2]
+      : undefined;
 
   if (error) {
     return (
@@ -59,6 +83,14 @@ export default function MonthlyStatsScreen() {
           styles.contentContainer,
           { paddingBottom: insets.bottom + Spacing.xl },
         ]}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            colors={[colors.primary]}
+            tintColor={colors.primary}
+          />
+        }
       >
         {/* Month Navigator */}
         <MonthNavigator
@@ -105,6 +137,12 @@ export default function MonthlyStatsScreen() {
                     )}
                   </Text>
                   <Text style={styles.financialLabel} numberOfLines={1} adjustsFontSizeToFit>Total Revenue</Text>
+                  {previous && (
+                    <DeltaLine
+                      current={toNumber(stats.total_revenue)}
+                      previous={toNumber(previous.revenue)}
+                    />
+                  )}
                 </GradientCard>
 
                 <GradientCard
@@ -124,6 +162,12 @@ export default function MonthlyStatsScreen() {
                     )}
                   </Text>
                   <Text style={styles.financialLabel} numberOfLines={1} adjustsFontSizeToFit>Total Expenses</Text>
+                  {previous && (
+                    <DeltaLine
+                      current={toNumber(stats.total_expenses)}
+                      previous={toNumber(previous.expenses)}
+                    />
+                  )}
                 </GradientCard>
 
                 <GradientCard
@@ -155,6 +199,12 @@ export default function MonthlyStatsScreen() {
                     )}
                   </Text>
                   <Text style={styles.financialLabel} numberOfLines={1} adjustsFontSizeToFit>Net Income</Text>
+                  {previous && (
+                    <DeltaLine
+                      current={toNumber(stats.net_income)}
+                      previous={toNumber(previous.net_income)}
+                    />
+                  )}
                 </GradientCard>
               </View>
             </View>
@@ -220,6 +270,47 @@ export default function MonthlyStatsScreen() {
                 </Card>
               </View>
             </View>
+
+            {/* Invoice status */}
+            {stats.status_counts && (
+              <View style={styles.section}>
+                <Text style={[styles.sectionTitle, { color: colors.text }]}>
+                  Invoice Status
+                </Text>
+                <Card style={{ backgroundColor: colors.surface, padding: Spacing.lg }}>
+                  <StatusBreakdown counts={stats.status_counts} />
+                </Card>
+              </View>
+            )}
+
+            {/* Trend (optional: the screen still works if it fails to load) */}
+            {trend && trend.months.length > 0 && (
+              <View style={styles.section}>
+                <Text style={[styles.sectionTitle, { color: colors.text }]}>
+                  Last {trend.months.length} Months
+                </Text>
+                <Card style={{ backgroundColor: colors.surface, padding: Spacing.md }}>
+                  <TrendBarChart
+                    points={trend.months}
+                    selectedMonth={month}
+                    selectedYear={year}
+                    currency={currency}
+                    onSelect={setMonthYear}
+                  />
+                </Card>
+              </View>
+            )}
+
+            {trend && trend.daily.length > 0 && (
+              <View style={styles.section}>
+                <Text style={[styles.sectionTitle, { color: colors.text }]}>
+                  Daily Activity
+                </Text>
+                <Card style={{ backgroundColor: colors.surface, padding: Spacing.md }}>
+                  <DailyAreaChart points={trend.daily} />
+                </Card>
+              </View>
+            )}
 
             {/* Products Sold */}
             <View style={styles.section}>
@@ -354,7 +445,35 @@ export default function MonthlyStatsScreen() {
   );
 }
 
+/** "▲ 12% vs last month" on a gradient card. "—" when last month had nothing to compare against. */
+function DeltaLine({ current, previous }: { current: number; previous: number }) {
+  const change = relativeChange(current, previous);
+  const text =
+    change === null
+      ? "— vs last month"
+      : `${change > 0 ? "▲" : change < 0 ? "▼" : "•"} ${Math.abs(Math.round(change))}% vs last month`;
+  return (
+    <Text
+      style={styles.deltaText}
+      numberOfLines={1}
+      adjustsFontSizeToFit
+      accessibilityLabel={
+        change === null
+          ? "No comparison with last month"
+          : `${change >= 0 ? "Up" : "Down"} ${Math.abs(Math.round(change))} percent compared with last month`
+      }
+    >
+      {text}
+    </Text>
+  );
+}
+
 const styles = StyleSheet.create({
+  deltaText: {
+    fontSize: Typography.sizes.xs,
+    color: "rgba(255, 255, 255, 0.9)",
+    marginTop: 2,
+  },
   container: {
     flex: 1,
   },

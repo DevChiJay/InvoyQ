@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
   View,
   Text,
@@ -38,6 +38,10 @@ import { formatCurrency } from "@/utils/formatters";
 import { STORAGE_KEYS } from "@/constants/config";
 import { HIT_SLOP } from "@/constants/colors";
 import { useKeyboardOffset } from '@/hooks/useKeyboardOffset';
+import { parseLimitError } from "@/utils/limitError";
+import { useUsage } from "@/hooks/useUsage";
+import { ExtractWithAISheet } from "@/components/invoices/ExtractWithAISheet";
+import type { InvoicePrefill } from "@/types/extraction";
 
 // Validation schema
 const invoiceSchema = z.object({
@@ -112,6 +116,11 @@ export default function CreateInvoiceScreen() {
   const createClient = useCreateClient();
   const createProduct = useCreateProduct();
   const { data: productsData } = useProducts();
+  const { data: usage } = useUsage();
+  const invoicesLeft =
+    usage && usage.invoices.limit !== null
+      ? Math.max(usage.invoices.limit - usage.invoices.used, 0)
+      : null;
 
   // Client search state (server-side)
   const [clientSearchQuery, setClientSearchQuery] = useState("");
@@ -200,9 +209,16 @@ export default function CreateInvoiceScreen() {
     );
   }, [products, debouncedProductSearch]);
 
+  // Keep the chosen client in the options even when it isn't in the current
+  // search results, otherwise the Select falls back to its placeholder.
+  const listedClients =
+    selectedClientData && !clients.some((c) => c.id === selectedClientData.id)
+      ? [selectedClientData, ...clients]
+      : clients;
+
   const clientOptions: SelectOption[] = [
     { label: "+ Create New Client", value: "__create_new__" },
-    ...clients.map((client) => ({
+    ...listedClients.map((client) => ({
       label: client.name,
       value: client.id,
     })),
@@ -231,6 +247,106 @@ export default function CreateInvoiceScreen() {
       const found = clients.find((c) => c.id === value);
       if (found) setSelectedClientData(found);
     }
+  };
+
+  // --- AI extraction prefill -------------------------------------------------
+  const [showExtractSheet, setShowExtractSheet] = useState(false);
+  const [aiInfo, setAiInfo] = useState<{
+    confidence: number;
+    needsReview: string[];
+    currencyNote?: string;
+  } | null>(null);
+  // Extracted client waiting for the server search to come back, then either
+  // matched to an existing client or offered as a "create client" suggestion.
+  const [pendingClient, setPendingClient] = useState<
+    InvoicePrefill["client"] | null
+  >(null);
+  const [clientSuggestion, setClientSuggestion] = useState<
+    InvoicePrefill["client"] | null
+  >(null);
+  const matchQuery = pendingClient?.name ?? pendingClient?.email ?? "";
+  const { data: matchData, isFetching: isMatchingClient } =
+    useClientSearch(matchQuery);
+
+  useEffect(() => {
+    if (!pendingClient || !matchQuery || isMatchingClient || !matchData) return;
+    const name = pendingClient.name?.toLowerCase();
+    const email = pendingClient.email?.toLowerCase();
+    // Same rule as the web form: exact, case-insensitive name or email.
+    const match = matchData.find(
+      (c) =>
+        (name && c.name.toLowerCase() === name) ||
+        (email && c.email?.toLowerCase() === email),
+    );
+    if (match) {
+      handleChange("client_id", match.id);
+      setSelectedClientData(match);
+      setClientSuggestion(null);
+    } else {
+      setClientSuggestion(pendingClient);
+    }
+    setPendingClient(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendingClient, matchQuery, isMatchingClient, matchData]);
+
+  const handleExtracted = (prefill: InvoicePrefill) => {
+    setShowExtractSheet(false);
+
+    const supportedCurrency = currencyOptions.some(
+      (option) => option.value === prefill.currency,
+    );
+    setAiInfo({
+      confidence: prefill.confidence,
+      needsReview: prefill.needsReview,
+      currencyNote:
+        prefill.currency && !supportedCurrency
+          ? `Currency ${prefill.currency} isn't available here. Check the currency before saving.`
+          : undefined,
+    });
+
+    setFormData((prev) => ({
+      ...prev,
+      due_date: prefill.dueDate ?? prev.due_date,
+      currency:
+        prefill.currency && supportedCurrency ? prefill.currency : prev.currency,
+      // Never overwrite notes the user already typed.
+      notes: prev.notes.trim() ? prev.notes : (prefill.notes ?? prev.notes),
+    }));
+
+    if (prefill.items.length > 0) {
+      const stamp = Date.now();
+      setLineItems((prev) => [
+        ...prev,
+        ...prefill.items.map(
+          (item, index): CustomItem => ({
+            id: `${stamp}-${index}`,
+            description: item.description,
+            quantity: String(item.quantity),
+            unit_price: String(item.unitPrice),
+            tax_rate: "0",
+            amount: item.quantity * item.unitPrice,
+          }),
+        ),
+      ]);
+    }
+
+    // Leave a client the user already picked alone.
+    if (!formData.client_id && (prefill.client.name || prefill.client.email)) {
+      setClientSuggestion(null);
+      setPendingClient(prefill.client);
+    }
+  };
+
+  const handleCreateSuggestedClient = () => {
+    if (!clientSuggestion) return;
+    setNewClient({
+      name: clientSuggestion.name ?? "",
+      email: clientSuggestion.email ?? "",
+      phone: "",
+      address: clientSuggestion.address ?? "",
+    });
+    setClientSuggestion(null);
+    setShowCreateClientModal(true);
   };
 
   const handleCreateClient = async () => {
@@ -592,7 +708,13 @@ export default function CreateInvoiceScreen() {
         });
         setErrors(fieldErrors);
       } else {
-        Alert.alert("Error", error.message || "Failed to create invoice");
+        const limit = parseLimitError(error);
+        if (limit) {
+          // Backend message already explains the cap and when it resets.
+          Alert.alert("Invoice limit reached", limit.message);
+        } else {
+          Alert.alert("Error", error.message || "Failed to create invoice");
+        }
       }
     }
   };
@@ -613,6 +735,65 @@ export default function CreateInvoiceScreen() {
           contentContainerStyle={styles.contentContainer}
           keyboardShouldPersistTaps="handled"
         >
+          {/* AI extraction */}
+          <Button
+            title="Extract with AI"
+            onPress={() => setShowExtractSheet(true)}
+            variant="outline"
+            style={styles.section}
+            accessibilityLabel="Extract invoice details with AI from text or a screenshot"
+            icon={
+              <Ionicons name="sparkles" size={18} color={colors.primaryText} />
+            }
+          />
+
+          {aiInfo && (
+            <Card variant="outlined" style={styles.section}>
+              <View style={styles.aiHeader}>
+                <Text style={[styles.aiTitle, { color: colors.text }]}>
+                  AI filled this in ({aiInfo.confidence}% confidence)
+                </Text>
+                <TouchableOpacity
+                  hitSlop={HIT_SLOP}
+                  accessibilityRole="button"
+                  accessibilityLabel="Dismiss AI summary"
+                  onPress={() => setAiInfo(null)}
+                >
+                  <Ionicons name="close" size={20} color={colors.textTertiary} />
+                </TouchableOpacity>
+              </View>
+              <Text style={[styles.aiText, { color: colors.textSecondary }]}>
+                Check every field before you save.
+              </Text>
+              {aiInfo.needsReview.length > 0 && (
+                <Text style={[styles.aiText, { color: colors.warningText }]}>
+                  Check the price on: {aiInfo.needsReview.join(", ")}
+                </Text>
+              )}
+              {aiInfo.currencyNote && (
+                <Text style={[styles.aiText, { color: colors.warningText }]}>
+                  {aiInfo.currencyNote}
+                </Text>
+              )}
+            </Card>
+          )}
+
+          {clientSuggestion && !formData.client_id && (
+            <Card variant="outlined" style={styles.section}>
+              <Text style={[styles.aiText, { color: colors.text }]}>
+                {clientSuggestion.name ?? clientSuggestion.email} isn't in your
+                clients yet.
+              </Text>
+              <Button
+                title="Create client"
+                size="sm"
+                variant="outline"
+                onPress={handleCreateSuggestedClient}
+                style={styles.aiAction}
+              />
+            </Card>
+          )}
+
           {/* Client Selection */}
           <Card style={styles.section}>
             <Text style={[styles.sectionTitle, { color: colors.text }]}>
@@ -972,8 +1153,27 @@ export default function CreateInvoiceScreen() {
               </View>
             </Card>
           )}
+
+          {invoicesLeft !== null && (
+            <Text
+              style={[
+                styles.limitHint,
+                { color: invoicesLeft === 0 ? colors.errorText : colors.textTertiary },
+              ]}
+            >
+              {invoicesLeft === 0
+                ? "You've used all your free invoices this month."
+                : `${invoicesLeft} free ${invoicesLeft === 1 ? "invoice" : "invoices"} left this month.`}
+            </Text>
+          )}
         </ScrollView>
       </KeyboardAvoidingView>
+
+      <ExtractWithAISheet
+        visible={showExtractSheet}
+        onClose={() => setShowExtractSheet(false)}
+        onExtracted={handleExtracted}
+      />
 
       {/* Footer Buttons */}
       <View
@@ -1619,6 +1819,31 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "600",
     marginBottom: 16,
+  },
+  aiHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 4,
+  },
+  aiTitle: {
+    fontSize: 15,
+    fontWeight: "600",
+    flex: 1,
+    marginRight: 8,
+  },
+  aiText: {
+    fontSize: 14,
+    marginTop: 4,
+  },
+  aiAction: {
+    alignSelf: "flex-start",
+    marginTop: 8,
+  },
+  limitHint: {
+    fontSize: 12,
+    textAlign: "center",
+    marginTop: 4,
   },
   clientPreview: {
     marginTop: 12,

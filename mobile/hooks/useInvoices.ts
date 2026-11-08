@@ -12,6 +12,7 @@ import {
   InvoiceStatsParams,
 } from "@/types/invoice";
 import { PRODUCT_KEYS } from "./useProducts";
+import { USAGE_KEYS } from "./useUsage";
 
 const PAGE_SIZE = 50;
 
@@ -70,6 +71,11 @@ export function useCreateInvoice() {
       queryClient.invalidateQueries({ queryKey: INVOICE_KEYS.all });
       // Also invalidate products if product_items were used
       queryClient.invalidateQueries({ queryKey: PRODUCT_KEYS.all });
+    },
+    // Success or failure, refresh usage: the server refunds a failed create, so
+    // refetching keeps the displayed allowance honest.
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: USAGE_KEYS.all });
     },
   });
 }

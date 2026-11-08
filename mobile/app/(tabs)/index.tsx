@@ -8,14 +8,30 @@ import {
   Animated,
   Platform,
   StatusBar,
+  RefreshControl,
 } from "react-native";
 import { useState, useRef } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { LinearGradient } from "expo-linear-gradient";
 import { useAuth } from "@/hooks/useAuth";
-import { useInvoices, useInvoiceStats } from "@/hooks/useInvoices";
-import { useExpenses, useExpenseSummary } from "@/hooks/useExpenses";
-import { useProducts, useProductStats } from "@/hooks/useProducts";
-import { useClients, useClientStats } from "@/hooks/useClients";
+import {
+  useInvoices,
+  useInvoiceStats,
+  INVOICE_KEYS,
+} from "@/hooks/useInvoices";
+import {
+  useExpenses,
+  useExpenseSummary,
+  EXPENSE_KEYS,
+} from "@/hooks/useExpenses";
+import {
+  useProducts,
+  useProductStats,
+  PRODUCT_KEYS,
+} from "@/hooks/useProducts";
+import { useClients, useClientStats, CLIENT_KEYS } from "@/hooks/useClients";
+import { USAGE_KEYS } from "@/hooks/useUsage";
+import { UsageCard } from "@/components/ui/UsageCard";
 import { formatCurrency, formatDate } from "@/utils/formatters";
 import { router, useNavigation } from "expo-router";
 import { useTheme } from "@/hooks/useTheme";
@@ -39,6 +55,27 @@ export default function DashboardScreen() {
   const insets = useSafeAreaInsets();
   const { contentBottom } = useTabBarInset();
   const scrollY = useRef(new Animated.Value(0)).current;
+  const queryClient = useQueryClient();
+  const [refreshing, setRefreshing] = useState(false);
+
+  // Pull-to-refresh: every dashboard query lives under one of these prefix keys,
+  // so refetching them re-pulls all the cards and recent lists (no new endpoint needed).
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await Promise.all(
+        [
+          INVOICE_KEYS.all,
+          EXPENSE_KEYS.all,
+          PRODUCT_KEYS.all,
+          CLIENT_KEYS.all,
+          USAGE_KEYS.all,
+        ].map((queryKey) => queryClient.refetchQueries({ queryKey })),
+      );
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   // Fetch accurate stats from dedicated endpoints
   const { data: statsData, isLoading: statsLoading } = useInvoiceStats();
@@ -137,6 +174,15 @@ export default function DashboardScreen() {
           { useNativeDriver: false },
         )}
         scrollEventThrottle={16}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            colors={[colors.primary]}
+            tintColor={colors.primary}
+            progressViewOffset={insets.top + 44}
+          />
+        }
       >
         {/* Header */}
         <View style={styles.header}>
@@ -331,6 +377,9 @@ export default function DashboardScreen() {
             </View>
           </LinearGradient>
         </View>
+
+        {/* Plan usage (hidden on Pro) */}
+        <UsageCard style={styles.usageCard} />
 
         {/* Monthly Stats Card */}
         <TouchableOpacity
@@ -687,6 +736,10 @@ const styles = StyleSheet.create({
   quickStatLabel: {
     fontSize: Typography.sizes.xs,
     marginTop: 2,
+  },
+  usageCard: {
+    marginHorizontal: Spacing.lg,
+    marginTop: Spacing.lg,
   },
   monthlyStatsContainer: {
     paddingHorizontal: Spacing.lg,
