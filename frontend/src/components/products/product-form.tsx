@@ -228,7 +228,7 @@ export function ProductForm({ product, onSubmit, isSubmitting }: ProductFormProp
                     className="font-mono"
                   />
                 </FormControl>
-                <FormDescription>Decimal as string</FormDescription>
+                <FormDescription>Price for one unit, e.g. 2500.00</FormDescription>
                 <FormMessage />
               </FormItem>
             )}

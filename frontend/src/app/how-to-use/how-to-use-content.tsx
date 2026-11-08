@@ -47,6 +47,7 @@ import {
 import Link from "next/link";
 import { useAuthStore } from "@/stores/auth-store";
 import Image from "next/image";
+import { FREE_EXTRACTIONS_PER_MONTH } from "@/constants/plans";
 
 import Signup from "../../../public/screenshots/signup-form.png";
 import Dashboard from "../../../public/screenshots/dashboard-overview.png";
@@ -56,6 +57,7 @@ import NewProduct from "../../../public/screenshots/new-product.png";
 import ProductList from "../../../public/screenshots/products-list.png";
 import ClientsList from "../../../public/screenshots/clients-list.png";
 import ExpenseDetail from "../../../public/screenshots/expense-detail.png";
+import ExtractReview from "../../../public/screenshots/extract-review.png";
 
 export default function HowToUseContent() {
   const { user } = useAuthStore();
@@ -188,7 +190,7 @@ export default function HowToUseContent() {
                           <div>
                             <p className="font-medium">AI Invoice Extraction</p>
                             <p className="text-sm text-muted-foreground">
-                              Upload and extract invoice data automatically
+                              Paste a chat and get a drafted invoice
                             </p>
                           </div>
                         </div>
@@ -294,7 +296,7 @@ export default function HowToUseContent() {
                       alt="The InvoyQ sign-up form"
                       width={1100}
                       sizes="(min-width: 1024px) 880px, 100vw"
-                      height={625}
+                      height={739}
                     />
 
                     <Separator />
@@ -427,7 +429,7 @@ export default function HowToUseContent() {
                       alt="The InvoyQ dashboard with revenue, invoice and client totals"
                       width={1100}
                       sizes="(min-width: 1024px) 880px, 100vw"
-                      height={625}
+                      height={739}
                     />
 
                     <Separator />
@@ -619,7 +621,7 @@ export default function HowToUseContent() {
                         <Button asChild variant="outline">
                           <Link href="/dashboard/extract">
                             <Upload className="mr-2 h-4 w-4" />
-                            Extract Invoice
+                            Extract from chat
                           </Link>
                         </Button>
                         <Button asChild variant="outline">
@@ -789,7 +791,7 @@ export default function HowToUseContent() {
                       alt="Creating a new invoice: client, dates and line items"
                       width={1100}
                       sizes="(min-width: 1024px) 880px, 100vw"
-                      height={625}
+                      height={739}
                     />
 
                     <Separator />
@@ -868,36 +870,45 @@ export default function HowToUseContent() {
                         AI Invoice Extraction
                       </h3>
                       <p className="text-muted-foreground mb-4">
-                        InvoyQ's AI-powered feature can extract data from
-                        uploaded invoice images or PDFs:
+                        Paste a WhatsApp or email conversation, or add a
+                        screenshot of it, and InvoyQ drafts the invoice for
+                        you:
                       </p>
                       <ol className="space-y-3 list-decimal list-inside text-muted-foreground">
                         <li className="pl-2">
                           <span className="font-medium text-foreground">
-                            Click "Extract Invoice"
+                            Click "Extract from chat"
                           </span>{" "}
-                          from the dashboard or invoices page
+                          in the sidebar or on the dashboard
                         </li>
                         <li className="pl-2">
                           <span className="font-medium text-foreground">
-                            Upload an invoice
+                            Paste the conversation
                           </span>{" "}
-                          image (PNG, JPG) or PDF file
+                          into the box, or add a screenshot (PNG or JPG)
                         </li>
                         <li className="pl-2">
                           <span className="font-medium text-foreground">
-                            AI processes the document
+                            The AI drafts the invoice
                           </span>{" "}
-                          and extracts key information (dates, amounts, line
-                          items)
+                          with the client, line items, amounts and due date
                         </li>
                         <li className="pl-2">
                           <span className="font-medium text-foreground">
                             Review and save
                           </span>{" "}
-                          the extracted data into your system
+                          the draft. Fields the AI filled in are marked, and
+                          nothing is saved until you check them
                         </li>
                       </ol>
+                      <Image
+                        className="mt-4 rounded-xl border bg-card shadow-frame"
+                        src={ExtractReview}
+                        alt="The review screen after extraction: the client, due date and currency the AI filled in are marked AI"
+                        width={1100}
+                        sizes="(min-width: 1024px) 880px, 100vw"
+                        height={739}
+                      />
                       <div className="mt-4 p-4 rounded-lg bg-accent border border-primary/20">
                         <div className="flex items-start gap-3">
                           <Zap className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
@@ -906,9 +917,9 @@ export default function HowToUseContent() {
                               Pro Tip
                             </p>
                             <p className="text-sm text-muted-foreground mt-1">
-                              The AI extraction feature saves hours of manual
-                              data entry and reduces errors when importing
-                              invoices from suppliers or clients
+                              Extraction saves you retyping what a client already
+                              told you in a chat. Free accounts get{" "}
+                              {FREE_EXTRACTIONS_PER_MONTH} extractions a month
                             </p>
                           </div>
                         </div>
@@ -922,7 +933,7 @@ export default function HowToUseContent() {
                       alt="An invoice detail page with download and print options"
                       width={1100}
                       sizes="(min-width: 1024px) 880px, 100vw"
-                      height={625}
+                      height={739}
                     />
 
                     <div className="pt-4">
@@ -1085,7 +1096,7 @@ export default function HowToUseContent() {
                       alt="The new product form with price, stock and category"
                       width={1100}
                       sizes="(min-width: 1024px) 880px, 100vw"
-                      height={625}
+                      height={739}
                     />
 
                     <Separator />
@@ -1285,7 +1296,7 @@ export default function HowToUseContent() {
                       alt="The product list with prices and stock levels"
                       width={1100}
                       sizes="(min-width: 1024px) 880px, 100vw"
-                      height={625}
+                      height={739}
                     />
 
                     <div className="pt-4">
@@ -1540,7 +1551,7 @@ export default function HowToUseContent() {
                       alt="The client list with contact details"
                       width={1100}
                       sizes="(min-width: 1024px) 880px, 100vw"
-                      height={625}
+                      height={739}
                     />
 
                     <div className="pt-4">
@@ -1799,7 +1810,7 @@ export default function HowToUseContent() {
                       alt="An expense detail page"
                       width={1100}
                       sizes="(min-width: 1024px) 880px, 100vw"
-                      height={625}
+                      height={739}
                     />
 
                     <div className="pt-4">
