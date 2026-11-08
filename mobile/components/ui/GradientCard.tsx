@@ -1,11 +1,11 @@
-import { View, StyleSheet, ViewStyle } from "react-native";
+import { View, StyleSheet, StyleProp, ViewStyle } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { BorderRadius, Shadows, Spacing } from "@/constants/colors";
 
 interface GradientCardProps {
   children: React.ReactNode;
   colors: [string, string, ...string[]];
-  style?: ViewStyle;
+  style?: StyleProp<ViewStyle>;
   shadowColor?: string;
 }
 

@@ -12,16 +12,18 @@ interface BadgeProps {
 export function Badge({ label, variant = 'default', size = 'md' }: BadgeProps) {
   const { colors } = useTheme();
 
+  // Text uses the `*Text` tokens: the plain status colours are too light on
+  // their tinted backgrounds to meet WCAG AA.
   const getVariantColors = () => {
     switch (variant) {
       case 'success':
-        return { bg: colors.successLight, text: colors.success };
+        return { bg: colors.successLight, text: colors.successText };
       case 'warning':
-        return { bg: colors.warningLight, text: colors.warning };
+        return { bg: colors.warningLight, text: colors.warningText };
       case 'error':
-        return { bg: colors.errorLight, text: colors.error };
+        return { bg: colors.errorLight, text: colors.errorText };
       case 'info':
-        return { bg: colors.infoLight, text: colors.info };
+        return { bg: colors.infoLight, text: colors.infoText };
       default:
         return { bg: colors.borderLight, text: colors.textSecondary };
     }
@@ -43,6 +45,7 @@ export function Badge({ label, variant = 'default', size = 'md' }: BadgeProps) {
           { color: variantColors.text },
           size === 'sm' && styles.textSm,
         ]}
+        maxFontSizeMultiplier={1.3}
       >
         {label}
       </Text>
@@ -63,7 +66,7 @@ const styles = StyleSheet.create({
   },
   text: {
     fontSize: Typography.sizes.sm,
-    fontWeight: Typography.weights.medium,
+    fontWeight: Typography.weights.semibold,
   },
   textSm: {
     fontSize: Typography.sizes.xs,

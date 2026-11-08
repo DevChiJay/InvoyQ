@@ -4,6 +4,7 @@ import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/dat
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/hooks/useTheme';
 import { formatDate } from '@/utils/formatters';
+import { BorderRadius, Spacing } from '@/constants/colors';
 
 interface DatePickerProps {
   value?: Date;
@@ -20,7 +21,7 @@ export function DatePicker({
   error,
   placeholder = 'Select date',
 }: DatePickerProps) {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const [show, setShow] = useState(false);
 
   const handleChange = (event: DateTimePickerEvent, selectedDate?: Date) => {
@@ -31,11 +32,9 @@ export function DatePicker({
     }
     
     if (event.type === 'set' && selectedDate) {
+      // The iOS spinner reports every wheel tick as 'set'; keep it open and let
+      // the "Done" button below close it.
       onChange(selectedDate);
-      // Close picker on iOS after confirmation
-      if (Platform.OS === 'ios') {
-        setShow(false);
-      }
     } else if (event.type === 'dismissed') {
       // User cancelled, close picker
       setShow(false);
@@ -52,11 +51,14 @@ export function DatePicker({
         style={[
           styles.button,
           {
-            backgroundColor: colors.surface,
+            backgroundColor: colors.inputBackground,
             borderColor: error ? colors.error : colors.border,
           },
         ]}
         onPress={() => setShow(true)}
+        accessibilityRole="button"
+        accessibilityLabel={value ? `Date, ${displayValue}` : placeholder}
+        accessibilityHint="Opens the date picker"
       >
         <Ionicons
           name="calendar-outline"
@@ -79,8 +81,20 @@ export function DatePicker({
           value={value || new Date()}
           mode={mode}
           display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+          themeVariant={isDark ? 'dark' : 'light'}
+          accentColor={colors.primary}
           onChange={handleChange}
         />
+      )}
+      {show && Platform.OS === 'ios' && (
+        <TouchableOpacity
+          onPress={() => setShow(false)}
+          style={styles.doneButton}
+          accessibilityRole="button"
+          accessibilityLabel="Done"
+        >
+          <Text style={[styles.doneText, { color: colors.primaryText }]}>Done</Text>
+        </TouchableOpacity>
       )}
     </View>
   );
@@ -88,15 +102,25 @@ export function DatePicker({
 
 const styles = StyleSheet.create({
   button: {
-    height: 48,
+    minHeight: 48,
     borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 16,
+    borderRadius: BorderRadius.md,
+    paddingHorizontal: Spacing.md,
     flexDirection: 'row',
     alignItems: 'center',
   },
   icon: {
     marginRight: 8,
+  },
+  doneButton: {
+    alignSelf: 'flex-end',
+    minHeight: 44,
+    justifyContent: 'center',
+    paddingHorizontal: Spacing.md,
+  },
+  doneText: {
+    fontSize: 16,
+    fontWeight: '600',
   },
   text: {
     fontSize: 16,

@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet, Animated } from 'react-native';
+import { View, StyleSheet, Animated, AccessibilityInfo, StyleProp, ViewStyle } from 'react-native';
 import { useTheme } from '@/hooks/useTheme';
 import { Spacing } from '@/constants/colors';
 import { useEffect, useRef } from 'react';
@@ -7,14 +7,20 @@ import { useEffect, useRef } from 'react';
 interface SkeletonCardProps {
   height?: number;
   marginBottom?: number;
+  style?: StyleProp<ViewStyle>;
 }
 
-export function SkeletonCard({ height = 120, marginBottom = Spacing.md }: SkeletonCardProps) {
+export function SkeletonCard({ height = 120, marginBottom = Spacing.md, style }: SkeletonCardProps) {
   const { colors } = useTheme();
   const shimmerAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    const shimmer = Animated.loop(
+    let shimmer: Animated.CompositeAnimation | undefined;
+    let cancelled = false;
+    // Respect the system "Reduce Motion" setting: show a static placeholder.
+    AccessibilityInfo.isReduceMotionEnabled().then((reduce) => {
+      if (cancelled || reduce) return;
+      shimmer = Animated.loop(
       Animated.sequence([
         Animated.timing(shimmerAnim, {
           toValue: 1,
@@ -28,9 +34,13 @@ export function SkeletonCard({ height = 120, marginBottom = Spacing.md }: Skelet
         }),
       ])
     );
-    shimmer.start();
+      shimmer.start();
+    });
 
-    return () => shimmer.stop();
+    return () => {
+      cancelled = true;
+      shimmer?.stop();
+    };
   }, []);
 
   const opacity = shimmerAnim.interpolate({
@@ -48,6 +58,7 @@ export function SkeletonCard({ height = 120, marginBottom = Spacing.md }: Skelet
           backgroundColor: colors.border,
           opacity,
         },
+        style,
       ]}
     >
       <View style={styles.content}>
