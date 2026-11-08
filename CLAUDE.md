@@ -21,7 +21,7 @@ uvicorn app.main:app --reload          # API on :8000, docs at /docs
 pytest                                  # all tests
 pytest tests/test_auth.py::test_name    # single test
 ```
-Tests hit a real MongoDB at `mongodb://localhost:27017` (db `invoiq_test`, see `tests/conftest.py`) — they are not mocked.
+Tests hit a real MongoDB at `mongodb://localhost:27017` (db `invoiq_test`, see `tests/conftest.py`) — they are not mocked. They need `pytest-asyncio` (in `requirements.txt`; `pytest.ini` sets auto mode). Some older expense/product/auth tests were already failing before the plan-limit work.
 
 Frontend (from `frontend/`): `npm run dev`, `npm run build`, `npm run lint`. There is no test script (the root README's `npm test` does not exist). API base URL is `NEXT_PUBLIC_API_URL` (default `http://localhost:8000`).
 
@@ -39,7 +39,10 @@ Layering: `app/api/v1/*` (routers) → `app/repositories/*` (Mongo access) → `
 - **Other services**: `email.py` (SMTP, verification/reminders), `paystack.py` / `stripe.py` (payments & subscriptions), `storage.py` (local or remote file storage via `STORAGE_PROVIDER`).
 - `core/rate_limiter.py` is an in-memory per-IP limiter — single-instance only.
 - CORS is `*` unless `ENV=production`, in which case only `invoyq.com` origins are allowed.
-- Admin endpoints live under `api/v1/admin/`; the frontend has matching `/admin` routes.
+- Admin endpoints live under `api/v1/admin/`; the frontend has matching `/admin` routes. Granting Pro there (single or `POST /bulk-pro`, or `backend/scripts/grant_pro.py`, dry-run by default) writes the same subscription fields a paid plan would, with an optional end date.
+- **Plan limits** (`services/plans.py`): Free = `FREE_INVOICES_PER_MONTH` (100) and `FREE_EXTRACTIONS_PER_MONTH` (10) per calendar month (UTC). Usage is an atomic counter in the `usage` collection, one document per user and month, refunded if the operation fails; it is not a recount, so deleting invoices does not hand the allowance back. `is_pro_active()` treats a subscription past its `subscription_end_date` as Free. `/extract-job-details` requires sign-in. `GET /v1/usage` reports usage and limits; limit hits are HTTP 403 `{code: "limit_reached", message, ...}`.
+- **Payments are not connected**: `api/v1/payments.py` still imports the old SQLAlchemy modules and is not included in `main.py`, so every `/v1/payments/*` call 404s. `PAYMENTS_ENABLED` stays false until it is rebuilt on Motor.
+- `GET /v1/stats/trend` (charts) and `status_counts` on `/v1/stats/monthly` back the stats page.
 - List endpoints for invoices/clients are capped at 500 items per response.
 
 ## Frontend architecture
