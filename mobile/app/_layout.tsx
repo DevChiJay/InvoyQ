@@ -17,10 +17,13 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { OfflineBanner } from "@/components/ui/OfflineBanner";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { analytics } from "@/utils/analytics";
+import { useTheme } from "@/hooks/useTheme";
+import { BorderRadius, MIN_TOUCH_TARGET } from "@/constants/colors";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import NetInfo from "@react-native-community/netinfo";
 
 export default function RootLayout() {
+  const { colors, isDark } = useTheme();
   const [isReady, setIsReady] = useState(false);
   const [hasToken, setHasToken] = useState(false);
   const [hasSeenOnboarding, setHasSeenOnboarding] = useState(false);
@@ -112,7 +115,7 @@ export default function RootLayout() {
             flex: 1,
             justifyContent: "center",
             alignItems: "center",
-            backgroundColor: "#F8FAFC",
+            backgroundColor: colors.background,
             padding: 20,
           }}
         >
@@ -120,7 +123,7 @@ export default function RootLayout() {
             style={{
               fontSize: 18,
               fontWeight: "600",
-              color: "#1F2937",
+              color: colors.text,
               marginBottom: 8,
               textAlign: "center",
             }}
@@ -130,7 +133,7 @@ export default function RootLayout() {
           <Text
             style={{
               fontSize: 14,
-              color: "#6B7280",
+              color: colors.textSecondary,
               marginBottom: 24,
               textAlign: "center",
             }}
@@ -140,14 +143,17 @@ export default function RootLayout() {
           </Text>
           <TouchableOpacity
             onPress={handleRetry}
+            accessibilityRole="button"
+            accessibilityLabel="Retry"
             style={{
-              backgroundColor: "#6366F1",
+              backgroundColor: colors.primary,
               paddingHorizontal: 24,
-              paddingVertical: 12,
-              borderRadius: 8,
+              minHeight: MIN_TOUCH_TARGET,
+              justifyContent: "center",
+              borderRadius: BorderRadius.md,
             }}
           >
-            <Text style={{ color: "#FFFFFF", fontWeight: "600" }}>Retry</Text>
+            <Text style={{ color: colors.onPrimary, fontWeight: "600" }}>Retry</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaProvider>
@@ -157,7 +163,7 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <StatusBar
-        style="dark"
+        style={isDark ? "light" : "dark"}
         translucent={Platform.OS === "android"}
         backgroundColor="transparent"
       />
@@ -168,10 +174,10 @@ export default function RootLayout() {
             flex: 1,
             justifyContent: "center",
             alignItems: "center",
-            backgroundColor: "#F8FAFC",
+            backgroundColor: colors.background,
           }}
         >
-          <ActivityIndicator size="large" color="#6366F1" />
+          <ActivityIndicator size="large" color={colors.primary} />
         </View>
       ) : (
         <ErrorBoundary>

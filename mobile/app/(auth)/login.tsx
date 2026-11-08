@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import {
   View,
   Text,
@@ -9,21 +9,20 @@ import {
   Platform,
   ScrollView,
   Alert,
-  Image,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "@/hooks/useAuth";
 import { router } from "expo-router";
 import { useTheme } from "@/hooks/useTheme";
 import { Button } from "@/components/ui/Button";
-import { Card } from "@/components/ui/Card";
-import { Spacing, BorderRadius } from "@/constants/colors";
+import { Logo } from "@/components/ui/Logo";
+import { AuthField } from "@/components/auth/AuthField";
+import { Spacing, BorderRadius, HIT_SLOP } from "@/constants/colors";
 import { Typography } from "@/constants/typography";
 
 export default function LoginScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
+  const passwordRef = useRef<TextInput>(null);
   const { login, isLoggingIn, loginError } = useAuth();
   const { colors } = useTheme();
 
@@ -37,7 +36,7 @@ export default function LoginScreen() {
 
   return (
     <KeyboardAvoidingView
-      style={[styles.container]}
+      style={[styles.container, { backgroundColor: colors.background }]}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
       <ScrollView
@@ -45,105 +44,72 @@ export default function LoginScreen() {
         keyboardShouldPersistTaps="handled"
       >
         <View style={styles.logoContainer}>
-          <Image
-            source={require("@/assets/logo.png")}
-            style={styles.logo}
-            resizeMode="contain"
-          />
+          <Logo />
         </View>
 
         <View style={styles.header}>
-          <Text style={[styles.subtitle]}>Sign in to your account</Text>
+          <Text
+            style={[styles.subtitle, { color: colors.textSecondary }]}
+            accessibilityRole="header"
+          >
+            Sign in to your account
+          </Text>
         </View>
 
         <View style={styles.formContainer}>
-          <View style={styles.inputGroup}>
-            <Text style={[styles.label]}>Email</Text>
-            <View style={styles.inputWrapper}>
-              <Ionicons
-                name="mail-outline"
-                size={20}
-                color="rgba(107, 114, 128, 0.7)"
-                style={styles.inputIcon}
-              />
-              <TextInput
-                style={[
-                  styles.input,
-                  styles.inputWithIcon,
-                  {
-                    backgroundColor: "rgba(255, 255, 255, 0.95)",
-                    borderColor: "rgba(255, 255, 255, 0.3)",
-                    color: "#1F2937",
-                  },
-                ]}
-                placeholder="you@example.com"
-                placeholderTextColor="rgba(107, 114, 128, 0.7)"
-                value={email}
-                onChangeText={setEmail}
-                keyboardType="email-address"
-                autoCapitalize="none"
-                autoCorrect={false}
-              />
-            </View>
-          </View>
+          <AuthField
+            label="Email"
+            icon="mail-outline"
+            placeholder="you@example.com"
+            value={email}
+            onChangeText={setEmail}
+            keyboardType="email-address"
+            autoCapitalize="none"
+            autoCorrect={false}
+            autoComplete="email"
+            textContentType="username"
+            returnKeyType="next"
+            onSubmitEditing={() => passwordRef.current?.focus()}
+          />
 
-          <View style={styles.inputGroup}>
-            <View style={styles.passwordHeader}>
-              <Text style={[styles.label]}>Password</Text>
+          <AuthField
+            label="Password"
+            icon="lock-closed-outline"
+            password
+            placeholder="••••••••"
+            value={password}
+            onChangeText={setPassword}
+            autoCapitalize="none"
+            autoComplete="current-password"
+            textContentType="password"
+            returnKeyType="go"
+            onSubmitEditing={handleLogin}
+            ref={passwordRef}
+            labelAccessory={
               <TouchableOpacity
                 onPress={() => router.push("/(auth)/forgot-password")}
+                hitSlop={HIT_SLOP}
+                accessibilityRole="link"
+                accessibilityLabel="Forgot password"
               >
-                <Text style={[styles.forgotPasswordLink]}>
+                <Text
+                  style={[styles.forgotPasswordLink, { color: colors.primaryText }]}
+                >
                   Forgot Password?
                 </Text>
               </TouchableOpacity>
-            </View>
-            <View style={styles.inputWrapper}>
-              <Ionicons
-                name="lock-closed-outline"
-                size={20}
-                color="rgba(107, 114, 128, 0.7)"
-                style={styles.inputIcon}
-              />
-              <TextInput
-                style={[
-                  styles.input,
-                  styles.inputWithIcon,
-                  styles.inputWithRightIcon,
-                  {
-                    backgroundColor: "rgba(255, 255, 255, 0.95)",
-                    borderColor: "rgba(255, 255, 255, 0.3)",
-                    color: "#1F2937",
-                  },
-                ]}
-                placeholder="••••••••"
-                placeholderTextColor="rgba(107, 114, 128, 0.7)"
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry={!showPassword}
-                autoCapitalize="none"
-              />
-              <TouchableOpacity
-                onPress={() => setShowPassword(!showPassword)}
-                style={styles.eyeIcon}
-              >
-                <Ionicons
-                  name={showPassword ? "eye-off-outline" : "eye-outline"}
-                  size={20}
-                  color="rgba(107, 114, 128, 0.7)"
-                />
-              </TouchableOpacity>
-            </View>
-          </View>
+            }
+          />
 
           {loginError && (
             <View
+              accessibilityRole="alert"
               style={[
                 styles.errorContainer,
                 { backgroundColor: colors.errorLight },
               ]}
             >
-              <Text style={[styles.errorText, { color: colors.error }]}>
+              <Text style={[styles.errorText, { color: colors.errorText }]}>
                 Invalid email or password
               </Text>
             </View>
@@ -162,10 +128,14 @@ export default function LoginScreen() {
           <TouchableOpacity
             onPress={() => router.push("/(auth)/register")}
             style={styles.linkContainer}
+            accessibilityRole="link"
+            accessibilityLabel="Don't have an account? Sign up"
           >
-            <Text style={[styles.linkText]}>
+            <Text style={[styles.linkText, { color: colors.textSecondary }]}>
               Don't have an account?{" "}
-              <Text style={{ fontWeight: "600" }}>Sign Up</Text>
+              <Text style={{ fontWeight: "600", color: colors.primaryText }}>
+                Sign Up
+              </Text>
             </Text>
           </TouchableOpacity>
         </View>
@@ -177,7 +147,6 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#6366F120", // Warm orange background
   },
   scrollContent: {
     flexGrow: 1,
@@ -188,76 +157,20 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: Spacing.xl,
   },
-  logo: {
-    width: 180,
-    height: 54,
-  },
   header: {
     marginBottom: Spacing.xl,
     alignItems: "center",
   },
-  title: {
-    fontSize: Typography.sizes["2xl"],
-    fontWeight: Typography.weights.bold,
-    marginBottom: Spacing.xs,
-    color: "#fff",
-  },
   subtitle: {
     fontSize: Typography.sizes.md,
+    textAlign: "center",
   },
   formContainer: {
     width: "100%",
   },
-  inputGroup: {
-    marginBottom: Spacing.lg,
-  },
-  inputWrapper: {
-    position: "relative",
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  inputIcon: {
-    position: "absolute",
-    left: Spacing.md,
-    zIndex: 1,
-  },
-  inputWithIcon: {
-    paddingLeft: 44,
-  },
-  inputWithRightIcon: {
-    paddingRight: 44,
-  },
-  eyeIcon: {
-    position: "absolute",
-    right: Spacing.md,
-    padding: Spacing.xs,
-  },
-  passwordHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: Spacing.xs,
-  },
   forgotPasswordLink: {
     fontSize: Typography.sizes.sm,
-    fontWeight: Typography.weights.medium,
-  },
-  label: {
-    fontSize: Typography.sizes.sm,
-    fontWeight: Typography.weights.medium,
-    marginBottom: Spacing.xs,
-  },
-  input: {
-    flex: 1,
-    borderWidth: 1,
-    borderRadius: BorderRadius.lg,
-    padding: Spacing.lg,
-    fontSize: Typography.sizes.md,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
+    fontWeight: Typography.weights.semibold,
   },
   errorContainer: {
     padding: Spacing.sm,
@@ -271,27 +184,14 @@ const styles = StyleSheet.create({
   loginButton: {
     marginTop: Spacing.md,
   },
-  dividerContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginVertical: Spacing.lg,
-  },
-  divider: {
-    flex: 1,
-    height: 1,
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
-  },
-  dividerText: {
-    marginHorizontal: Spacing.md,
-    fontSize: Typography.sizes.sm,
-    fontWeight: Typography.weights.medium,
-    color: "rgba(255, 255, 255, 0.7)",
-  },
   linkContainer: {
     marginTop: Spacing.lg,
     alignItems: "center",
+    minHeight: 44,
+    justifyContent: "center",
   },
   linkText: {
     fontSize: Typography.sizes.sm,
+    textAlign: "center",
   },
 });

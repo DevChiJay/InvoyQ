@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import {
   View,
   Text,
@@ -9,15 +9,14 @@ import {
   Platform,
   ScrollView,
   Alert,
-  Image,
   Linking,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "@/hooks/useAuth";
 import { router } from "expo-router";
 import { useTheme } from "@/hooks/useTheme";
 import { Button } from "@/components/ui/Button";
-import { Card } from "@/components/ui/Card";
+import { Logo } from "@/components/ui/Logo";
+import { AuthField } from "@/components/auth/AuthField";
 import { Spacing, BorderRadius } from "@/constants/colors";
 import { Typography } from "@/constants/typography";
 
@@ -26,8 +25,9 @@ export default function RegisterScreen() {
   const [fullName, setFullName] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const emailRef = useRef<TextInput>(null);
+  const passwordRef = useRef<TextInput>(null);
+  const confirmRef = useRef<TextInput>(null);
   const { register, isRegistering, registerError } = useAuth();
   const { colors } = useTheme();
 
@@ -66,7 +66,7 @@ export default function RegisterScreen() {
 
   return (
     <KeyboardAvoidingView
-      style={[styles.container]}
+      style={[styles.container, { backgroundColor: colors.background }]}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
       <ScrollView
@@ -74,167 +74,90 @@ export default function RegisterScreen() {
         keyboardShouldPersistTaps="handled"
       >
         <View style={styles.logoContainer}>
-          <Image
-            source={require("@/assets/logo.png")}
-            style={styles.logo}
-            resizeMode="contain"
-          />
+          <Logo />
         </View>
 
         <View style={styles.header}>
-          <Text style={[styles.title]}>Create Account</Text>
-          <Text style={[styles.subtitle]}>
+          <Text
+            style={[styles.title, { color: colors.text }]}
+            accessibilityRole="header"
+          >
+            Create Account
+          </Text>
+          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
             Join Invoyq to manage your business
           </Text>
         </View>
 
         <View style={styles.formContainer}>
-          <View style={styles.inputGroup}>
-            <Text style={[styles.label]}>Full Name</Text>
-            <View style={styles.inputWrapper}>
-              <Ionicons
-                name="person-outline"
-                size={20}
-                color="rgba(107, 114, 128, 0.7)"
-                style={styles.inputIcon}
-              />
-              <TextInput
-                style={[
-                  styles.input,
-                  styles.inputWithIcon,
-                  {
-                    backgroundColor: "rgba(255, 255, 255, 0.95)",
-                    borderColor: "rgba(255, 255, 255, 0.3)",
-                    color: "#1F2937",
-                  },
-                ]}
-                placeholder="John Doe"
-                placeholderTextColor="rgba(107, 114, 128, 0.7)"
-                value={fullName}
-                onChangeText={setFullName}
-                autoCapitalize="words"
-              />
-            </View>
-          </View>
+          <AuthField
+            label="Full Name"
+            icon="person-outline"
+            placeholder="John Doe"
+            value={fullName}
+            onChangeText={setFullName}
+            autoCapitalize="words"
+            autoComplete="name"
+            textContentType="name"
+            returnKeyType="next"
+            onSubmitEditing={() => emailRef.current?.focus()}
+          />
 
-          <View style={styles.inputGroup}>
-            <Text style={[styles.label]}>Email</Text>
-            <View style={styles.inputWrapper}>
-              <Ionicons
-                name="mail-outline"
-                size={20}
-                color="rgba(107, 114, 128, 0.7)"
-                style={styles.inputIcon}
-              />
-              <TextInput
-                style={[
-                  styles.input,
-                  styles.inputWithIcon,
-                  {
-                    backgroundColor: "rgba(255, 255, 255, 0.95)",
-                    borderColor: "rgba(255, 255, 255, 0.3)",
-                    color: "#1F2937",
-                  },
-                ]}
-                placeholder="you@example.com"
-                placeholderTextColor="rgba(107, 114, 128, 0.7)"
-                value={email}
-                onChangeText={setEmail}
-                keyboardType="email-address"
-                autoCapitalize="none"
-                autoCorrect={false}
-              />
-            </View>
-          </View>
+          <AuthField
+            label="Email"
+            icon="mail-outline"
+            placeholder="you@example.com"
+            value={email}
+            onChangeText={setEmail}
+            keyboardType="email-address"
+            autoCapitalize="none"
+            autoCorrect={false}
+            autoComplete="email"
+            textContentType="emailAddress"
+            returnKeyType="next"
+            ref={emailRef}
+            onSubmitEditing={() => passwordRef.current?.focus()}
+          />
 
-          <View style={styles.inputGroup}>
-            <Text style={[styles.label]}>Password</Text>
-            <View style={styles.inputWrapper}>
-              <Ionicons
-                name="lock-closed-outline"
-                size={20}
-                color="rgba(107, 114, 128, 0.7)"
-                style={styles.inputIcon}
-              />
-              <TextInput
-                style={[
-                  styles.input,
-                  styles.inputWithIcon,
-                  styles.inputWithRightIcon,
-                  {
-                    backgroundColor: "rgba(255, 255, 255, 0.95)",
-                    borderColor: "rgba(255, 255, 255, 0.3)",
-                    color: "#1F2937",
-                  },
-                ]}
-                placeholder="••••••••"
-                placeholderTextColor="rgba(107, 114, 128, 0.7)"
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry={!showPassword}
-                autoCapitalize="none"
-              />
-              <TouchableOpacity
-                onPress={() => setShowPassword(!showPassword)}
-                style={styles.eyeIcon}
-              >
-                <Ionicons
-                  name={showPassword ? "eye-off-outline" : "eye-outline"}
-                  size={20}
-                  color="rgba(107, 114, 128, 0.7)"
-                />
-              </TouchableOpacity>
-            </View>
-          </View>
+          <AuthField
+            label="Password"
+            icon="lock-closed-outline"
+            password
+            placeholder="••••••••"
+            value={password}
+            onChangeText={setPassword}
+            autoCapitalize="none"
+            autoComplete="new-password"
+            textContentType="newPassword"
+            returnKeyType="next"
+            ref={passwordRef}
+            onSubmitEditing={() => confirmRef.current?.focus()}
+          />
 
-          <View style={styles.inputGroup}>
-            <Text style={[styles.label]}>Confirm Password</Text>
-            <View style={styles.inputWrapper}>
-              <Ionicons
-                name="lock-closed-outline"
-                size={20}
-                color="rgba(107, 114, 128, 0.7)"
-                style={styles.inputIcon}
-              />
-              <TextInput
-                style={[
-                  styles.input,
-                  styles.inputWithIcon,
-                  styles.inputWithRightIcon,
-                  {
-                    backgroundColor: "rgba(255, 255, 255, 0.95)",
-                    borderColor: "rgba(255, 255, 255, 0.3)",
-                    color: "#1F2937",
-                  },
-                ]}
-                placeholder="••••••••"
-                placeholderTextColor="rgba(107, 114, 128, 0.7)"
-                value={confirmPassword}
-                onChangeText={setConfirmPassword}
-                secureTextEntry={!showConfirmPassword}
-                autoCapitalize="none"
-              />
-              <TouchableOpacity
-                onPress={() => setShowConfirmPassword(!showConfirmPassword)}
-                style={styles.eyeIcon}
-              >
-                <Ionicons
-                  name={showConfirmPassword ? "eye-off-outline" : "eye-outline"}
-                  size={20}
-                  color="rgba(107, 114, 128, 0.7)"
-                />
-              </TouchableOpacity>
-            </View>
-          </View>
+          <AuthField
+            label="Confirm Password"
+            icon="lock-closed-outline"
+            password
+            placeholder="••••••••"
+            value={confirmPassword}
+            onChangeText={setConfirmPassword}
+            autoCapitalize="none"
+            autoComplete="new-password"
+            textContentType="newPassword"
+            returnKeyType="go"
+            ref={confirmRef}
+            onSubmitEditing={handleRegister}
+          />
 
           {registerError && (
             <View
+              accessibilityRole="alert"
               style={[
                 styles.errorContainer,
                 { backgroundColor: colors.errorLight },
               ]}
             >
-              <Text style={[styles.errorText, { color: colors.error }]}>
+              <Text style={[styles.errorText, { color: colors.errorText }]}>
                 Registration failed. Please try again.
               </Text>
             </View>
@@ -251,10 +174,11 @@ export default function RegisterScreen() {
           />
 
           <View style={styles.privacyContainer}>
-            <Text style={[styles.privacyText]}>
+            <Text style={[styles.privacyText, { color: colors.textSecondary }]}>
               By continuing, you agree to our{" "}
               <Text
-                style={[styles.privacyLink]}
+                style={[styles.privacyLink, { color: colors.primaryText }]}
+                accessibilityRole="link"
                 onPress={() =>
                   Linking.openURL(
                     `${process.env.EXPO_PUBLIC_FRONTEND_URL}/privacy`,
@@ -270,10 +194,14 @@ export default function RegisterScreen() {
           <TouchableOpacity
             onPress={() => router.back()}
             style={styles.linkContainer}
+            accessibilityRole="link"
+            accessibilityLabel="Already have an account? Sign in"
           >
-            <Text style={[styles.linkText]}>
+            <Text style={[styles.linkText, { color: colors.textSecondary }]}>
               Already have an account?{" "}
-              <Text style={{ fontWeight: "600" }}>Sign In</Text>
+              <Text style={{ fontWeight: "600", color: colors.primaryText }}>
+                Sign In
+              </Text>
             </Text>
           </TouchableOpacity>
         </View>
@@ -285,7 +213,6 @@ export default function RegisterScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#6366F120", // Warm orange background
   },
   scrollContent: {
     flexGrow: 1,
@@ -296,10 +223,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: Spacing.lg,
   },
-  logo: {
-    width: 180,
-    height: 54,
-  },
   header: {
     marginBottom: Spacing.xl,
     alignItems: "center",
@@ -308,53 +231,14 @@ const styles = StyleSheet.create({
     fontSize: Typography.sizes["2xl"],
     fontWeight: Typography.weights.bold,
     marginBottom: Spacing.xs,
+    textAlign: "center",
   },
   subtitle: {
     fontSize: Typography.sizes.md,
+    textAlign: "center",
   },
   formContainer: {
     width: "100%",
-  },
-  inputGroup: {
-    marginBottom: Spacing.lg,
-  },
-  inputWrapper: {
-    position: "relative",
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  inputIcon: {
-    position: "absolute",
-    left: Spacing.md,
-    zIndex: 1,
-  },
-  inputWithIcon: {
-    paddingLeft: 44,
-  },
-  inputWithRightIcon: {
-    paddingRight: 44,
-  },
-  eyeIcon: {
-    position: "absolute",
-    right: Spacing.md,
-    padding: Spacing.xs,
-  },
-  label: {
-    fontSize: Typography.sizes.sm,
-    fontWeight: Typography.weights.medium,
-    marginBottom: Spacing.xs,
-  },
-  input: {
-    flex: 1,
-    borderWidth: 1,
-    borderRadius: BorderRadius.lg,
-    padding: Spacing.lg,
-    fontSize: Typography.sizes.md,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
   },
   errorContainer: {
     padding: Spacing.sm,
@@ -367,22 +251,6 @@ const styles = StyleSheet.create({
   },
   registerButton: {
     marginTop: Spacing.md,
-  },
-  dividerContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginVertical: Spacing.lg,
-  },
-  divider: {
-    flex: 1,
-    height: 1,
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
-  },
-  dividerText: {
-    marginHorizontal: Spacing.md,
-    fontSize: Typography.sizes.sm,
-    fontWeight: Typography.weights.medium,
-    color: "rgba(255, 255, 255, 0.7)",
   },
   privacyContainer: {
     marginTop: Spacing.md,
@@ -399,8 +267,11 @@ const styles = StyleSheet.create({
   linkContainer: {
     marginTop: Spacing.lg,
     alignItems: "center",
+    minHeight: 44,
+    justifyContent: "center",
   },
   linkText: {
     fontSize: Typography.sizes.sm,
+    textAlign: "center",
   },
 });

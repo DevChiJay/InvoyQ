@@ -9,7 +9,6 @@ import {
   Platform,
   ScrollView,
   Alert,
-  Image,
 } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useTheme } from '@/hooks/useTheme';
@@ -19,6 +18,7 @@ import { Spacing, BorderRadius } from '@/constants/colors';
 import { Typography } from '@/constants/typography';
 import { Ionicons } from '@expo/vector-icons';
 import { authApi } from '@/services/api/auth';
+import { Logo } from '@/components/ui/Logo';
 
 export default function ResetPasswordScreen() {
   const { token } = useLocalSearchParams<{ token: string }>();
@@ -87,15 +87,11 @@ export default function ResetPasswordScreen() {
         keyboardShouldPersistTaps="handled"
       >
         <View style={styles.logoContainer}>
-          <Image
-            source={require('@/assets/logo.png')}
-            style={styles.logo}
-            resizeMode="contain"
-          />
+          <Logo />
         </View>
 
         <View style={styles.header}>
-          <Ionicons name="key-outline" size={48} color={colors.primary} />
+          <Ionicons name="key-outline" size={48} color={colors.primaryText} />
           <Text style={[styles.title, { color: colors.text }]}>Reset Password</Text>
           <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
             Enter your new password below
@@ -165,7 +161,7 @@ export default function ResetPasswordScreen() {
           >
             <Text style={[styles.linkText, { color: colors.textSecondary }]}>
               Back to{' '}
-              <Text style={{ color: colors.primary, fontWeight: '600' }}>Sign In</Text>
+              <Text style={{ color: colors.primaryText, fontWeight: '600' }}>Sign In</Text>
             </Text>
           </TouchableOpacity>
         </Card>

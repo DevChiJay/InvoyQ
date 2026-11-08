@@ -9,7 +9,6 @@ import {
   Platform,
   ScrollView,
   Alert,
-  Image,
 } from 'react-native';
 import { router } from 'expo-router';
 import { useTheme } from '@/hooks/useTheme';
@@ -19,6 +18,7 @@ import { Spacing, BorderRadius } from '@/constants/colors';
 import { Typography } from '@/constants/typography';
 import { Ionicons } from '@expo/vector-icons';
 import { authApi } from '@/services/api/auth';
+import { Logo } from '@/components/ui/Logo';
 
 export default function ForgotPasswordScreen() {
   const [email, setEmail] = useState('');
@@ -62,17 +62,13 @@ export default function ForgotPasswordScreen() {
           keyboardShouldPersistTaps="handled"
         >
           <View style={styles.logoContainer}>
-            <Image
-              source={require('@/assets/logo.png')}
-              style={styles.logo}
-              resizeMode="contain"
-            />
+            <Logo />
           </View>
 
           <Card variant="elevated" style={styles.formCard}>
             <View style={styles.successIconContainer}>
               <View style={[styles.successIcon, { backgroundColor: colors.successLight }]}>
-                <Ionicons name="mail-outline" size={48} color={colors.success} />
+                <Ionicons name="mail-outline" size={48} color={colors.successText} />
               </View>
             </View>
 
@@ -101,7 +97,7 @@ export default function ForgotPasswordScreen() {
             >
               <Text style={[styles.linkText, { color: colors.textSecondary }]}>
                 Didn't receive the email?{' '}
-                <Text style={{ color: colors.primary, fontWeight: '600' }}>Resend</Text>
+                <Text style={{ color: colors.primaryText, fontWeight: '600' }}>Resend</Text>
               </Text>
             </TouchableOpacity>
           </Card>
@@ -120,15 +116,11 @@ export default function ForgotPasswordScreen() {
         keyboardShouldPersistTaps="handled"
       >
         <View style={styles.logoContainer}>
-          <Image
-            source={require('@/assets/logo.png')}
-            style={styles.logo}
-            resizeMode="contain"
-          />
+          <Logo />
         </View>
 
         <View style={styles.header}>
-          <Ionicons name="lock-closed-outline" size={48} color={colors.primary} />
+          <Ionicons name="lock-closed-outline" size={48} color={colors.primaryText} />
           <Text style={[styles.title, { color: colors.text }]}>Forgot Password?</Text>
           <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
             Enter your email and we'll send you a link to reset your password
@@ -175,7 +167,7 @@ export default function ForgotPasswordScreen() {
           >
             <Text style={[styles.linkText, { color: colors.textSecondary }]}>
               Remember your password?{' '}
-              <Text style={{ color: colors.primary, fontWeight: '600' }}>Sign In</Text>
+              <Text style={{ color: colors.primaryText, fontWeight: '600' }}>Sign In</Text>
             </Text>
           </TouchableOpacity>
         </Card>

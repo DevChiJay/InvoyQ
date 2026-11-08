@@ -7,15 +7,17 @@ import {
   TouchableOpacity,
   FlatList,
   ViewToken,
-  Image,
 } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/hooks/useTheme';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { HIT_SLOP } from '@/constants/colors';
 import { Button } from '@/components/ui/Button';
 import { Spacing, BorderRadius } from '@/constants/colors';
 import { Typography } from '@/constants/typography';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Logo } from '@/components/ui/Logo';
 
 const { width, height } = Dimensions.get('window');
 
@@ -53,6 +55,7 @@ const slides: OnboardingSlide[] = [
 
 export default function OnboardingScreen() {
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
   const [currentIndex, setCurrentIndex] = useState(0);
   const flatListRef = useRef<FlatList>(null);
 
@@ -86,7 +89,7 @@ export default function OnboardingScreen() {
   const renderSlide = ({ item }: { item: OnboardingSlide }) => (
     <View style={[styles.slide, { width }]}>
       <View style={[styles.iconContainer, { backgroundColor: item.color + '20' }]}>
-        <Ionicons name={item.icon} size={80} color={item.color} />
+        <Ionicons name={item.icon} size={80} color={item.color} accessibilityElementsHidden importantForAccessibility="no" />
       </View>
 
       <Text style={[styles.title, { color: colors.text }]}>{item.title}</Text>
@@ -99,17 +102,19 @@ export default function OnboardingScreen() {
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Logo */}
-      <View style={styles.logoContainer}>
-        <Image
-          source={require('@/assets/logo.png')}
-          style={styles.logo}
-          resizeMode="contain"
-        />
+      <View style={[styles.logoContainer, { paddingTop: insets.top + Spacing.md }]}>
+        <Logo width={160} />
       </View>
 
       {/* Skip button */}
       {currentIndex < slides.length - 1 && (
-        <TouchableOpacity style={styles.skipButton} onPress={handleSkip}>
+        <TouchableOpacity
+          style={[styles.skipButton, { top: insets.top + Spacing.sm }]}
+          onPress={handleSkip}
+          hitSlop={HIT_SLOP}
+          accessibilityRole="button"
+          accessibilityLabel="Skip introduction"
+        >
           <Text style={[styles.skipText, { color: colors.textSecondary }]}>Skip</Text>
         </TouchableOpacity>
       )}
@@ -162,7 +167,6 @@ const styles = StyleSheet.create({
   },
   logoContainer: {
     alignItems: 'center',
-    paddingTop: 60,
     marginBottom: 20,
   },
   logo: {
@@ -171,10 +175,11 @@ const styles = StyleSheet.create({
   },
   skipButton: {
     position: 'absolute',
-    top: 60,
     right: 20,
     zIndex: 10,
-    padding: 10,
+    minHeight: 44,
+    justifyContent: 'center',
+    paddingHorizontal: 10,
   },
   skipText: {
     fontSize: Typography.sizes.md,
@@ -217,7 +222,6 @@ const styles = StyleSheet.create({
   dot: {
     height: 8,
     borderRadius: 4,
-    transition: 'all 0.3s',
   },
   buttonContainer: {
     paddingHorizontal: Spacing.xl,

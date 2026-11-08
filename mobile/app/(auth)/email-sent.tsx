@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, Image } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useTheme } from '@/hooks/useTheme';
 import { Button } from '@/components/ui/Button';
@@ -6,6 +6,7 @@ import { Card } from '@/components/ui/Card';
 import { Spacing, BorderRadius } from '@/constants/colors';
 import { Typography } from '@/constants/typography';
 import { Ionicons } from '@expo/vector-icons';
+import { Logo } from '@/components/ui/Logo';
 
 export default function EmailSentScreen() {
   const { email } = useLocalSearchParams<{ email?: string }>();
@@ -15,16 +16,12 @@ export default function EmailSentScreen() {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.content}>
         <View style={styles.logoContainer}>
-          <Image
-            source={require('@/assets/logo.png')}
-            style={styles.logo}
-            resizeMode="contain"
-          />
+          <Logo />
         </View>
 
         <Card variant="elevated" style={styles.card}>
           <View style={[styles.iconContainer, { backgroundColor: colors.success + '20' }]}>
-            <Ionicons name="mail-outline" size={64} color={colors.success} />
+            <Ionicons name="mail-outline" size={64} color={colors.successText} />
           </View>
 
           <Text style={[styles.title, { color: colors.text }]}>
@@ -40,7 +37,7 @@ export default function EmailSentScreen() {
           </Text>
 
           <View style={styles.infoBox}>
-            <Ionicons name="information-circle-outline" size={20} color={colors.primary} />
+            <Ionicons name="information-circle-outline" size={20} color={colors.primaryText} />
             <Text style={[styles.infoText, { color: colors.textSecondary }]}>
               Don't forget to check your spam folder if you don't see the email.
             </Text>
