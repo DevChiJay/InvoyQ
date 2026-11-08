@@ -188,9 +188,81 @@ async def resend_verification(request: ResendVerificationRequest, db: AsyncIOMot
 
 
 # ==================== Google OAuth ====================
+import logging
+import re
 from urllib.parse import urlencode
 from google.oauth2 import id_token
 from google.auth.transport import requests as google_requests
+
+logger = logging.getLogger(__name__)
+
+
+def _is_true(value) -> bool:
+    """Google puts a boolean in ID tokens, but some endpoints return the string "true"."""
+    return value is True or str(value).lower() == "true"
+
+
+async def _find_or_create_google_user(user_repo: UserRepository, id_info: dict, registration_source: str = "web"):
+    """
+    Resolve a verified Google ID token payload to a user, creating or linking as needed.
+
+    Shared by the browser callback and the mobile ID-token endpoint so the two can't drift.
+    Raises HTTPException(400/409) for identities we must not sign in.
+    """
+    google_user_id = id_info["sub"]
+    email = (id_info.get("email") or "").strip()
+    if not email:
+        raise HTTPException(status_code=400, detail="Email not provided by Google")
+    # Linking an existing account by email is only safe if Google vouches for that email.
+    if not _is_true(id_info.get("email_verified")):
+        raise HTTPException(
+            status_code=400,
+            detail="Your Google email address isn't verified, so we can't sign you in with it.",
+        )
+    full_name = id_info.get("name", "")
+    avatar_url = id_info.get("picture")
+
+    user = await user_repo.get_by_oauth(provider="google", provider_id=google_user_id)
+    if not user:
+        # Exact match first, then case-insensitive (registration stores the email as typed).
+        user = await user_repo.get_by_email(email) or await user_repo.get_one(
+            {"email": {"$regex": f"^{re.escape(email)}$", "$options": "i"}}
+        )
+        if (
+            user
+            and user.oauth_provider == "google"
+            and user.oauth_provider_id
+            and user.oauth_provider_id != google_user_id
+        ):
+            raise HTTPException(
+                status_code=409,
+                detail="This email is already linked to a different Google account.",
+            )
+
+    if user:
+        update_data = {}
+        if not user.oauth_provider:
+            update_data["oauth_provider"] = "google"
+            update_data["oauth_provider_id"] = google_user_id
+        if not user.avatar_url and avatar_url:
+            update_data["avatar_url"] = avatar_url
+        if not user.is_verified:
+            update_data["is_verified"] = True  # Google verified the email (checked above)
+        if update_data:
+            await user_repo.update(user.id, update_data)
+            user = await user_repo.get_by_id(user.id)
+        return user
+
+    return await user_repo.create_user(
+        email=email,
+        full_name=full_name,
+        oauth_provider="google",
+        oauth_provider_id=google_user_id,
+        avatar_url=avatar_url,
+        is_verified=True,
+        hashed_password=None,  # No password for OAuth users until they set one
+        registration_source=registration_source,
+    )
 
 
 @router.get("/google/login")
@@ -214,15 +286,15 @@ def google_login():
 
 @router.get("/google/callback")
 async def google_callback(code: str, db: AsyncIOMotorDatabase = Depends(get_database)):
-    """Handle Google OAuth callback and create/login user"""
+    """Handle Google OAuth callback (web flow) and create/login user"""
     if not settings.GOOGLE_CLIENT_ID or not settings.GOOGLE_CLIENT_SECRET:
         raise HTTPException(status_code=500, detail="Google OAuth not configured")
-    
+
+    import httpx
     try:
         user_repo = UserRepository(db)
-        
+
         # Exchange authorization code for access token
-        import httpx
         token_url = "https://oauth2.googleapis.com/token"
         token_data = {
             "code": code,
@@ -231,77 +303,41 @@ async def google_callback(code: str, db: AsyncIOMotorDatabase = Depends(get_data
             "redirect_uri": settings.GOOGLE_REDIRECT_URI,
             "grant_type": "authorization_code",
         }
-        
+
         async with httpx.AsyncClient() as client:
             token_response = await client.post(token_url, data=token_data)
             token_response.raise_for_status()
             tokens = token_response.json()
-        
+
         # Verify and decode the ID token
         id_info = id_token.verify_oauth2_token(
             tokens["id_token"],
             google_requests.Request(),
             settings.GOOGLE_CLIENT_ID
         )
-        
-        # Extract user information
-        google_user_id = id_info["sub"]
-        email = id_info.get("email")
-        full_name = id_info.get("name", "")
-        avatar_url = id_info.get("picture")
-        email_verified = id_info.get("email_verified", False)
-        
-        if not email:
-            raise HTTPException(status_code=400, detail="Email not provided by Google")
-        
-        # Check if user exists by email or OAuth ID
-        user = await user_repo.get_by_email(email)
-        if not user:
-            user = await user_repo.get_by_oauth(provider="google", provider_id=google_user_id)
-        
-        if user:
-            # Update existing user with Google OAuth info if not already set
-            update_data = {}
-            if not user.oauth_provider:
-                update_data["oauth_provider"] = "google"
-                update_data["oauth_provider_id"] = google_user_id
-            if not user.avatar_url and avatar_url:
-                update_data["avatar_url"] = avatar_url
-            # Mark as verified if Google says email is verified
-            if email_verified and not user.is_verified:
-                update_data["is_verified"] = True
-            
-            if update_data:
-                await user_repo.update(user.id, update_data)
-                # Refresh user object
-                user = await user_repo.get_by_id(user.id)
-        else:
-            # Create new user with Google OAuth
-            user = await user_repo.create_user(
-                email=email,
-                full_name=full_name,
-                oauth_provider="google",
-                oauth_provider_id=google_user_id,
-                avatar_url=avatar_url,
-                is_verified=email_verified,  # Trust Google's verification
-                hashed_password=None  # No password for OAuth users
-            )
-        
+
+        user = await _find_or_create_google_user(user_repo, id_info)
+
         # Generate JWT access token
         access_token = create_access_token({"sub": user.id})
-        
+
         # Redirect to frontend with token
         redirect_url = f"{settings.FRONTEND_URL}/auth/callback?token={access_token}"
-        
+
         from fastapi.responses import RedirectResponse
         return RedirectResponse(url=redirect_url)
-        
+
+    except HTTPException:
+        raise
     except httpx.HTTPStatusError as e:
-        raise HTTPException(status_code=400, detail=f"Failed to exchange code for token: {str(e)}")
+        logger.warning("Google code exchange failed: %s", e)
+        raise HTTPException(status_code=400, detail="Failed to exchange code for token")
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=f"Invalid token: {str(e)}")
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"OAuth error: {str(e)}")
+        logger.warning("Rejected Google ID token (web callback): %s", e)
+        raise HTTPException(status_code=400, detail="Invalid Google token")
+    except Exception:
+        logger.exception("Google OAuth callback failed")
+        raise HTTPException(status_code=500, detail="OAuth error")
 
 
 @router.post("/google/mobile", response_model=Token, dependencies=[Depends(auth_rate_limiter.dependency())])
@@ -312,86 +348,42 @@ async def google_mobile_auth(
     """
     Authenticate mobile users with Google ID token.
     Mobile apps use native Google Sign-In and send the ID token directly.
+
+    The token's audience must be GOOGLE_CLIENT_ID (the web client id, which native
+    sign-in uses when configured with `webClientId`) or one of GOOGLE_ALLOWED_CLIENT_IDS.
     """
-    if not settings.GOOGLE_CLIENT_ID:
+    audiences = settings.google_audiences()
+    if not audiences:
         raise HTTPException(status_code=500, detail="Google OAuth not configured")
-    
+
     try:
-        user_repo = UserRepository(db)
-        refresh_token_repo = RefreshTokenRepository(db)
-        
-        # Verify the ID token from Google
         id_info = id_token.verify_oauth2_token(
             auth_request.id_token,
             google_requests.Request(),
-            settings.GOOGLE_CLIENT_ID
+            audiences,
         )
-        
-        # Extract user information
-        google_user_id = id_info["sub"]
-        email = id_info.get("email")
-        full_name = id_info.get("name", "")
-        avatar_url = id_info.get("picture")
-        email_verified = id_info.get("email_verified", False)
-        
-        if not email:
-            raise HTTPException(status_code=400, detail="Email not provided by Google")
-        
-        # Check if user exists by email or OAuth ID
-        user = await user_repo.get_by_email(email)
-        if not user:
-            user = await user_repo.get_by_oauth(provider="google", provider_id=google_user_id)
-        
-        if user:
-            # Update existing user with Google OAuth info if not already set
-            update_data = {}
-            if not user.oauth_provider:
-                update_data["oauth_provider"] = "google"
-                update_data["oauth_provider_id"] = google_user_id
-            if not user.avatar_url and avatar_url:
-                update_data["avatar_url"] = avatar_url
-            # Mark as verified if Google says email is verified
-            if email_verified and not user.is_verified:
-                update_data["is_verified"] = True
-            
-            if update_data:
-                await user_repo.update(user.id, update_data)
-                # Refresh user object
-                user = await user_repo.get_by_id(user.id)
-        else:
-            # Create new user with Google OAuth
-            user = await user_repo.create_user(
-                email=email,
-                full_name=full_name,
-                oauth_provider="google",
-                oauth_provider_id=google_user_id,
-                avatar_url=avatar_url,
-                is_verified=email_verified,
-                hashed_password=None,
-                registration_source="mobile"
-            )
-        
-        # Generate JWT access token
-        access_token = create_access_token({"sub": user.id})
-        
-        # Create refresh token
-        refresh_token_doc = await refresh_token_repo.create_refresh_token(
-            user_id=user.id,
-            expires_delta=timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS),
-            device_id=auth_request.device_id
-        )
-        
-        return {
-            "access_token": access_token,
-            "refresh_token": refresh_token_doc.token,
-            "token_type": "bearer"
-        }
-        
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=f"Invalid ID token: {str(e)}")
-    except Exception as e:
-        print(f"Mobile Google auth error: {e}")
-        raise HTTPException(status_code=500, detail=f"Authentication error: {str(e)}")
+        # Bad signature, expired, or wrong audience. Details go to the log, not the client.
+        logger.warning("Rejected Google ID token (mobile): %s", e)
+        raise HTTPException(status_code=400, detail="Invalid Google ID token")
+
+    user_repo = UserRepository(db)
+    refresh_token_repo = RefreshTokenRepository(db)
+
+    user = await _find_or_create_google_user(user_repo, id_info, registration_source="mobile")
+
+    access_token = create_access_token({"sub": user.id})
+    refresh_token_doc = await refresh_token_repo.create_refresh_token(
+        user_id=user.id,
+        expires_delta=timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS),
+        device_id=auth_request.device_id
+    )
+
+    return {
+        "access_token": access_token,
+        "refresh_token": refresh_token_doc.token,
+        "token_type": "bearer"
+    }
 
 
 @router.post("/refresh", response_model=Token, dependencies=[Depends(auth_rate_limiter.dependency())])

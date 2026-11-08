@@ -54,7 +54,16 @@ class Settings(BaseModel):
     GOOGLE_CLIENT_ID: str | None = os.getenv("GOOGLE_CLIENT_ID")
     GOOGLE_CLIENT_SECRET: str | None = os.getenv("GOOGLE_CLIENT_SECRET")
     GOOGLE_REDIRECT_URI: str = os.getenv("GOOGLE_REDIRECT_URI", "http://localhost:8000/v1/auth/google/callback")
-    
+    # Extra client ids (comma-separated, e.g. the iOS and Android ones) whose ID tokens
+    # /v1/auth/google/mobile accepts, in addition to GOOGLE_CLIENT_ID.
+    GOOGLE_ALLOWED_CLIENT_IDS: str = os.getenv("GOOGLE_ALLOWED_CLIENT_IDS", "")
+
+    def google_audiences(self) -> list[str]:
+        """Client ids an ID token's `aud` may match: GOOGLE_CLIENT_ID plus GOOGLE_ALLOWED_CLIENT_IDS."""
+        ids = [self.GOOGLE_CLIENT_ID] if self.GOOGLE_CLIENT_ID else []
+        ids += [c.strip() for c in self.GOOGLE_ALLOWED_CLIENT_IDS.split(",") if c.strip()]
+        return list(dict.fromkeys(ids))
+
     # MongoDB settings
     MONGODB_URI: str = os.getenv("MONGODB_URI", "mongodb://localhost:27017")
     MONGODB_DB_NAME: str = os.getenv("MONGODB_DB_NAME", "invoyq")
