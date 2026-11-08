@@ -8,12 +8,11 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useGoogleAuth } from "@/hooks/useGoogleAuth";
-import { useTheme } from "@/hooks/useTheme";
 
 interface GoogleSignInButtonProps {
   mode?: "login" | "register";
   onSuccess?: () => void;
-  onError?: (error: any) => void;
+  onError?: (error: unknown) => void;
 }
 
 export function GoogleSignInButton({
@@ -22,13 +21,11 @@ export function GoogleSignInButton({
   onError,
 }: GoogleSignInButtonProps) {
   const { signInWithGoogle, isLoading, isReady } = useGoogleAuth();
-  const { colors } = useTheme();
+
+  // Builds without the Google client ids can't sign in, so don't offer a dead button.
+  if (!isReady) return null;
 
   const handlePress = async () => {
-    if (__DEV__) {
-      console.log("Google Sign-In button pressed, mode:", mode);
-    }
-
     const result = await signInWithGoogle();
 
     if (result.success && onSuccess) {
@@ -51,8 +48,11 @@ export function GoogleSignInButton({
         },
       ]}
       onPress={handlePress}
-      disabled={isLoading || !isReady}
+      disabled={isLoading}
       activeOpacity={0.7}
+      accessibilityRole="button"
+      accessibilityLabel={buttonText}
+      accessibilityState={{ busy: isLoading, disabled: isLoading }}
     >
       {isLoading ? (
         <ActivityIndicator size="small" color="#4285F4" />

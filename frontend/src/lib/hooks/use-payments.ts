@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { paymentsAPI } from '@/lib/api';
+import { usersAPI, paymentsAPI } from '@/lib/api';
 import type { Payment } from '@/types/api';
 
 export interface SubscriptionStatus {
@@ -12,7 +12,7 @@ export interface SubscriptionStatus {
 }
 
 export interface CreateSubscriptionRequest {
-  provider: 'paystack' | 'stripe';
+  provider: 'paystack';
   currency: string;
   callback_url?: string;
 }
@@ -24,16 +24,28 @@ export interface SubscriptionResponse {
 
 export interface VerifyPaymentRequest {
   reference: string;
-  provider: 'paystack' | 'stripe';
+  provider: 'paystack';
 }
 
-// Get subscription status
+// Subscription status, read from the signed-in user's own record (GET /v1/me).
+// (The /v1/payments/subscription/status endpoint is not connected; see the payments requirements.)
 export function useSubscriptionStatus() {
   return useQuery<SubscriptionStatus>({
     queryKey: ['subscription', 'status'],
     queryFn: async () => {
-      const response = await paymentsAPI.getSubscriptionStatus();
-      return response.data;
+      const { data: user } = await usersAPI.getMe();
+      const end = user.subscription_end_date;
+      const daysRemaining = end
+        ? Math.ceil((new Date(/[zZ]|[+-]\d\d:?\d\d$/.test(end) ? end : `${end}Z`).getTime() - Date.now()) / 86_400_000)
+        : null;
+      return {
+        is_pro: user.is_pro,
+        subscription_status: user.subscription_status,
+        subscription_provider: user.subscription_provider,
+        subscription_start_date: user.subscription_start_date,
+        subscription_end_date: end,
+        days_remaining: daysRemaining,
+      };
     },
   });
 }

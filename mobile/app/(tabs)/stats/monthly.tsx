@@ -1,10 +1,11 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
   ActivityIndicator,
+  RefreshControl,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
@@ -21,6 +22,10 @@ import {
   SkeletonCard,
   IconBadge,
 } from "@/components/ui";
+import { TrendBarChart } from "@/components/stats/TrendBarChart";
+import { DailyAreaChart } from "@/components/stats/DailyAreaChart";
+import { StatusBreakdown } from "@/components/stats/StatusBreakdown";
+import { relativeChange, toNumber } from "@/components/stats/chartUtils";
 import { formatCurrency } from "@/utils/formatters";
 import { Typography } from "@/constants/typography";
 import { Spacing, BorderRadius } from "@/constants/colors";
@@ -30,6 +35,7 @@ export default function MonthlyStatsScreen() {
   const insets = useSafeAreaInsets();
   const {
     stats,
+    trend,
     isLoading,
     error,
     month,
@@ -37,14 +43,33 @@ export default function MonthlyStatsScreen() {
     goToPreviousMonth,
     goToNextMonth,
     setMonthYear,
+    refetch,
+    refetchAll,
+    currency,
   } = useMonthlyStats();
+  const [refreshing, setRefreshing] = useState(false);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await refetchAll();
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  // The trend ends at the selected month, so the one before it is last month.
+  const previous =
+    trend && trend.months.length >= 2
+      ? trend.months[trend.months.length - 2]
+      : undefined;
 
   if (error) {
     return (
       <View style={[styles.container, { backgroundColor: colors.background }]}>
         <ErrorState
           message="Failed to load monthly statistics"
-          onRetry={() => {}}
+          onRetry={() => refetch()}
         />
       </View>
     );
@@ -58,6 +83,14 @@ export default function MonthlyStatsScreen() {
           styles.contentContainer,
           { paddingBottom: insets.bottom + Spacing.xl },
         ]}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            colors={[colors.primary]}
+            tintColor={colors.primary}
+          />
+        }
       >
         {/* Month Navigator */}
         <MonthNavigator
@@ -76,7 +109,8 @@ export default function MonthlyStatsScreen() {
         ) : !stats ? (
           <EmptyState
             icon="bar-chart-outline"
-            message="No data available for this month"
+            title="No activity this month"
+            message="Invoices and expenses you record for this month will show up here."
           />
         ) : (
           <>
@@ -91,13 +125,24 @@ export default function MonthlyStatsScreen() {
                   style={styles.financialCard}
                 >
                   <Ionicons name="trending-up" size={24} color="#FFFFFF" />
-                  <Text style={styles.financialValue}>
+                  <Text
+                    style={styles.financialValue}
+                    numberOfLines={1}
+                    adjustsFontSizeToFit
+                    minimumFontScale={0.6}
+                  >
                     {formatCurrency(
                       parseFloat(stats.total_revenue),
                       stats.currency,
                     )}
                   </Text>
-                  <Text style={styles.financialLabel}>Total Revenue</Text>
+                  <Text style={styles.financialLabel} numberOfLines={1} adjustsFontSizeToFit>Total Revenue</Text>
+                  {previous && (
+                    <DeltaLine
+                      current={toNumber(stats.total_revenue)}
+                      previous={toNumber(previous.revenue)}
+                    />
+                  )}
                 </GradientCard>
 
                 <GradientCard
@@ -105,13 +150,24 @@ export default function MonthlyStatsScreen() {
                   style={styles.financialCard}
                 >
                   <Ionicons name="trending-down" size={24} color="#FFFFFF" />
-                  <Text style={styles.financialValue}>
+                  <Text
+                    style={styles.financialValue}
+                    numberOfLines={1}
+                    adjustsFontSizeToFit
+                    minimumFontScale={0.6}
+                  >
                     {formatCurrency(
                       parseFloat(stats.total_expenses),
                       stats.currency,
                     )}
                   </Text>
-                  <Text style={styles.financialLabel}>Total Expenses</Text>
+                  <Text style={styles.financialLabel} numberOfLines={1} adjustsFontSizeToFit>Total Expenses</Text>
+                  {previous && (
+                    <DeltaLine
+                      current={toNumber(stats.total_expenses)}
+                      previous={toNumber(previous.expenses)}
+                    />
+                  )}
                 </GradientCard>
 
                 <GradientCard
@@ -131,13 +187,24 @@ export default function MonthlyStatsScreen() {
                     size={24}
                     color="#FFFFFF"
                   />
-                  <Text style={styles.financialValue}>
+                  <Text
+                    style={styles.financialValue}
+                    numberOfLines={1}
+                    adjustsFontSizeToFit
+                    minimumFontScale={0.6}
+                  >
                     {formatCurrency(
                       parseFloat(stats.net_income),
                       stats.currency,
                     )}
                   </Text>
-                  <Text style={styles.financialLabel}>Net Income</Text>
+                  <Text style={styles.financialLabel} numberOfLines={1} adjustsFontSizeToFit>Net Income</Text>
+                  {previous && (
+                    <DeltaLine
+                      current={toNumber(stats.net_income)}
+                      previous={toNumber(previous.net_income)}
+                    />
+                  )}
                 </GradientCard>
               </View>
             </View>
@@ -153,8 +220,8 @@ export default function MonthlyStatsScreen() {
                 >
                   <IconBadge
                     icon="document-text"
-                    backgroundColor={colors.primaryLight}
-                    iconColor={colors.primary}
+                    backgroundColor={colors.primarySoft}
+                    iconColor={colors.primaryText}
                   />
                   <Text style={[styles.statValue, { color: colors.text }]}>
                     {stats.total_invoices}
@@ -171,8 +238,8 @@ export default function MonthlyStatsScreen() {
                 >
                   <IconBadge
                     icon="checkmark-circle"
-                    backgroundColor={colors.successLight || "#D1FAE5"}
-                    iconColor={colors.success}
+                    backgroundColor={colors.successLight}
+                    iconColor={colors.successText}
                   />
                   <Text style={[styles.statValue, { color: colors.text }]}>
                     {stats.paid_invoices}
@@ -189,8 +256,8 @@ export default function MonthlyStatsScreen() {
                 >
                   <IconBadge
                     icon="time"
-                    backgroundColor={colors.warningLight || "#FEF3C7"}
-                    iconColor={colors.warning}
+                    backgroundColor={colors.warningLight}
+                    iconColor={colors.warningText}
                   />
                   <Text style={[styles.statValue, { color: colors.text }]}>
                     {stats.unpaid_invoices}
@@ -203,6 +270,47 @@ export default function MonthlyStatsScreen() {
                 </Card>
               </View>
             </View>
+
+            {/* Invoice status */}
+            {stats.status_counts && (
+              <View style={styles.section}>
+                <Text style={[styles.sectionTitle, { color: colors.text }]}>
+                  Invoice Status
+                </Text>
+                <Card style={{ backgroundColor: colors.surface, padding: Spacing.lg }}>
+                  <StatusBreakdown counts={stats.status_counts} />
+                </Card>
+              </View>
+            )}
+
+            {/* Trend (optional: the screen still works if it fails to load) */}
+            {trend && trend.months.length > 0 && (
+              <View style={styles.section}>
+                <Text style={[styles.sectionTitle, { color: colors.text }]}>
+                  Last {trend.months.length} Months
+                </Text>
+                <Card style={{ backgroundColor: colors.surface, padding: Spacing.md }}>
+                  <TrendBarChart
+                    points={trend.months}
+                    selectedMonth={month}
+                    selectedYear={year}
+                    currency={currency}
+                    onSelect={setMonthYear}
+                  />
+                </Card>
+              </View>
+            )}
+
+            {trend && trend.daily.length > 0 && (
+              <View style={styles.section}>
+                <Text style={[styles.sectionTitle, { color: colors.text }]}>
+                  Daily Activity
+                </Text>
+                <Card style={{ backgroundColor: colors.surface, padding: Spacing.md }}>
+                  <DailyAreaChart points={trend.daily} />
+                </Card>
+              </View>
+            )}
 
             {/* Products Sold */}
             <View style={styles.section}>
@@ -261,7 +369,7 @@ export default function MonthlyStatsScreen() {
                     >
                       <View style={styles.topProductRank}>
                         <Text
-                          style={[styles.rankNumber, { color: colors.primary }]}
+                          style={[styles.rankNumber, { color: colors.primaryText }]}
                         >
                           {index + 1}
                         </Text>
@@ -309,7 +417,7 @@ export default function MonthlyStatsScreen() {
                 <View style={styles.productsSoldHeader}>
                   <IconBadge
                     icon="people"
-                    backgroundColor={colors.secondaryLight || "#E0E7FF"}
+                    backgroundColor={colors.secondaryLight}
                     iconColor={colors.secondary}
                   />
                   <View style={styles.productsSoldInfo}>
@@ -337,7 +445,35 @@ export default function MonthlyStatsScreen() {
   );
 }
 
+/** "▲ 12% vs last month" on a gradient card. "—" when last month had nothing to compare against. */
+function DeltaLine({ current, previous }: { current: number; previous: number }) {
+  const change = relativeChange(current, previous);
+  const text =
+    change === null
+      ? "— vs last month"
+      : `${change > 0 ? "▲" : change < 0 ? "▼" : "•"} ${Math.abs(Math.round(change))}% vs last month`;
+  return (
+    <Text
+      style={styles.deltaText}
+      numberOfLines={1}
+      adjustsFontSizeToFit
+      accessibilityLabel={
+        change === null
+          ? "No comparison with last month"
+          : `${change >= 0 ? "Up" : "Down"} ${Math.abs(Math.round(change))} percent compared with last month`
+      }
+    >
+      {text}
+    </Text>
+  );
+}
+
 const styles = StyleSheet.create({
+  deltaText: {
+    fontSize: Typography.sizes.xs,
+    color: "rgba(255, 255, 255, 0.9)",
+    marginTop: 2,
+  },
   container: {
     flex: 1,
   },
@@ -358,17 +494,16 @@ const styles = StyleSheet.create({
   financialGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: Spacing.md,
+    justifyContent: "space-between",
+    rowGap: Spacing.md,
   },
   financialCard: {
-    flex: 1,
-    minWidth: "45%",
+    width: "48%",
     padding: Spacing.lg,
     minHeight: 120,
   },
   fullWidth: {
     width: "100%",
-    minWidth: "100%",
   },
   financialValue: {
     fontSize: Typography.sizes["2xl"],

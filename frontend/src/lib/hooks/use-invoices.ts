@@ -12,6 +12,9 @@ import type {
 } from "@/types/api";
 import { toast } from "sonner";
 import { formatErrorMessage } from "@/lib/utils";
+import { parseLimitError } from "@/lib/plan";
+import { BILLING_HREF } from "@/constants/plans";
+import { USAGE_QUERY_KEY } from "@/lib/hooks/use-usage";
 
 const PAGE_SIZE = 50;
 
@@ -65,14 +68,23 @@ export const useCreateInvoice = () => {
       queryClient.invalidateQueries({ queryKey: ["invoices"] });
       queryClient.invalidateQueries({ queryKey: ["dashboard-stats"] });
       queryClient.invalidateQueries({ queryKey: ["recent-invoices"] });
+      queryClient.invalidateQueries({ queryKey: USAGE_QUERY_KEY });
       toast.success("Invoice created successfully");
     },
     onError: (error: unknown) => {
+      queryClient.invalidateQueries({ queryKey: USAGE_QUERY_KEY });
       const err = error as { response?: { data?: { detail?: unknown } } };
       const message = formatErrorMessage(
         err.response?.data?.detail,
         "Failed to create invoice",
       );
+      if (parseLimitError(error)) {
+        toast.error(message, {
+          duration: 10_000,
+          action: { label: "Upgrade options", onClick: () => window.location.assign(BILLING_HREF) },
+        });
+        return;
+      }
       toast.error(message);
     },
   });

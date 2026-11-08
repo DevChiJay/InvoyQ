@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, ActivityIndicator, Image } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, KeyboardAvoidingView, Platform, TouchableOpacity, Alert, ActivityIndicator, Image } from 'react-native';
 import { useState } from 'react';
 import { Stack, router } from 'expo-router';
 import { useTheme } from '@/hooks/useTheme';
@@ -13,8 +13,10 @@ import { Typography } from '@/constants/typography';
 import { Ionicons } from '@expo/vector-icons';
 import { userApi } from '@/services/api/user';
 import * as ImagePicker from 'expo-image-picker';
+import { useKeyboardOffset } from '@/hooks/useKeyboardOffset';
 
 export default function ProfileEditScreen() {
+  const keyboardOffset = useKeyboardOffset();
   const { colors } = useTheme();
   const { user, fetchUser } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
@@ -94,7 +96,11 @@ export default function ProfileEditScreen() {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background, paddingBottom: Math.max(insets.bottom + 80, 100) }]}>
+    <KeyboardAvoidingView
+      style={[styles.container, { backgroundColor: colors.background }]}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      keyboardVerticalOffset={keyboardOffset}
+    >
       <Stack.Screen
         options={{
           title: 'Edit Profile',
@@ -103,7 +109,12 @@ export default function ProfileEditScreen() {
         }}
       />
 
-      <ScrollView style={styles.content}>
+      <ScrollView
+        style={styles.content}
+        contentContainerStyle={{ paddingBottom: insets.bottom + 32 }}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
+      >
         {/* Avatar Section */}
         <Card style={styles.avatarCard}>
           <View style={styles.avatarSection}>
@@ -179,7 +190,7 @@ export default function ProfileEditScreen() {
         <Card style={styles.section}>
           <TouchableOpacity style={styles.settingItem} onPress={handleChangePassword}>
             <View style={[styles.iconContainer, { backgroundColor: colors.primaryLight + '20' }]}>
-              <Ionicons name="key-outline" size={20} color={colors.primary} />
+              <Ionicons name="key-outline" size={20} color={colors.primaryText} />
             </View>
             <View style={styles.settingInfo}>
               <Text style={[styles.settingTitle, { color: colors.text }]}>
@@ -201,7 +212,7 @@ export default function ProfileEditScreen() {
           style={styles.saveButton}
         />
       </ScrollView>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 

@@ -9,7 +9,7 @@ from motor.motor_asyncio import AsyncIOMotorDatabase
 from app.repositories.base import BaseRepository
 from app.schemas.user import UserOut, UserCreate, UserUpdate
 from typing import Optional
-from datetime import datetime
+from datetime import datetime, timedelta
 from pydantic import Field
 
 
@@ -381,6 +381,66 @@ class UserRepository(BaseRepository[UserInDB]):
         
         return users, total
     
+    @staticmethod
+    def _pro_fields(is_pro: bool, days: Optional[int]) -> dict:
+        """Fields written when an admin grants or revokes Pro.
+
+        A grant looks exactly like a paid subscription (status "active", start and end
+        dates) so billing pages and limits treat both the same. No `days` means no end date.
+        """
+        now = datetime.utcnow()
+        if is_pro:
+            return {
+                "is_pro": True,
+                "subscription_status": "active",
+                "subscription_provider": "admin",
+                "subscription_start_date": now,
+                "subscription_end_date": now + timedelta(days=days) if days else None,
+                "subscription_updated_at": now,
+                "updated_at": now,
+            }
+        return {
+            "is_pro": False,
+            "subscription_status": "cancelled",
+            "subscription_end_date": now,
+            "subscription_updated_at": now,
+            "updated_at": now,
+        }
+
+    async def set_pro(self, user_id: str, is_pro: bool, days: Optional[int] = None) -> Optional[UserInDB]:
+        """Grant (optionally for `days` days) or revoke Pro for one user."""
+        result = await self.collection.find_one_and_update(
+            {"_id": self._to_object_id(user_id)},
+            {"$set": self._pro_fields(is_pro, days)},
+            return_document=True,
+        )
+        if not result:
+            return None
+        result["_id"] = str(result["_id"])
+        return UserInDB(**result)
+
+    async def set_pro_many(self, user_ids: list[str], is_pro: bool, days: Optional[int] = None) -> int:
+        """Grant or revoke Pro for many users at once. Returns how many were updated."""
+        if not user_ids:
+            return 0
+        result = await self.collection.update_many(
+            {"_id": {"$in": [self._to_object_id(i) for i in user_ids]}},
+            {"$set": self._pro_fields(is_pro, days)},
+        )
+        return result.modified_count
+
+    async def find_by_emails(self, emails: list[str]) -> list[UserInDB]:
+        """Users whose email matches any of `emails` (case-insensitive on the lower-cased form)."""
+        wanted = {e.strip().lower() for e in emails if e and e.strip()}
+        if not wanted:
+            return []
+        cursor = self.collection.find({"email": {"$in": list(wanted | {e.strip() for e in emails if e})}})
+        users = []
+        async for doc in cursor:
+            doc["_id"] = str(doc["_id"])
+            users.append(UserInDB(**doc))
+        return users
+
     async def admin_update_user(
         self,
         user_id: str,

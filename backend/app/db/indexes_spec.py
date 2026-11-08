@@ -130,6 +130,15 @@ MONGO_INDEXES = {
         }
     ],
     
+    # Monthly plan usage: one document per (user, "YYYY-MM") with invoice / extraction counters
+    "usage": [
+        {
+            "keys": [("user_id", 1), ("period", 1)],
+            "unique": True,
+            "name": "idx_usage_user_period_unique"
+        }
+    ],
+
     "extractions": [
         {
             "keys": [("user_id", 1), ("created_at", -1)],

@@ -8,6 +8,9 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Mail, Loader2, CheckCircle2, ArrowLeft } from 'lucide-react'
+import { isAxiosError } from 'axios'
+import { authAPI } from '@/lib/api'
+import { formatErrorMessage } from '@/lib/utils'
 
 export default function ResendVerificationPage() {
   const router = useRouter()
@@ -23,26 +26,21 @@ export default function ResendVerificationPage() {
     setMessage('')
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/v1/auth/resend-verification`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email }),
-      })
-
-      const data = await response.json()
-
-      if (response.ok) {
-        setStatus('success')
-        setMessage(data.message || 'Verification email sent successfully!')
-      } else {
-        setStatus('error')
-        setMessage(data.detail || 'Failed to send verification email. Please try again.')
-      }
-    } catch {
+      const { data } = await authAPI.resendVerification(email)
+      setStatus('success')
+      setMessage(data.message || 'Verification email sent successfully!')
+    } catch (error) {
       setStatus('error')
-      setMessage('Network error. Please check your connection and try again.')
+      if (isAxiosError(error) && error.response) {
+        setMessage(
+          formatErrorMessage(
+            error.response.data?.detail,
+            'Failed to send verification email. Please try again.',
+          ),
+        )
+      } else {
+        setMessage('Network error. Please check your connection and try again.')
+      }
     } finally {
       setIsLoading(false)
     }
@@ -53,7 +51,7 @@ export default function ResendVerificationPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md">
         <CardHeader>
           <div className="flex items-center gap-2">
@@ -62,11 +60,12 @@ export default function ResendVerificationPage() {
               size="icon"
               onClick={handleGoBack}
               className="h-8 w-8"
+              aria-label="Back to login"
             >
               <ArrowLeft className="h-4 w-4" />
             </Button>
             <div>
-              <CardTitle>Resend Verification Email</CardTitle>
+              <CardTitle as="h1">Resend Verification Email</CardTitle>
               <CardDescription>Enter your email to receive a new verification link</CardDescription>
             </div>
           </div>
@@ -75,9 +74,9 @@ export default function ResendVerificationPage() {
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-4">
             {status === 'success' && (
-              <Alert className="border-green-200 bg-green-50 dark:border-green-900 dark:bg-green-950">
-                <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
-                <AlertDescription className="text-green-800 dark:text-green-200">
+              <Alert className="border-success/30 bg-success/10">
+                <CheckCircle2 className="h-4 w-4 text-success" />
+                <AlertDescription className="text-success">
                   {message}
                 </AlertDescription>
               </Alert>

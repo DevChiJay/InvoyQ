@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, FlatList } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, FlatList, KeyboardAvoidingView, Platform } from 'react-native';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -9,13 +9,14 @@ import { useClients } from '@/hooks/useClients';
 import { FormField, Input, TextArea, NumberInput, Select, DatePicker, Button, SelectOption, Card } from '@/components/ui';
 import { validateForm, hasErrors, getFieldError } from '@/utils/formHelpers';
 import { showError } from '@/utils/alerts';
+import { useKeyboardOffset } from '@/hooks/useKeyboardOffset';
 import { formatCurrency } from '@/utils/formatters';
 import { z } from 'zod';
 
 const invoiceSchema = z.object({
   client_id: z.string().min(1, 'Client is required'),
-  issued_date: z.date({ required_error: 'Issue date is required' }),
-  due_date: z.date({ required_error: 'Due date is required' }),
+  issued_date: z.date({ error: 'Issue date is required' }),
+  due_date: z.date({ error: 'Due date is required' }),
   currency: z.string().min(1, 'Currency is required'),
 });
 
@@ -39,6 +40,7 @@ interface LineItem {
 export default function EditInvoiceScreen() {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
+  const keyboardOffset = useKeyboardOffset();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { data: invoice, isLoading: invoiceLoading } = useInvoice(id);
   const updateInvoice = useUpdateInvoice();
@@ -195,7 +197,7 @@ export default function EditInvoiceScreen() {
   if (invoiceLoading) {
     return (
       <View style={[styles.container, styles.centered, { backgroundColor: colors.background }]}>
-        <ActivityIndicator size="large" color={colors.primary} />
+        <ActivityIndicator size="large" color={colors.primaryText} />
       </View>
     );
   }
@@ -211,7 +213,11 @@ export default function EditInvoiceScreen() {
   const totals = calculateTotals();
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <KeyboardAvoidingView
+      style={[styles.container, { backgroundColor: colors.background }]}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={keyboardOffset}
+    >
       <Stack.Screen
         options={{
           title: 'Edit Invoice',
@@ -225,11 +231,16 @@ export default function EditInvoiceScreen() {
         }}
       />
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={styles.content}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
+      >
         {invoice.status !== 'draft' && (
           <View style={[styles.warningBox, { backgroundColor: colors.warning + '20', borderColor: colors.warning }]}>
-            <Ionicons name="warning-outline" size={20} color={colors.warning} />
-            <Text style={[styles.warningText, { color: colors.warning }]}>
+            <Ionicons name="warning-outline" size={20} color={colors.warningText} />
+            <Text style={[styles.warningText, { color: colors.warningText }]}>
               This invoice is {invoice.status}. Editing may affect the invoice history.
             </Text>
           </View>
@@ -297,7 +308,7 @@ export default function EditInvoiceScreen() {
         <View style={styles.sectionHeader}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Line Items</Text>
           <TouchableOpacity onPress={addManualItem}>
-            <Ionicons name="add-circle" size={28} color={colors.primary} />
+            <Ionicons name="add-circle" size={28} color={colors.primaryText} />
           </TouchableOpacity>
         </View>
 
@@ -306,7 +317,7 @@ export default function EditInvoiceScreen() {
             <View style={styles.lineItemHeader}>
               <Text style={[styles.lineItemTitle, { color: colors.text }]}>Item {index + 1}</Text>
               <TouchableOpacity onPress={() => removeLineItem(item.id)}>
-                <Ionicons name="trash-outline" size={20} color={colors.error} />
+                <Ionicons name="trash-outline" size={20} color={colors.errorText} />
               </TouchableOpacity>
             </View>
 
@@ -374,7 +385,7 @@ export default function EditInvoiceScreen() {
           {formData.discount > 0 && (
             <View style={styles.totalRow}>
               <Text style={[styles.totalLabel, { color: colors.textSecondary }]}>Discount ({formData.discount}%)</Text>
-              <Text style={[styles.totalValue, { color: colors.error }]}>
+              <Text style={[styles.totalValue, { color: colors.errorText }]}>
                 -{formatCurrency(totals.discountAmount, formData.currency)}
               </Text>
             </View>
@@ -389,7 +400,7 @@ export default function EditInvoiceScreen() {
 
           <View style={[styles.totalRow, styles.grandTotalRow, { borderTopColor: colors.border }]}>
             <Text style={[styles.grandTotalLabel, { color: colors.text }]}>Total</Text>
-            <Text style={[styles.grandTotalValue, { color: colors.primary }]}>
+            <Text style={[styles.grandTotalValue, { color: colors.primaryText }]}>
               {formatCurrency(totals.total, formData.currency)}
             </Text>
           </View>
@@ -411,7 +422,7 @@ export default function EditInvoiceScreen() {
           style={styles.button}
         />
       </View>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 

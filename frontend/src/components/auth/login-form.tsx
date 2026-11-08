@@ -70,7 +70,7 @@ export default function LoginForm() {
   return (
     <Card>
       <CardHeader className="space-y-1">
-        <CardTitle className="text-2xl font-bold">Welcome back</CardTitle>
+        <CardTitle as="h1" className="text-2xl font-bold">Welcome back</CardTitle>
         <CardDescription>
           Enter your credentials to access your account
         </CardDescription>
@@ -133,7 +133,7 @@ export default function LoginForm() {
             <span className="w-full border-t" />
           </div>
           <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-white px-2 text-muted-foreground dark:bg-gray-950">
+            <span className="bg-card px-2 text-muted-foreground">
               Or continue with
             </span>
           </div>
@@ -142,8 +142,8 @@ export default function LoginForm() {
         <GoogleOAuthButton className="w-full" />
         
         {unverifiedEmail && (
-          <div className="mt-4 p-3 bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 rounded-md">
-            <p className="text-sm text-amber-800 dark:text-amber-200 mb-2">
+          <div className="mt-4 p-3 bg-warning/10 border border-warning/30 rounded-md">
+            <p className="text-sm text-warning mb-2">
               Your email is not verified. Please check your inbox for a verification link.
             </p>
             <Link 
@@ -157,7 +157,7 @@ export default function LoginForm() {
         
         <div className="mt-4 text-center text-sm">
           Don&apos;t have an account?{' '}
-          <Link href="/register" className="text-primary hover:underline">
+          <Link href="/register" className="font-medium text-primary underline underline-offset-4">
             Sign up
           </Link>
         </div>

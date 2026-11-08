@@ -32,10 +32,14 @@ import type {
   ExpenseSummaryResponse,
   MonthlyStatsParams,
   MonthlyStatsResponse,
+  StatsTrendResponse,
+  Usage,
   AdminUser,
   AdminUserListResponse,
   AdminUserListParams,
   AdminUserUpdate,
+  BulkProRequest,
+  BulkProResponse,
   AdminUserInvoicesResponse,
 } from "@/types/api";
 
@@ -314,7 +318,7 @@ export const generateAPI = {
     tax?: string;
     total?: string;
     number?: string;
-    payment_provider?: "paystack" | "stripe";
+    payment_provider?: "paystack";
     payment_link?: string;
     currency?: string;
   }) => api.post<Invoice>("/v1/generate-invoice", data),
@@ -343,7 +347,7 @@ export const freeExtractionAPI = {
 
 export const paymentsAPI = {
   createSubscription: (data: {
-    provider: "paystack" | "stripe";
+    provider: "paystack";
     currency: string;
     callback_url?: string;
   }) =>
@@ -354,7 +358,7 @@ export const paymentsAPI = {
 
   verifyPayment: (data: {
     reference: string;
-    provider: "paystack" | "stripe";
+    provider: "paystack";
   }) =>
     api.post<{ message: string; is_pro: boolean }>(
       "/v1/payments/subscription/verify",
@@ -451,10 +455,18 @@ export const expensesAPI = {
   }) => api.get<ExpenseSummaryResponse>("/v1/expenses/summary", { params }),
 };
 
+// Plan usage API
+export const usageAPI = {
+  get: () => api.get<Usage>("/v1/usage"),
+};
+
 // Stats API
 export const statsAPI = {
   getMonthlyStats: (params: MonthlyStatsParams) =>
     api.get<MonthlyStatsResponse>("/v1/stats/monthly", { params }),
+
+  getTrend: (params: MonthlyStatsParams & { months?: number }) =>
+    api.get<StatsTrendResponse>("/v1/stats/trend", { params }),
 };
 
 // Demo extraction helper - uses the same endpoint as authenticated extraction
@@ -506,6 +518,10 @@ export const adminAPI = {
     api.patch<AdminUser>(`/v1/admin/users/${userId}`, data),
 
   deleteUser: (userId: string) => api.delete(`/v1/admin/users/${userId}`),
+
+  // Grant or revoke Pro for several users (up to 200) by id or email
+  bulkSetPro: (data: BulkProRequest) =>
+    api.post<BulkProResponse>("/v1/admin/users/bulk-pro", data),
 
   // User Invoices
   getUserInvoices: (

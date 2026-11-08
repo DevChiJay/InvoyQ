@@ -129,7 +129,7 @@ export function ExpenseForm({ expense, categories = [], onSubmit, isSubmitting }
                 <FormControl>
                   <Input type="date" {...field} />
                 </FormControl>
-                <FormDescription>YYYY-MM-DD format</FormDescription>
+                <FormDescription>The day you paid for it</FormDescription>
                 <FormMessage />
               </FormItem>
             )}
@@ -172,7 +172,7 @@ export function ExpenseForm({ expense, categories = [], onSubmit, isSubmitting }
                     className="font-mono"
                   />
                 </FormControl>
-                <FormDescription>Decimal as string, must be {'>'} 0</FormDescription>
+                <FormDescription>Must be more than 0</FormDescription>
                 <FormMessage />
               </FormItem>
             )}

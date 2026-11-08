@@ -24,8 +24,10 @@ import {
 } from "@/utils/formHelpers";
 import { clientSchema } from "@/utils/validation";
 import { showError } from "@/utils/alerts";
+import { useKeyboardOffset } from '@/hooks/useKeyboardOffset';
 
 export default function CreateClientScreen() {
+  const keyboardOffset = useKeyboardOffset();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const createClient = useCreateClient();
@@ -91,7 +93,7 @@ export default function CreateClientScreen() {
       <KeyboardAvoidingView
         style={styles.keyboardView}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
-        keyboardVerticalOffset={100}
+        keyboardVerticalOffset={keyboardOffset}
       >
         <ScrollView
           style={styles.content}

@@ -1,9 +1,12 @@
 "use client";
 
 import { useRef, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import Link from "next/link";
+import { Loader2, Pencil, Search, SearchX, Trash2, Users } from "lucide-react";
+import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
   TableBody,
@@ -12,17 +15,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Search,
-  Mail,
-  Phone,
-  MapPin,
-  Eye,
-  Pencil,
-  Trash2,
-  Loader2,
-} from "lucide-react";
-import Link from "next/link";
+import { EmptyState } from "@/components/shared/empty-state";
 import type { Client } from "@/types/api";
 
 interface ClientListProps {
@@ -34,6 +27,7 @@ interface ClientListProps {
   hasMore?: boolean;
   isLoadingMore?: boolean;
   onLoadMore?: () => void;
+  onAddClient?: () => void;
 }
 
 export function ClientList({
@@ -45,6 +39,7 @@ export function ClientList({
   hasMore = false,
   isLoadingMore = false,
   onLoadMore,
+  onAddClient,
 }: ClientListProps) {
   const sentinelRef = useRef<HTMLDivElement | null>(null);
 
@@ -66,208 +61,143 @@ export function ClientList({
     return () => observer.disconnect();
   }, [onLoadMore, hasMore]);
 
-  if (isLoading) {
+  if (!isLoading && clients.length === 0 && !searchTerm) {
     return (
       <Card>
-        <CardHeader>
-          <CardTitle>Clients</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="h-16 bg-muted animate-pulse rounded" />
-            ))}
-          </div>
-        </CardContent>
+        <EmptyState
+          icon={Users}
+          title="No clients yet"
+          description="Add the people and businesses you invoice. Clients found in a chat can be added during extraction too."
+          action={onAddClient && <Button onClick={onAddClient}>Add Client</Button>}
+        />
       </Card>
     );
   }
 
-  if (clients.length === 0 && !searchTerm) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Clients</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-col items-center justify-center py-12 text-center">
-            <div className="rounded-full bg-muted p-6 mb-4">
-              <Mail className="h-12 w-12 text-muted-foreground" />
-            </div>
-            <h3 className="font-semibold text-lg mb-2">No clients yet</h3>
-            <p className="text-sm text-muted-foreground mb-6">
-              Get started by adding your first client.
-            </p>
-            <Button asChild>
-              <Link href="/dashboard/clients/new">Add Client</Link>
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
+  const dash = <span className="text-muted-foreground">—</span>;
 
   return (
     <div className="space-y-4">
-      {/* Search Bar */}
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
         <Input
-          placeholder="Search clients by name or email..."
+          type="search"
+          aria-label="Search clients"
+          placeholder="Search clients by name or email"
           value={searchTerm}
           onChange={(e) => onSearchChange?.(e.target.value)}
           className="pl-10"
         />
       </div>
 
-      {/* Desktop Table View */}
-      <Card className="hidden md:block">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead>Phone</TableHead>
-              <TableHead>Address</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {clients.map((client) => (
-              <TableRow key={client.id}>
-                <TableCell className="font-medium">{client.name}</TableCell>
-                <TableCell>
-                  <div className="flex items-center gap-2">
-                    <Mail className="h-4 w-4 text-muted-foreground" />
-                    {client.email}
-                  </div>
-                </TableCell>
-                <TableCell>
-                  {client.phone ? (
-                    <div className="flex items-center gap-2">
-                      <Phone className="h-4 w-4 text-muted-foreground" />
-                      {client.phone}
-                    </div>
-                  ) : (
-                    <span className="text-muted-foreground">—</span>
-                  )}
-                </TableCell>
-                <TableCell>
-                  {client.address ? (
-                    <div className="flex items-center gap-2">
-                      <MapPin className="h-4 w-4 text-muted-foreground" />
-                      <span className="max-w-[200px] truncate">
-                        {client.address}
-                      </span>
-                    </div>
-                  ) : (
-                    <span className="text-muted-foreground">—</span>
-                  )}
-                </TableCell>
-                <TableCell className="text-right">
-                  <div className="flex items-center justify-end gap-2">
-                    <Button variant="ghost" size="sm" asChild>
-                      <Link href={`/dashboard/clients/${client.id}`}>
-                        <Eye className="h-4 w-4" />
-                      </Link>
-                    </Button>
-                    <Button variant="ghost" size="sm" asChild>
-                      <Link href={`/dashboard/clients/${client.id}/edit`}>
-                        <Pencil className="h-4 w-4" />
-                      </Link>
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => onDelete?.(client.id, client.name)}
-                    >
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
-                  </div>
-                </TableCell>
-              </TableRow>
+      {isLoading ? (
+        <Card className="gap-0 p-4" aria-busy="true">
+          <div className="space-y-3">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <Skeleton key={i} className="h-12 w-full" />
             ))}
-          </TableBody>
-        </Table>
-      </Card>
+          </div>
+        </Card>
+      ) : clients.length === 0 ? (
+        <Card>
+          <EmptyState
+            icon={SearchX}
+            title="No clients match"
+            description={<>Nothing found for &ldquo;{searchTerm}&rdquo;.</>}
+            action={
+              <Button variant="outline" onClick={() => onSearchChange?.("")}>
+                Clear search
+              </Button>
+            }
+          />
+        </Card>
+      ) : (
+        <>
+          <Card className="hidden gap-0 py-0 md:block">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Phone</TableHead>
+                  <TableHead>Address</TableHead>
+                  <TableHead className="w-24 text-right">
+                    <span className="sr-only">Actions</span>
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {clients.map((client) => (
+                  <TableRow key={client.id}>
+                    <TableCell className="font-medium">
+                      <Link
+                        href={`/dashboard/clients/${client.id}`}
+                        className="rounded-sm hover:underline focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                      >
+                        {client.name}
+                      </Link>
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">{client.email || dash}</TableCell>
+                    <TableCell className="text-muted-foreground tabular-nums">{client.phone || dash}</TableCell>
+                    <TableCell className="max-w-64 truncate text-muted-foreground">{client.address || dash}</TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        <Button variant="ghost" size="icon-sm" asChild>
+                          <Link href={`/dashboard/clients/${client.id}/edit`} aria-label={`Edit ${client.name}`}>
+                            <Pencil />
+                          </Link>
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          aria-label={`Delete ${client.name}`}
+                          onClick={() => onDelete?.(client.id, client.name)}
+                        >
+                          <Trash2 className="text-destructive" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </Card>
 
-      {/* Mobile Card View */}
-      <div className="md:hidden space-y-4">
-        {clients.map((client) => (
-          <Card key={client.id}>
-            <CardContent className="pt-6">
-              <div className="space-y-3">
-                <div>
-                  <h3 className="font-semibold text-lg">{client.name}</h3>
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
-                    <Mail className="h-4 w-4" />
-                    {client.email}
-                  </div>
-                </div>
-                {client.phone && (
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Phone className="h-4 w-4" />
-                    {client.phone}
-                  </div>
-                )}
-                {client.address && (
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <MapPin className="h-4 w-4" />
-                    {client.address}
-                  </div>
-                )}
-                <div className="flex gap-2 pt-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="flex-1"
-                    asChild
+          <ul className="space-y-2 md:hidden">
+            {clients.map((client) => (
+              <li key={client.id}>
+                <Card className="flex-row items-center gap-3 p-4">
+                  <Link
+                    href={`/dashboard/clients/${client.id}`}
+                    className="min-w-0 flex-1 rounded-sm focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
                   >
-                    <Link href={`/dashboard/clients/${client.id}`}>
-                      <Eye className="mr-2 h-4 w-4" />
-                      View
-                    </Link>
-                  </Button>
+                    <p className="font-medium">{client.name}</p>
+                    <p className="truncate text-sm text-muted-foreground">
+                      {[client.email, client.phone].filter(Boolean).join(" · ") || "No contact details"}
+                    </p>
+                  </Link>
                   <Button
-                    variant="outline"
-                    size="sm"
-                    className="flex-1"
-                    asChild
-                  >
-                    <Link href={`/dashboard/clients/${client.id}/edit`}>
-                      <Pencil className="mr-2 h-4 w-4" />
-                      Edit
-                    </Link>
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
+                    variant="ghost"
+                    size="icon-sm"
+                    aria-label={`Delete ${client.name}`}
                     onClick={() => onDelete?.(client.id, client.name)}
                   >
-                    <Trash2 className="h-4 w-4 text-destructive" />
+                    <Trash2 className="text-destructive" />
                   </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      {/* Infinite scroll sentinel */}
-      <div ref={sentinelRef} className="h-4" />
-
-      {/* Loading more indicator */}
-      {isLoadingMore && (
-        <div className="flex justify-center py-4">
-          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-        </div>
+                </Card>
+              </li>
+            ))}
+          </ul>
+        </>
       )}
 
-      {/* No results for search */}
-      {clients.length === 0 && searchTerm && (
-        <p className="text-center text-sm text-muted-foreground py-8">
-          No clients match &ldquo;{searchTerm}&rdquo;
-        </p>
+      <div ref={sentinelRef} className="h-4" />
+
+      {isLoadingMore && (
+        <div className="flex justify-center py-4" role="status">
+          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" aria-hidden="true" />
+          <span className="sr-only">Loading more clients</span>
+        </div>
       )}
     </div>
   );

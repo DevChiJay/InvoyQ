@@ -5,7 +5,8 @@ import type { ExpoConfig } from "expo/config";
 const projectId = process.env.EAS_PROJECT_ID;
 const iosGoogleClientId = process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID_IOS ?? "";
 
-// The iOS URL scheme for Google Sign-In is the reversed iOS client ID.
+// The iOS URL scheme for Google Sign-In is the reversed iOS client ID. The
+// @react-native-google-signin plugin below registers it in Info.plist.
 const googleIosUrlScheme = iosGoogleClientId
   ? `com.googleusercontent.apps.${iosGoogleClientId.replace(".apps.googleusercontent.com", "")}`
   : undefined;
@@ -34,9 +35,6 @@ const config: ExpoConfig = {
         "This app uses the camera to capture receipts and documents.",
       NSPhotoLibraryUsageDescription:
         "This app accesses your photo library to upload receipts and documents.",
-      ...(googleIosUrlScheme && {
-        CFBundleURLTypes: [{ CFBundleURLSchemes: [googleIosUrlScheme] }],
-      }),
       ITSAppUsesNonExemptEncryption: false,
     },
   },
@@ -69,6 +67,18 @@ const config: ExpoConfig = {
     ],
     "@react-native-community/datetimepicker",
     "expo-web-browser",
+    // Xcode 27 fails the build on pods that still target iOS < 15; see the plugin.
+    "./plugins/withPodsDeploymentTarget",
+    // Native Google Sign-In. The plugin throws without an iOS URL scheme, so only add it
+    // when the iOS client id is set; builds without it simply hide the Google button.
+    ...(googleIosUrlScheme
+      ? ([
+          [
+            "@react-native-google-signin/google-signin",
+            { iosUrlScheme: googleIosUrlScheme },
+          ],
+        ] as NonNullable<ExpoConfig["plugins"]>)
+      : []),
   ],
   experiments: { typedRoutes: true },
   extra: {

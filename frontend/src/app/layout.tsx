@@ -1,7 +1,8 @@
-import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import type { Metadata, Viewport } from "next";
+import { Geist, Space_Grotesk } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import { QueryProvider } from "@/components/providers/query-provider";
+import { ThemeProvider } from "@/components/providers/theme-provider";
 import Script from "next/script";
 import "./globals.css";
 import dynamic from "next/dynamic";
@@ -20,15 +21,25 @@ const geistSans = Geist({
   subsets: ["latin"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+// Display face for headings, KPI figures and invoice totals (shared with devchi.me).
+const spaceGrotesk = Space_Grotesk({
+  variable: "--font-space",
   subsets: ["latin"],
+  weight: ["500", "600", "700"],
 });
+
+// Browser UI colour follows the system theme (set before first paint, so no flash).
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#f8fafc" },
+    { media: "(prefers-color-scheme: dark)", color: "#0b1120" },
+  ],
+};
 
 export const metadata: Metadata = {
   title: {
-    default: "InvoYQ - All-in-One Invoicing Platform",
-    template: "%s | InvoYQ",
+    default: "InvoyQ - All-in-One Invoicing Platform",
+    template: "%s | InvoyQ",
   },
   description:
     "All-in-one invoicing dashboard to create, manage, and track invoices, clients, products, stock, and expenses—built for speed, clarity, and getting paid faster.",
@@ -46,43 +57,39 @@ export const metadata: Metadata = {
     "invoice software",
     "freelance invoicing",
   ],
-  authors: [{ name: "Devchi Digital" }],
-  creator: "Devchi",
-  publisher: "InvoYQ",
+  authors: [{ name: "Devchi Digital", url: "https://www.devchi.me" }],
+  creator: "Devchi Digital",
+  publisher: "Devchi Digital",
   formatDetection: {
     email: false,
     address: false,
     telephone: false,
   },
-  metadataBase: new URL(
-    process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
-  ),
-  alternates: {
-    canonical: "/",
-  },
+  // Canonical URLs are set per page (see each page's `alternates`), never site-wide,
+  // otherwise every page would tell search engines it is the homepage.
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://invoyq.com"),
   openGraph: {
-    title: "InvoYQ - All-in-One Invoicing Platform",
+    title: "InvoyQ - All-in-One Invoicing Platform",
     description:
       "All-in-one invoicing dashboard to create, manage, and track invoices, clients, products, stock, and expenses—built for speed, clarity, and getting paid faster.",
-    url: "/",
-    siteName: "InvoYQ",
+    siteName: "InvoyQ",
     locale: "en_US",
     type: "website",
     images: [
       {
-        url: "/og-image.png",
+        url: "/og-image.jpg",
         width: 1200,
         height: 630,
-        alt: "InvoYQ - All-in-One Invoicing Platform",
+        alt: "InvoyQ - All-in-One Invoicing Platform",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "InvoYQ - All-in-One Invoicing Platform",
+    title: "InvoyQ - All-in-One Invoicing Platform",
     description:
-      "Create professional invoices, track payments, manage clients, products, and expenses, and get paid faster with InvoYQ.",
-    images: ["/og-image.png"],
+      "Create professional invoices, track payments, manage clients, products, and expenses, and get paid faster with InvoyQ.",
+    images: ["/og-image.jpg"],
     creator: "@devchijay",
   },
   robots: {
@@ -99,7 +106,7 @@ export const metadata: Metadata = {
   icons: {
     icon: "/icon.svg",
     shortcut: "/icon.svg",
-    apple: "/icon.svg",
+    apple: "/apple-touch-icon.png",
   },
   manifest: "/manifest.json",
 };
@@ -115,10 +122,6 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <link
-          rel="canonical"
-          href={process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}
-        />
         {/* Only load script if environment variables exist */}
         {umamiUrl && umamiId && (
           <Script
@@ -130,18 +133,21 @@ export default function RootLayout({
         )}
       </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${spaceGrotesk.variable} antialiased`}
       >
         {process.env.NODE_ENV === "production" && <GoogleAnalytics />}
-        <QueryProvider>
-          {children}
-          <Toaster />
-        </QueryProvider>
+        <ThemeProvider>
+          <QueryProvider>
+            {children}
+            <Toaster />
+          </QueryProvider>
+        </ThemeProvider>
 
         {/* Smartsupp Live Chat */}
         <Script
           id="smartsupp-chat"
-          strategy="afterInteractive"
+          // The chat widget isn't needed to read or use the page: load it once the browser is idle.
+          strategy="lazyOnload"
           dangerouslySetInnerHTML={{
             __html: `
               var _smartsupp = _smartsupp || {};

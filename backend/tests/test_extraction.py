@@ -1,84 +1,47 @@
+"""Extraction endpoint: needs a signed-in user, uses the stub extractor (no OpenAI calls)."""
 import pytest
-from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from httpx import AsyncClient
 
-from app.main import app
-from app.db.session import Base, get_db
+from app.api.v1 import extraction as extraction_module
 
 
-@pytest.fixture()
-def client_app():
-    # Use a separate SQLite DB for tests with transaction rollback
-    SQLALCHEMY_DATABASE_URL = "sqlite:///./test_extract.db"
-    engine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False})
-    Base.metadata.create_all(bind=engine)
-
-    connection = engine.connect()
-    transaction = connection.begin()
-    TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=connection)
-
-    def override_get_db():
-        db = TestingSessionLocal()
-        try:
-            yield db
-            db.flush()
-        finally:
-            db.close()
-
-    app.dependency_overrides[get_db] = override_get_db
-    client = TestClient(app)
-
-    try:
-        yield client
-    finally:
-        transaction.rollback()
-        connection.close()
+class StubExtractor:
+    async def aextract(self, text, file_bytes=None, file_mime=None):
+        return {"jobs": ["Logo design"], "amount": 50000, "currency": "NGN", "confidence": 0.9}
 
 
-def auth_headers(client: TestClient):
-    # Register and login
-    r = client.post("/v1/auth/register", json={
-        "email": "ext@example.com",
-        "full_name": "Extractor User",
-        "password": "secret123",
-    })
-    assert r.status_code in (201, 400)
-    r = client.post(
-        "/v1/auth/login",
-        data={"username": "ext@example.com", "password": "secret123"},
-        headers={"Content-Type": "application/x-www-form-urlencoded"},
-    )
-    assert r.status_code == 200, r.text
-    token = r.json()["access_token"]
-    return {"Authorization": f"Bearer {token}"}
+class FailingExtractor:
+    async def aextract(self, text, file_bytes=None, file_mime=None):
+        raise RuntimeError("OpenAI is down")
 
 
-def test_extract_text_minimal_flow(client_app: TestClient, monkeypatch):
-    # Monkeypatch the extractor factory to return a stub
-    from app.api.v1 import extraction as extraction_module
-
-    class StubExtractor:
-        def extract_from_text(self, text: str):
-            return {
-                "jobs": ["Logo design"],
-                "deadlines": ["2025-10-30"],
-                "payment_terms": "50% upfront",
-                "amount": 500,
-                "currency": "USD",
-                "confidence": 88,
-            }
-
+async def test_extraction_requires_login(client: AsyncClient, monkeypatch):
     monkeypatch.setattr(extraction_module, "get_extractor", lambda provider=None: StubExtractor())
+    response = await client.post("/v1/extract-job-details", data={"text": "Logo design 50000"})
+    assert response.status_code == 401
 
-    headers = auth_headers(client_app)
-    r = client_app.post(
-        "/v1/extract-job-details",
-        data={"text": "Make an invoice for Matthew Philips. He want 2 feet container delivered to Nigeria by December 9th and is willing to pay 70% of the total amount of 5 million naira"},
-        headers=headers,
+
+async def test_extraction_saves_the_user_id(client: AsyncClient, auth_headers, test_user, test_db, monkeypatch):
+    monkeypatch.setattr(extraction_module, "get_extractor", lambda provider=None: StubExtractor())
+    response = await client.post(
+        "/v1/extract-job-details", data={"text": "Logo design 50000"}, headers=auth_headers
     )
-    assert r.status_code == 200, r.text
-    body = r.json()
-    assert "extraction_id" in body
-    assert body["parsed"]["amount"] == 500
-    assert body["parsed"]["currency"] == "USD"
+    assert response.status_code == 200
+    body = response.json()
+    assert body["parsed"]["amount"] == 50000
+    doc = await test_db.extractions.find_one({"user_id": test_user.id})
+    assert doc is not None
+
+
+async def test_empty_extraction_is_rejected_and_not_counted(client: AsyncClient, auth_headers, test_db):
+    response = await client.post("/v1/extract-job-details", data={"text": "  "}, headers=auth_headers)
+    assert response.status_code == 400
+    assert await test_db.usage.count_documents({}) == 0
+
+
+async def test_failed_extraction_is_refunded(client: AsyncClient, auth_headers, test_user, test_db, monkeypatch):
+    monkeypatch.setattr(extraction_module, "get_extractor", lambda provider=None: FailingExtractor())
+    response = await client.post("/v1/extract-job-details", data={"text": "x"}, headers=auth_headers)
+    assert response.status_code == 500
+    usage = await client.get("/v1/usage", headers=auth_headers)
+    assert usage.json()["extractions"]["used"] == 0

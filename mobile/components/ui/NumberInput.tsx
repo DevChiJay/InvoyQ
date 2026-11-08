@@ -1,6 +1,7 @@
 import React from 'react';
 import { TextInput, StyleSheet, TextInputProps } from 'react-native';
 import { useTheme } from '@/hooks/useTheme';
+import { BorderRadius } from '@/constants/colors';
 
 interface NumberInputProps extends Omit<TextInputProps, 'keyboardType' | 'onChange'> {
   value: string;
@@ -76,19 +77,20 @@ export function NumberInput({
 
   return (
     <TextInput
+      accessibilityLabel={props.accessibilityLabel ?? props.placeholder}
       value={value}
       onChangeText={handleChange}
       keyboardType="decimal-pad"
       style={[
         styles.input,
         {
-          backgroundColor: colors.surface,
+          backgroundColor: colors.inputBackground,
           borderColor: error ? colors.error : colors.border,
           color: colors.text,
         },
         style,
       ]}
-      placeholderTextColor={colors.textSecondary}
+      placeholderTextColor={colors.textTertiary}
       {...props}
     />
   );
@@ -96,9 +98,9 @@ export function NumberInput({
 
 const styles = StyleSheet.create({
   input: {
-    height: 48,
+    minHeight: 48,
     borderWidth: 1,
-    borderRadius: 8,
+    borderRadius: BorderRadius.md,
     paddingHorizontal: 16,
     fontSize: 16,
   },

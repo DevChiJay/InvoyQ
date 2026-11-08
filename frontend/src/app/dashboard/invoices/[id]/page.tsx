@@ -12,13 +12,17 @@ import { useClient } from "@/lib/hooks/use-clients";
 import { useSendReminder } from "@/lib/hooks/use-payments";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { InvoicePreview } from "@/components/invoices/invoice-preview";
-import { ProFeatureGate } from "@/components/payments/pro-feature-gate";
-import { Pencil, Trash2, ArrowLeft, Bell } from "lucide-react";
+import { PageHeader } from "@/components/shared/page-header";
+import { StatusBadge } from "@/components/shared/status-badge";
+import { EmptyState } from "@/components/shared/empty-state";
+import { BellRing, FileQuestion, Mail, MessageCircle, Pencil, Trash2, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { formatRelativeDate } from "@/lib/format";
+import { whatsAppShareUrl } from "@/lib/share";
 import { toast } from "sonner";
 
 // Dynamically import InvoicePDFViewer with ssr: false to avoid Node.js module issues in dev mode
@@ -40,7 +44,8 @@ export default function InvoiceDetailPage() {
   const sendReminder = useSendReminder();
   const sendInvoiceEmail = useSendInvoiceEmail();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const previewRef = useRef<HTMLDivElement>(null);
+  // PDF/image export renders from a fixed-width off-screen copy, so phones get the full A4 layout.
+  const exportRef = useRef<HTMLDivElement>(null);
 
   const handleDelete = () => {
     toast.promise(
@@ -82,152 +87,132 @@ export default function InvoiceDetailPage() {
     });
   };
 
-  const getStatusBadgeVariant = (
-    status: string,
-  ): "default" | "secondary" | "destructive" | "outline" => {
-    switch (status) {
-      case "paid":
-        return "default";
-      case "sent":
-        return "secondary";
-      case "overdue":
-        return "destructive";
-      case "draft":
-        return "outline";
-      default:
-        return "secondary";
-    }
-  };
-
   if (isLoading) {
     return (
-      <div className="space-y-6">
-        <div className="h-8 w-64 bg-muted animate-pulse rounded" />
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <Card className="lg:col-span-2">
-            <CardContent className="p-6">
-              <div className="space-y-4">
-                {[1, 2, 3, 4].map((i) => (
-                  <div key={i} className="h-4 bg-muted animate-pulse rounded" />
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-6">
-              <div className="space-y-4">
-                {[1, 2, 3].map((i) => (
-                  <div key={i} className="h-4 bg-muted animate-pulse rounded" />
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+      <div className="space-y-6" aria-busy="true">
+        <Skeleton className="h-9 w-56" />
+        <Skeleton className="h-[480px] w-full rounded-xl" />
       </div>
     );
   }
 
+  const backLink = (
+    <Button variant="ghost" size="sm" asChild className="-ml-2">
+      <Link href="/dashboard/invoices">
+        <ArrowLeft className="h-4 w-4" />
+        Invoices
+      </Link>
+    </Button>
+  );
+
   if (!invoice) {
     return (
       <div className="space-y-6">
-        <Button variant="ghost" asChild>
-          <Link href="/dashboard/invoices">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Invoices
-          </Link>
-        </Button>
+        {backLink}
         <Card>
-          <CardContent className="pt-6">
-            <div className="text-center py-12">
-              <h3 className="font-semibold text-lg mb-2">Invoice not found</h3>
-              <p className="text-sm text-muted-foreground">
-                The invoice you&apos;re looking for doesn&apos;t exist.
-              </p>
-            </div>
-          </CardContent>
+          <EmptyState
+            icon={FileQuestion}
+            title="Invoice not found"
+            description="It may have been deleted, or the link is wrong."
+            action={
+              <Button asChild>
+                <Link href="/dashboard/invoices">See all invoices</Link>
+              </Button>
+            }
+          />
         </Card>
       </div>
     );
   }
 
+  const sendDisabledReason =
+    invoice.status === "paid"
+      ? "This invoice is already paid."
+      : !client?.email
+        ? "Add an email address to this client to send by email."
+        : null;
+
   return (
     <div className="space-y-6">
-      {/* Header Actions */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="sm" asChild>
-            <Link href="/dashboard/invoices">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back
-            </Link>
-          </Button>
-          <div>
-            <div className="flex items-center gap-3">
-              <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">
-                {invoice.number}
-              </h2>
-              <Badge variant={getStatusBadgeVariant(invoice.status)}>
-                {invoice.status.toUpperCase()}
-              </Badge>
-            </div>
-            <p className="text-sm text-muted-foreground">
-              Created {formatRelativeDate(invoice.created_at)}
-            </p>
-          </div>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Button
-            variant="default"
-            size="sm"
-            onClick={handleSendInvoice}
-            disabled={
-              sendInvoiceEmail.isPending ||
-              invoice.status === "paid" ||
-              !client?.email
-            }
-          >
-            <Bell className="mr-2 h-4 w-4" />
-            {sendInvoiceEmail.isPending ? "Sending..." : "Send Invoice"}
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleSendReminder}
-            disabled={sendReminder.isPending || invoice.status === "paid"}
-          >
-            <Bell className="mr-2 h-4 w-4" />
-            {sendReminder.isPending ? "Sending..." : "Send Reminder"}
-          </Button>
-          <Button variant="outline" size="sm" asChild>
-            <Link href={`/dashboard/invoices/${invoice.id}/edit`}>
-              <Pencil className="mr-2 h-4 w-4" />
-              Edit
-            </Link>
-          </Button>
-          <Button
-            variant="destructive"
-            size="sm"
-            onClick={() => setShowDeleteDialog(true)}
-            disabled={deleteInvoice.isPending}
-          >
-            <Trash2 className="mr-2 h-4 w-4" />
-            Delete
-          </Button>
-        </div>
-      </div>
+      <PageHeader
+        back={backLink}
+        title={
+          <span className="flex flex-wrap items-center gap-3">
+            {invoice.number}
+            <StatusBadge status={invoice.status} className="font-sans text-xs" />
+          </span>
+        }
+        description={
+          <>
+            {client?.name ? `For ${client.name} · ` : ""}Created {formatRelativeDate(invoice.created_at)}
+          </>
+        }
+        actions={
+          <>
+            <Button asChild size="sm">
+              <a href={whatsAppShareUrl(invoice, client)} target="_blank" rel="noopener noreferrer">
+                <MessageCircle className="h-4 w-4" />
+                Share on WhatsApp
+              </a>
+            </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                {/* span keeps the tooltip working while the button is disabled */}
+                <span tabIndex={sendDisabledReason ? 0 : -1}>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleSendInvoice}
+                    disabled={sendInvoiceEmail.isPending || Boolean(sendDisabledReason)}
+                  >
+                    <Mail className="h-4 w-4" />
+                    {sendInvoiceEmail.isPending ? "Sending..." : "Send by email"}
+                  </Button>
+                </span>
+              </TooltipTrigger>
+              {sendDisabledReason && <TooltipContent>{sendDisabledReason}</TooltipContent>}
+            </Tooltip>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleSendReminder}
+              disabled={sendReminder.isPending || invoice.status === "paid"}
+            >
+              <BellRing className="h-4 w-4" />
+              {sendReminder.isPending ? "Sending..." : "Send reminder"}
+            </Button>
+            <Button variant="outline" size="sm" asChild>
+              <Link href={`/dashboard/invoices/${invoice.id}/edit`}>
+                <Pencil className="h-4 w-4" />
+                Edit
+              </Link>
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+              onClick={() => setShowDeleteDialog(true)}
+              disabled={deleteInvoice.isPending}
+            >
+              <Trash2 className="h-4 w-4" />
+              Delete
+            </Button>
+          </>
+        }
+      />
 
-      {/* Invoice Preview with Client Info */}
-      <div ref={previewRef}>
-        <InvoicePreview invoice={invoice} client={client} />
-      </div>
+      <InvoicePreview invoice={invoice} client={client} />
 
-      {/* PDF Viewer */}
       {client && (
-        <InvoicePDFViewer
-          invoice={invoice}
-          client={client}
-          previewRef={previewRef}
-        />
+        <>
+          <InvoicePDFViewer invoice={invoice} client={client} previewRef={exportRef} />
+          {/* Off-screen, fixed-width copy used only for PDF / image export */}
+          <div aria-hidden="true" inert className="pointer-events-none fixed top-0 -left-[10000px] w-[794px]">
+            <div ref={exportRef}>
+              <InvoicePreview invoice={invoice} client={client} />
+            </div>
+          </div>
+        </>
       )}
 
       {/* Delete Confirmation Dialog */}

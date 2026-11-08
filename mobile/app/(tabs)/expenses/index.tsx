@@ -17,7 +17,9 @@ import {
   EmptyState,
   SkeletonList,
   ErrorState,
+  FAB,
 } from "@/components/ui";
+import { useTabBarInset } from "@/hooks/useTabBarInset";
 import { useDebounce } from "@/hooks/useDebounce";
 import { useFilterState } from "@/hooks/useFilterState";
 import { Spacing } from "@/constants/colors";
@@ -53,6 +55,21 @@ const categoryFilters = [
     icon: "flash" as keyof typeof Ionicons.glyphMap,
   },
   {
+    label: "Rent",
+    value: "rent",
+    icon: "home" as keyof typeof Ionicons.glyphMap,
+  },
+  {
+    label: "Salaries",
+    value: "salaries",
+    icon: "people" as keyof typeof Ionicons.glyphMap,
+  },
+  {
+    label: "Marketing",
+    value: "marketing",
+    icon: "megaphone" as keyof typeof Ionicons.glyphMap,
+  },
+  {
     label: "Other",
     value: "other",
     icon: "ellipsis-horizontal" as keyof typeof Ionicons.glyphMap,
@@ -62,6 +79,7 @@ const categoryFilters = [
 export default function ExpensesScreen() {
   const { data, isLoading, error, refetch } = useExpenses();
   const { colors } = useTheme();
+  const { contentBottom } = useTabBarInset();
   const { filterState, isLoaded, updateFilter } = useFilterState("expenses");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
@@ -158,40 +176,6 @@ export default function ExpensesScreen() {
     });
   };
 
-  if (isLoading) {
-    return (
-      <View style={[styles.container, { backgroundColor: colors.background }]}>
-        <Stack.Screen
-          options={{
-            title: "Expenses",
-            headerStyle: { backgroundColor: colors.surface },
-            headerTintColor: colors.text,
-          }}
-        />
-        <SkeletonList count={6} />
-      </View>
-    );
-  }
-
-  if (error) {
-    return (
-      <View style={[styles.container, { backgroundColor: colors.background }]}>
-        <Stack.Screen
-          options={{
-            title: "Expenses",
-            headerStyle: { backgroundColor: colors.surface },
-            headerTintColor: colors.text,
-          }}
-        />
-        <ErrorState
-          title="Failed to load expenses"
-          message="We couldn't fetch your expenses. Please check your connection and try again."
-          onRetry={refetch}
-        />
-      </View>
-    );
-  }
-
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <Stack.Screen
@@ -199,14 +183,6 @@ export default function ExpensesScreen() {
           title: "Expenses",
           headerStyle: { backgroundColor: colors.surface },
           headerTintColor: colors.text,
-          headerRight: () => (
-            <TouchableOpacity
-              onPress={() => router.push("/expenses/create")}
-              style={styles.headerButton}
-            >
-              <Ionicons name="add" size={28} color={colors.primary} />
-            </TouchableOpacity>
-          ),
         }}
       />
 
@@ -240,10 +216,21 @@ export default function ExpensesScreen() {
       </View>
 
       {/* Expense List */}
+      {isLoading ? (
+        <SkeletonList count={6} />
+      ) : error ? (
+        <ErrorState
+          title="Failed to load expenses"
+          message="We couldn't fetch your expenses. Please check your connection and try again."
+          onRetry={refetch}
+        />
+      ) : (
       <FlatList
         data={filteredExpenses}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
         keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.listContent}
+        contentContainerStyle={[styles.listContent, { paddingBottom: contentBottom }]}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -269,7 +256,7 @@ export default function ExpensesScreen() {
                 ? "Add Expense"
                 : undefined
             }
-            onActionPress={
+            onAction={
               !searchQuery && selectedCategory === "all"
                 ? () => router.push("/expenses/create")
                 : undefined
@@ -277,7 +264,11 @@ export default function ExpensesScreen() {
           />
         }
         renderItem={({ item }) => (
-          <TouchableOpacity onPress={() => handleExpensePress(item.id)}>
+          <TouchableOpacity
+            onPress={() => handleExpensePress(item.id)}
+            accessibilityRole="button"
+            accessibilityLabel={`Expense ${item.description}`}
+          >
             <Card variant="elevated" style={styles.expenseCard}>
               <View style={styles.expenseHeader}>
                 <IconBadge
@@ -287,7 +278,10 @@ export default function ExpensesScreen() {
                   iconColor={colors.accent}
                 />
                 <View style={styles.expenseInfo}>
-                  <Text style={[styles.description, { color: colors.text }]}>
+                  <Text
+                    style={[styles.description, { color: colors.text }]}
+                    numberOfLines={2}
+                  >
                     {item.description}
                   </Text>
                   <View style={styles.metaRow}>
@@ -322,7 +316,7 @@ export default function ExpensesScreen() {
                   </Text>
                 </View>
                 <View style={styles.amountContainer}>
-                  <Text style={[styles.amount, { color: colors.error }]}>
+                  <Text style={[styles.amount, { color: colors.errorText }]}>
                     {formatCurrency(parseFloat(item.amount), item.currency)}
                   </Text>
                   <Ionicons
@@ -343,7 +337,7 @@ export default function ExpensesScreen() {
                         { backgroundColor: colors.primaryLight + "20" },
                       ]}
                     >
-                      <Text style={[styles.tagText, { color: colors.primary }]}>
+                      <Text style={[styles.tagText, { color: colors.primaryText }]}>
                         {tag}
                       </Text>
                     </View>
@@ -361,15 +355,12 @@ export default function ExpensesScreen() {
           </TouchableOpacity>
         )}
       />
+      )}
 
-      {/* Floating Action Button */}
-      <TouchableOpacity
-        style={[styles.fab, { backgroundColor: colors.primary }]}
+      <FAB
         onPress={() => router.push("/expenses/create")}
-        activeOpacity={0.8}
-      >
-        <Ionicons name="add" size={28} color="#FFFFFF" />
-      </TouchableOpacity>
+        accessibilityLabel="Add expense"
+      />
     </View>
   );
 }
@@ -382,24 +373,6 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-  },
-  headerButton: {
-    padding: 8,
-  },
-  fab: {
-    position: "absolute",
-    right: 20,
-    bottom: 120,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    justifyContent: "center",
-    alignItems: "center",
-    elevation: 6,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
   },
   searchContainer: {
     paddingHorizontal: Spacing.md,

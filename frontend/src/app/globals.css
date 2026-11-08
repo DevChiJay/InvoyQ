@@ -1,13 +1,16 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
-@custom-variant dark (&:is(.dark *));
+/* Dark mode: next-themes puts `.dark` or `.light` on <html> (system setting by default, or the
+   person's choice). The variant skips anything inside a `.light` subtree, so documents that must
+   stay white (invoices) never pick up `dark:` styles. */
+@custom-variant dark (&:is(.dark *):not(:is(.light *)));
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-space), var(--font-geist-sans), ui-sans-serif, sans-serif;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -25,6 +28,15 @@
   --color-input: var(--input);
   --color-border: var(--border);
   --color-destructive: var(--destructive);
+  --color-destructive-solid: var(--destructive-solid);
+  --color-chat-bubble: var(--chat-bubble);
+  --color-chat-bubble-foreground: var(--chat-bubble-foreground);
+  --color-success: var(--success);
+  --color-success-strong: var(--success-strong);
+  --color-warning-strong: var(--warning-strong);
+  --color-destructive-strong: var(--destructive-strong);
+  --color-warning: var(--warning);
+  --color-brand: var(--brand);
   --color-accent-foreground: var(--accent-foreground);
   --color-accent: var(--accent);
   --color-muted-foreground: var(--muted-foreground);
@@ -37,95 +49,144 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
+  --radius-sm: calc(var(--radius) - 6px);
+  --radius-md: calc(var(--radius) - 4px);
+  --radius-lg: calc(var(--radius) - 2px);
+  --radius-xl: var(--radius);
+  --radius-2xl: calc(var(--radius) + 4px);
+  --shadow-frame: var(--elevation-frame);
+  --shadow-nav: var(--elevation-nav);
 }
 
-:root {
-  --radius: 0.625rem;
-  /* Primary: Indigo #6366F1 */
-  --primary: oklch(0.569 0.196 276.914);
-  --primary-foreground: oklch(0.985 0 0);
-  /* Secondary: Deep Navy #0F172A */
-  --secondary: oklch(0.141 0.025 255.508);
-  --secondary-foreground: oklch(0.89 0.01 243.478);
-  /* Accent 1: Teal #14B8A6 */
-  --accent: oklch(0.695 0.128 192.329);
-  --accent-foreground: oklch(0.985 0 0);
-  /* Accent 2: Gold #FACC15 */
-  --gold: oklch(0.851 0.166 94.327);
-  /* Text: Soft gray-white #E2E8F0 */
-  --text-soft: oklch(0.89 0.01 243.478);
-  
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.141 0.025 255.508);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.141 0.025 255.508);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.141 0.025 255.508);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.569 0.196 276.914);
-  --chart-1: oklch(0.569 0.196 276.914);
-  --chart-2: oklch(0.695 0.128 192.329);
-  --chart-3: oklch(0.851 0.166 94.327);
-  --chart-4: oklch(0.141 0.025 255.508);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.141 0.025 255.508);
-  --sidebar-primary: oklch(0.569 0.196 276.914);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.141 0.025 255.508);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.569 0.196 276.914);
+/*
+ * "Calm ledger": a light slate base shared with devchi.me, and one indigo accent taken
+ * from the InvoyQ logo. Semantic colours (success / warning / destructive) appear only
+ * where they carry meaning, such as invoice status.
+ *
+ * `.light` repeats the light tokens so a subtree can opt out of dark mode (an invoice is paper:
+ * the PDF/PNG export must never turn dark). `.dark` below overrides them for the dark theme.
+ */
+:root,
+.light {
+  color-scheme: light;
+  --radius: 0.875rem;
+
+  --background: #f8fafc;
+  --foreground: #0f172a;
+  --card: #ffffff;
+  --card-foreground: #0f172a;
+  --popover: #ffffff;
+  --popover-foreground: #0f172a;
+
+  /* Accent: indigo. #4F46E5 passes WCAG AA on white; the logo's #6366F1 is kept for brand marks. */
+  --primary: #4f46e5;
+  --primary-foreground: #ffffff;
+  --brand: #6366f1;
+  --accent: #eef2ff;
+  --accent-foreground: #3730a3;
+
+  --secondary: #eef2f6;
+  --secondary-foreground: #0f172a;
+  --muted: #eef2f6;
+  --muted-foreground: #475569;
+
+  --success: #15803d;
+  --warning: #a16207;
+  --destructive: #dc2626;
+  /* Background for solid destructive buttons and badges (white text on top). */
+  --destructive-solid: #dc2626;
+  /* Darker text for soft (10% tint) status backgrounds, so small badge text passes AA. */
+  --success-strong: #166534;
+  --warning-strong: #854d0e;
+  --destructive-strong: #b91c1c;
+
+  --border: #e2e8f0;
+  --input: #cbd5e1;
+  --ring: #4f46e5;
+
+  --chart-1: #4f46e5;
+  --chart-2: #0b7a72;
+  --chart-3: #c2410c;
+  --chart-4: #a16207;
+  --chart-5: #6d28d9;
+
+  --sidebar: #ffffff;
+  --sidebar-foreground: #0f172a;
+  --sidebar-primary: #4f46e5;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #eef2ff;
+  --sidebar-accent-foreground: #3730a3;
+  --sidebar-border: #e2e8f0;
+  --sidebar-ring: #4f46e5;
+
+  /* The WhatsApp-style bubble in the landing hero */
+  --chat-bubble: #dcf8c6;
+  --chat-bubble-foreground: #0f172a;
+
+  --elevation-frame: 0 1px 2px #0f172a0f, 0 18px 40px -22px #0f172a47;
+  --elevation-nav: 0 1px 2px #0f172a0f, 0 8px 24px -12px #0f172a33;
 }
 
+/*
+ * Dark theme: deep slate-navy, the same cool family as the light slate base and the logo.
+ * Accent stays indigo, lifted to #818CF8 so it reads on navy; text on it flips to navy.
+ * Semantic colours become lighter tints that keep AA contrast on the dark surfaces.
+ */
 .dark {
-  /* Primary: Indigo #6366F1 - slightly brighter for dark mode */
-  --primary: oklch(0.619 0.216 276.914);
-  --primary-foreground: oklch(0.141 0.025 255.508);
-  /* Secondary: Deep Navy #0F172A - main background */
-  --background: oklch(0.141 0.025 255.508);
-  --foreground: oklch(0.89 0.01 243.478);
-  --card: oklch(0.19 0.025 255.508);
-  --card-foreground: oklch(0.89 0.01 243.478);
-  --popover: oklch(0.19 0.025 255.508);
-  --popover-foreground: oklch(0.89 0.01 243.478);
-  /* Accent 1: Teal #14B8A6 */
-  --accent: oklch(0.695 0.128 192.329);
-  --accent-foreground: oklch(0.141 0.025 255.508);
-  /* Accent 2: Gold #FACC15 */
-  --gold: oklch(0.851 0.166 94.327);
-  /* Text: Soft gray-white #E2E8F0 */
-  --text-soft: oklch(0.89 0.01 243.478);
-  
-  --secondary: oklch(0.269 0.025 255.508);
-  --secondary-foreground: oklch(0.89 0.01 243.478);
-  --muted: oklch(0.269 0.025 255.508);
-  --muted-foreground: oklch(0.708 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.569 0.196 276.914);
-  --chart-1: oklch(0.569 0.196 276.914);
-  --chart-2: oklch(0.695 0.128 192.329);
-  --chart-3: oklch(0.851 0.166 94.327);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.19 0.025 255.508);
-  --sidebar-foreground: oklch(0.89 0.01 243.478);
-  --sidebar-primary: oklch(0.569 0.196 276.914);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0.025 255.508);
-  --sidebar-accent-foreground: oklch(0.89 0.01 243.478);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.569 0.196 276.914);
+  color-scheme: dark;
+
+  --background: #0b1120;
+  --foreground: #e2e8f0;
+  --card: #111827;
+  --card-foreground: #e2e8f0;
+  --popover: #111827;
+  --popover-foreground: #e2e8f0;
+
+  --primary: #818cf8;
+  --primary-foreground: #0b1120;
+  --brand: #818cf8;
+  --accent: #1e1b4b;
+  --accent-foreground: #c7d2fe;
+
+  --secondary: #1e293b;
+  --secondary-foreground: #e2e8f0;
+  --muted: #1e293b;
+  --muted-foreground: #94a3b8;
+
+  --success: #4ade80;
+  --warning: #facc15;
+  --destructive: #f87171;
+  --destructive-solid: #b91c1c;
+  --success-strong: #86efac;
+  --warning-strong: #fde047;
+  --destructive-strong: #fca5a5;
+
+  --border: #1e293b;
+  --input: #334155;
+  --ring: #818cf8;
+
+  /* Validated for the dark surface (OKLCH L 0.48-0.67, CVD separation): indigo / orange */
+  --chart-1: #7680f0;
+  --chart-2: #2dd4bf;
+  --chart-3: #e0703a;
+  --chart-4: #facc15;
+  --chart-5: #a78bfa;
+
+  --sidebar: #111827;
+  --sidebar-foreground: #e2e8f0;
+  --sidebar-primary: #818cf8;
+  --sidebar-primary-foreground: #0b1120;
+  --sidebar-accent: #1e1b4b;
+  --sidebar-accent-foreground: #c7d2fe;
+  --sidebar-border: #1e293b;
+  --sidebar-ring: #818cf8;
+
+  --chat-bubble: #005c4b;
+  --chat-bubble-foreground: #e9edef;
+
+  /* Shadows barely show on navy, so lean on a darker, tighter drop. */
+  --elevation-frame: 0 1px 2px #00000080, 0 18px 40px -22px #000000cc;
+  --elevation-nav: 0 1px 2px #00000080, 0 8px 24px -12px #000000b3;
 }
 
 @layer base {
@@ -134,5 +195,21 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+  h1,
+  h2 {
+    font-family: var(--font-display);
+    letter-spacing: -0.02em;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }

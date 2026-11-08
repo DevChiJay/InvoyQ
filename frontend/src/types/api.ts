@@ -59,6 +59,7 @@ export interface Client {
   email: string | null;
   phone: string | null;
   address: string | null;
+  created_at?: string | null; // ISO datetime
 }
 
 export interface ClientCreate {
@@ -130,6 +131,8 @@ export interface Invoice {
   items: InvoiceItem[];
   events: InvoiceEvent[]; // NEW - audit trail
   user_business_info: UserBusinessInfo | null; // NEW
+  /** Populated by the API from client_id on list and detail responses. */
+  client?: Pick<Client, "id" | "name" | "email"> | null;
   created_at: string; // ISO datetime
   updated_at: string; // ISO datetime
 }
@@ -232,6 +235,8 @@ export interface InvoiceStatsParams {
 // Extraction Types - Backend Response Format
 export interface BackendExtractionData {
   jobs?: string[];
+  /** Per-line items (newer extractor responses). Preferred over `jobs` + `amount` when present. */
+  items?: Array<{ description: string; quantity?: number | null; unit_price?: number | null }>;
   deadlines?: string[];
   payment_terms?: string | null;
   amount?: number | null;
@@ -263,6 +268,7 @@ export interface ExtractedData {
     number?: string;
     issued_date?: string;
     due_date?: string;
+    currency?: string;
   };
   line_items?: Array<{
     description: string;
@@ -277,6 +283,8 @@ export interface ExtractedData {
   };
   notes?: string;
   confidence?: number;
+  /** Line-item descriptions whose price the AI could not determine. */
+  needs_review?: string[];
 }
 
 export interface ExtractionResponse {
@@ -305,6 +313,23 @@ export interface SubscriptionStatus {
   subscription_start_date: string | null;
   subscription_end_date: string | null;
   days_remaining: number | null;
+}
+
+// Plan usage (GET /v1/usage)
+export interface UsageCounter {
+  used: number;
+  /** null means unlimited */
+  limit: number | null;
+}
+
+export interface Usage {
+  plan: "free" | "pro";
+  period: string; // YYYY-MM
+  resets_at: string; // ISO, start of next month (UTC)
+  invoices: UsageCounter;
+  extractions: UsageCounter;
+  /** False until online payments are connected; the UI offers "contact us" instead. */
+  payments_enabled: boolean;
 }
 
 // Dashboard Types
@@ -482,12 +507,43 @@ export interface MonthlyStats {
   total_invoices: number;
   paid_invoices: number;
   unpaid_invoices: number;
+  /** Invoices in the month by status; only statuses that occur are listed. Absent on older backends. */
+  status_counts?: Record<string, number>;
   total_products_sold: number;
   top_products: TopProduct[];
   new_clients: number;
   period_start: string; // YYYY-MM-DD
   period_end: string; // YYYY-MM-DD
   currency: string;
+}
+
+export interface MonthTrendPoint {
+  month: number;
+  year: number;
+  revenue: string; // Decimal as string
+  expenses: string;
+  net_income: string;
+  total_invoices: number;
+  paid_invoices: number;
+}
+
+export interface DailyPoint {
+  date: string; // YYYY-MM-DD
+  revenue: string;
+  expenses: string;
+}
+
+/** GET /v1/stats/trend: the N months ending at the selected month, plus its daily figures. */
+export interface StatsTrend {
+  currency: string;
+  month: number;
+  year: number;
+  months: MonthTrendPoint[];
+  daily: DailyPoint[];
+}
+
+export interface StatsTrendResponse {
+  trend: StatsTrend;
 }
 
 export interface MonthlyStatsParams {
@@ -515,9 +571,16 @@ export interface AdminUser {
   updated_at: string;
   subscription_status: string | null;
   subscription_provider: string | null;
+  /** Null for a grant with no end date */
+  subscription_end_date: string | null;
+  /** is_pro and not expired: what the plan limits use */
+  pro_active: boolean;
   company_name: string | null;
   phone: string | null;
   invoice_count: number;
+  /** This month's plan usage */
+  usage_invoices: number;
+  usage_extractions: number;
 }
 
 export interface AdminUserListResponse {
@@ -544,6 +607,20 @@ export interface AdminUserUpdate {
   email?: string;
   is_active?: boolean;
   is_pro?: boolean;
+  /** With is_pro: true, how long the grant lasts. Omit for no end date. */
+  pro_days?: number;
+}
+
+export interface BulkProRequest {
+  user_ids?: string[];
+  emails?: string[];
+  is_pro: boolean;
+  days?: number;
+}
+
+export interface BulkProResponse {
+  updated: number;
+  not_found: string[];
 }
 
 export interface AdminUserInvoice {

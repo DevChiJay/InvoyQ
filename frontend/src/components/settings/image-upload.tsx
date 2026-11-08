@@ -90,11 +90,11 @@ export function ImageUpload({
             </AvatarFallback>
           </Avatar>
         ) : (
-          <div className="relative h-24 w-24 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center overflow-hidden">
+          <div className="relative h-24 w-24 rounded-lg border-2 border-dashed border-border flex items-center justify-center overflow-hidden">
             {preview ? (
               <img src={preview} alt="Logo preview" className="object-contain h-full w-full" />
             ) : (
-              <Upload className="h-8 w-8 text-gray-400" />
+              <Upload className="h-8 w-8 text-muted-foreground" />
             )}
           </div>
         )}

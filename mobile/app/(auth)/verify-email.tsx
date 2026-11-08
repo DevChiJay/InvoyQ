@@ -50,7 +50,7 @@ export default function VerifyEmailScreen() {
         </Text>
 
         {!token && (
-          <Text style={[styles.message, { color: colors.error }]}>
+          <Text style={[styles.message, { color: colors.errorText }]}>
             Invalid verification link
           </Text>
         )}

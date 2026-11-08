@@ -8,6 +8,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import VideoEmbed from "@/components/landing/video-embed";
 import {
   Accordion,
   AccordionContent,
@@ -45,8 +46,8 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useAuthStore } from "@/stores/auth-store";
-import Navbar from "@/components/landing/navbar";
 import Image from "next/image";
+import { FREE_EXTRACTIONS_PER_MONTH } from "@/constants/plans";
 
 import Signup from "../../../public/screenshots/signup-form.png";
 import Dashboard from "../../../public/screenshots/dashboard-overview.png";
@@ -56,19 +57,19 @@ import NewProduct from "../../../public/screenshots/new-product.png";
 import ProductList from "../../../public/screenshots/products-list.png";
 import ClientsList from "../../../public/screenshots/clients-list.png";
 import ExpenseDetail from "../../../public/screenshots/expense-detail.png";
+import ExtractReview from "../../../public/screenshots/extract-review.png";
 
 export default function HowToUseContent() {
   const { user } = useAuthStore();
 
   return (
     <>
-      <Navbar />
-      <div className="min-h-screen bg-gradient-to-b from-teal-50 via-emerald-50 to-cyan-50 dark:from-gray-900 dark:via-teal-950 dark:to-gray-900 pt-16">
+      <div className="bg-background">
         {/* Hero Section */}
         <section className="py-16 px-4 sm:px-6 lg:px-8">
           <div className="max-w-6xl mx-auto text-center">
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight mb-6">
-              <span className="bg-gradient-to-r from-[#6366F1] to-[#14B8A6] bg-clip-text text-transparent">
+              <span>
                 How to Use InvoyQ
               </span>
             </h1>
@@ -82,9 +83,9 @@ export default function HowToUseContent() {
               <Button
                 asChild
                 size="lg"
-                className="bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700"
+                className="bg-primary"
               >
-                <Link href={user ? "/dashboard" : "/auth/login"}>
+                <Link href={user ? "/dashboard" : "/login"}>
                   <Zap className="mr-2 h-5 w-5" />
                   {user ? "Go to Dashboard" : "Get Started Now"}
                 </Link>
@@ -103,10 +104,10 @@ export default function HowToUseContent() {
         <section className="py-12 px-4 sm:px-6 lg:px-8">
           <div className="max-w-6xl mx-auto">
             <Tabs defaultValue="getting-started" className="w-full">
-              <TabsList className="grid w-full grid-cols-2 lg:grid-cols-6 h-auto gap-2 bg-white/80 dark:bg-gray-800/80 p-2 rounded-lg">
+              <TabsList className="grid w-full grid-cols-2 lg:grid-cols-6 h-auto gap-2 bg-card/80 p-2 rounded-lg">
                 <TabsTrigger
                   value="getting-started"
-                  className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-teal-600 data-[state=active]:to-emerald-600 data-[state=active]:text-white"
+                  className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
                 >
                   <Zap className="h-4 w-4" />
                   <span className="hidden sm:inline">Getting Started</span>
@@ -114,7 +115,7 @@ export default function HowToUseContent() {
                 </TabsTrigger>
                 <TabsTrigger
                   value="dashboard"
-                  className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-teal-600 data-[state=active]:to-emerald-600 data-[state=active]:text-white"
+                  className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
                 >
                   <LayoutDashboard className="h-4 w-4" />
                   <span className="hidden sm:inline">Dashboard</span>
@@ -122,28 +123,28 @@ export default function HowToUseContent() {
                 </TabsTrigger>
                 <TabsTrigger
                   value="invoices"
-                  className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-teal-600 data-[state=active]:to-emerald-600 data-[state=active]:text-white"
+                  className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
                 >
                   <FileText className="h-4 w-4" />
                   <span>Invoices</span>
                 </TabsTrigger>
                 <TabsTrigger
                   value="products"
-                  className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-teal-600 data-[state=active]:to-emerald-600 data-[state=active]:text-white"
+                  className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
                 >
                   <Package className="h-4 w-4" />
                   <span>Products</span>
                 </TabsTrigger>
                 <TabsTrigger
                   value="clients"
-                  className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-teal-600 data-[state=active]:to-emerald-600 data-[state=active]:text-white"
+                  className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
                 >
                   <Users className="h-4 w-4" />
                   <span>Clients</span>
                 </TabsTrigger>
                 <TabsTrigger
                   value="expenses"
-                  className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-teal-600 data-[state=active]:to-emerald-600 data-[state=active]:text-white"
+                  className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
                 >
                   <Receipt className="h-4 w-4" />
                   <span>Expenses</span>
@@ -151,11 +152,15 @@ export default function HowToUseContent() {
               </TabsList>
 
               {/* Getting Started Tab */}
-              <TabsContent value="getting-started" className="mt-6 space-y-6">
-                <Card className="hover:border-[#14B8A6]/50 dark:hover:border-[#14B8A6] hover:shadow-lg transition-all duration-300">
+              <TabsContent
+                value="getting-started"
+                forceMount
+                className="mt-6 space-y-6 data-[state=inactive]:hidden"
+              >
+                <Card className="hover:border-primary/50 hover:shadow-lg transition-all duration-300">
                   <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-2xl">
-                      <Zap className="h-6 w-6 text-teal-600" />
+                    <CardTitle as="h2" className="flex items-center gap-2 text-2xl">
+                      <Zap className="h-6 w-6 text-primary" />
                       Welcome to InvoyQ
                     </CardTitle>
                     <CardDescription>
@@ -165,12 +170,12 @@ export default function HowToUseContent() {
                   <CardContent className="space-y-6">
                     <div>
                       <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
-                        <CheckCircle className="h-5 w-5 text-teal-600" />
+                        <CheckCircle className="h-5 w-5 text-primary" />
                         What You Can Do with InvoyQ
                       </h3>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="flex items-start gap-3 p-4 rounded-lg bg-muted/50">
-                          <FileText className="h-5 w-5 text-[#6366F1] mt-0.5" />
+                          <FileText className="h-5 w-5 text-primary mt-0.5" />
                           <div>
                             <p className="font-medium">
                               Create Professional Invoices
@@ -181,16 +186,16 @@ export default function HowToUseContent() {
                           </div>
                         </div>
                         <div className="flex items-start gap-3 p-4 rounded-lg bg-muted/50">
-                          <Upload className="h-5 w-5 text-[#14B8A6] mt-0.5" />
+                          <Upload className="h-5 w-5 text-primary mt-0.5" />
                           <div>
                             <p className="font-medium">AI Invoice Extraction</p>
                             <p className="text-sm text-muted-foreground">
-                              Upload and extract invoice data automatically
+                              Paste a chat and get a drafted invoice
                             </p>
                           </div>
                         </div>
                         <div className="flex items-start gap-3 p-4 rounded-lg bg-muted/50">
-                          <Users className="h-5 w-5 text-[#6366F1] mt-0.5" />
+                          <Users className="h-5 w-5 text-primary mt-0.5" />
                           <div>
                             <p className="font-medium">Manage Clients</p>
                             <p className="text-sm text-muted-foreground">
@@ -199,7 +204,7 @@ export default function HowToUseContent() {
                           </div>
                         </div>
                         <div className="flex items-start gap-3 p-4 rounded-lg bg-muted/50">
-                          <Package className="h-5 w-5 text-[#14B8A6] mt-0.5" />
+                          <Package className="h-5 w-5 text-primary mt-0.5" />
                           <div>
                             <p className="font-medium">Track Inventory</p>
                             <p className="text-sm text-muted-foreground">
@@ -208,7 +213,7 @@ export default function HowToUseContent() {
                           </div>
                         </div>
                         <div className="flex items-start gap-3 p-4 rounded-lg bg-muted/50">
-                          <Receipt className="h-5 w-5 text-[#6366F1] mt-0.5" />
+                          <Receipt className="h-5 w-5 text-primary mt-0.5" />
                           <div>
                             <p className="font-medium">Monitor Expenses</p>
                             <p className="text-sm text-muted-foreground">
@@ -217,7 +222,7 @@ export default function HowToUseContent() {
                           </div>
                         </div>
                         <div className="flex items-start gap-3 p-4 rounded-lg bg-muted/50">
-                          <TrendingUp className="h-5 w-5 text-[#14B8A6] mt-0.5" />
+                          <TrendingUp className="h-5 w-5 text-primary mt-0.5" />
                           <div>
                             <p className="font-medium">Track Payments</p>
                             <p className="text-sm text-muted-foreground">
@@ -286,11 +291,12 @@ export default function HowToUseContent() {
 
                     {/* Screenshot Placeholder */}
                     <Image
-                      className="rounded-lg border-2 border-dashed border-muted-foreground/25 bg-muted/30 text-center"
+                      className="rounded-xl border bg-card shadow-frame"
                       src={Signup}
-                      alt="signup shot"
+                      alt="The InvoyQ sign-up form"
                       width={1100}
-                      height={625}
+                      sizes="(min-width: 1024px) 880px, 100vw"
+                      height={739}
                     />
 
                     <Separator />
@@ -305,7 +311,7 @@ export default function HowToUseContent() {
                       </p>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div className="flex items-center gap-3 p-3 rounded-lg border bg-card">
-                          <LayoutDashboard className="h-5 w-5 text-teal-600" />
+                          <LayoutDashboard className="h-5 w-5 text-primary" />
                           <div>
                             <p className="font-medium">Dashboard</p>
                             <p className="text-xs text-muted-foreground">
@@ -314,7 +320,7 @@ export default function HowToUseContent() {
                           </div>
                         </div>
                         <div className="flex items-center gap-3 p-3 rounded-lg border bg-card">
-                          <FileText className="h-5 w-5 text-teal-600" />
+                          <FileText className="h-5 w-5 text-primary" />
                           <div>
                             <p className="font-medium">Invoices</p>
                             <p className="text-xs text-muted-foreground">
@@ -323,7 +329,7 @@ export default function HowToUseContent() {
                           </div>
                         </div>
                         <div className="flex items-center gap-3 p-3 rounded-lg border bg-card">
-                          <Package className="h-5 w-5 text-teal-600" />
+                          <Package className="h-5 w-5 text-primary" />
                           <div>
                             <p className="font-medium">Products</p>
                             <p className="text-xs text-muted-foreground">
@@ -332,7 +338,7 @@ export default function HowToUseContent() {
                           </div>
                         </div>
                         <div className="flex items-center gap-3 p-3 rounded-lg border bg-card">
-                          <Users className="h-5 w-5 text-teal-600" />
+                          <Users className="h-5 w-5 text-primary" />
                           <div>
                             <p className="font-medium">Clients</p>
                             <p className="text-xs text-muted-foreground">
@@ -341,7 +347,7 @@ export default function HowToUseContent() {
                           </div>
                         </div>
                         <div className="flex items-center gap-3 p-3 rounded-lg border bg-card">
-                          <Receipt className="h-5 w-5 text-teal-600" />
+                          <Receipt className="h-5 w-5 text-primary" />
                           <div>
                             <p className="font-medium">Expenses</p>
                             <p className="text-xs text-muted-foreground">
@@ -350,7 +356,7 @@ export default function HowToUseContent() {
                           </div>
                         </div>
                         <div className="flex items-center gap-3 p-3 rounded-lg border bg-card">
-                          <Settings className="h-5 w-5 text-teal-600" />
+                          <Settings className="h-5 w-5 text-primary" />
                           <div>
                             <p className="font-medium">Settings</p>
                             <p className="text-xs text-muted-foreground">
@@ -366,11 +372,11 @@ export default function HowToUseContent() {
                 {/* Video Walkthrough Section */}
                 <Card
                   id="video-walkthrough"
-                  className="hover:border-[#14B8A6]/50 dark:hover:border-[#14B8A6] hover:shadow-lg transition-all duration-300"
+                  className="hover:border-primary/50 hover:shadow-lg transition-all duration-300"
                 >
                   <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-2xl">
-                      <PlayCircle className="h-6 w-6 text-teal-600" />
+                    <CardTitle as="h2" className="flex items-center gap-2 text-2xl">
+                      <PlayCircle className="h-6 w-6 text-primary" />
                       Video Walkthrough
                     </CardTitle>
                     <CardDescription>
@@ -379,17 +385,7 @@ export default function HowToUseContent() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    {/* Video Embed Placeholder */}
-                    <div className="relative w-full rounded-lg overflow-hidden bg-black aspect-video">
-                      <iframe
-                        className="absolute inset-0 w-full h-full"
-                        src="https://www.youtube.com/embed/rCQs4TsycI0?si=eLNL0oSg7Ml9d8ll"
-                        title="InvoyQ Tutorial"
-                        frameBorder="0"
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        allowFullScreen
-                      ></iframe>
-                    </div>
+                    <VideoEmbed videoId="rCQs4TsycI0" title="InvoyQ Tutorial" />
                     <p className="text-sm text-muted-foreground mt-4 text-center">
                       This comprehensive video guide covers everything from
                       account creation to advanced features
@@ -399,11 +395,15 @@ export default function HowToUseContent() {
               </TabsContent>
 
               {/* Dashboard Tab */}
-              <TabsContent value="dashboard" className="mt-6 space-y-6">
-                <Card className="hover:border-[#14B8A6]/50 dark:hover:border-[#14B8A6] hover:shadow-lg transition-all duration-300">
+              <TabsContent
+                value="dashboard"
+                forceMount
+                className="mt-6 space-y-6 data-[state=inactive]:hidden"
+              >
+                <Card className="hover:border-primary/50 hover:shadow-lg transition-all duration-300">
                   <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-2xl">
-                      <LayoutDashboard className="h-6 w-6 text-teal-600" />
+                    <CardTitle as="h2" className="flex items-center gap-2 text-2xl">
+                      <LayoutDashboard className="h-6 w-6 text-primary" />
                       Understanding Your Dashboard
                     </CardTitle>
                     <CardDescription>
@@ -424,11 +424,12 @@ export default function HowToUseContent() {
 
                     {/* Screenshot Placeholder */}
                     <Image
-                      className="rounded-lg border-2 border-dashed border-muted-foreground/25 bg-muted/30 text-center"
+                      className="rounded-xl border bg-card shadow-frame"
                       src={Dashboard}
-                      alt="dashboard shot"
+                      alt="The InvoyQ dashboard with revenue, invoice and client totals"
                       width={1100}
-                      height={625}
+                      sizes="(min-width: 1024px) 880px, 100vw"
+                      height={739}
                     />
 
                     <Separator />
@@ -443,8 +444,8 @@ export default function HowToUseContent() {
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="p-4 rounded-lg border bg-card">
                           <div className="flex items-center gap-3 mb-2">
-                            <div className="p-2 rounded-lg bg-blue-500/10">
-                              <Users className="h-5 w-5 text-blue-600" />
+                            <div className="p-2 rounded-lg bg-primary/10">
+                              <Users className="h-5 w-5 text-primary" />
                             </div>
                             <div>
                               <p className="text-sm text-muted-foreground">
@@ -459,8 +460,8 @@ export default function HowToUseContent() {
                         </div>
                         <div className="p-4 rounded-lg border bg-card">
                           <div className="flex items-center gap-3 mb-2">
-                            <div className="p-2 rounded-lg bg-green-500/10">
-                              <FileText className="h-5 w-5 text-green-600" />
+                            <div className="p-2 rounded-lg bg-success/10">
+                              <FileText className="h-5 w-5 text-success" />
                             </div>
                             <div>
                               <p className="text-sm text-muted-foreground">
@@ -475,8 +476,8 @@ export default function HowToUseContent() {
                         </div>
                         <div className="p-4 rounded-lg border bg-card">
                           <div className="flex items-center gap-3 mb-2">
-                            <div className="p-2 rounded-lg bg-emerald-500/10">
-                              <DollarSign className="h-5 w-5 text-emerald-600" />
+                            <div className="p-2 rounded-lg bg-primary/10">
+                              <DollarSign className="h-5 w-5 text-primary" />
                             </div>
                             <div>
                               <p className="text-sm text-muted-foreground">
@@ -491,8 +492,8 @@ export default function HowToUseContent() {
                         </div>
                         <div className="p-4 rounded-lg border bg-card">
                           <div className="flex items-center gap-3 mb-2">
-                            <div className="p-2 rounded-lg bg-purple-500/10">
-                              <Package className="h-5 w-5 text-purple-600" />
+                            <div className="p-2 rounded-lg bg-primary/10">
+                              <Package className="h-5 w-5 text-primary" />
                             </div>
                             <div>
                               <p className="text-sm text-muted-foreground">
@@ -507,8 +508,8 @@ export default function HowToUseContent() {
                         </div>
                         <div className="p-4 rounded-lg border bg-card">
                           <div className="flex items-center gap-3 mb-2">
-                            <div className="p-2 rounded-lg bg-orange-500/10">
-                              <Receipt className="h-5 w-5 text-orange-600" />
+                            <div className="p-2 rounded-lg bg-warning/10">
+                              <Receipt className="h-5 w-5 text-warning" />
                             </div>
                             <div>
                               <p className="text-sm text-muted-foreground">
@@ -523,8 +524,8 @@ export default function HowToUseContent() {
                         </div>
                         <div className="p-4 rounded-lg border bg-card">
                           <div className="flex items-center gap-3 mb-2">
-                            <div className="p-2 rounded-lg bg-red-500/10">
-                              <CheckCircle className="h-5 w-5 text-red-600" />
+                            <div className="p-2 rounded-lg bg-destructive/10">
+                              <CheckCircle className="h-5 w-5 text-destructive" />
                             </div>
                             <div>
                               <p className="text-sm text-muted-foreground">
@@ -552,7 +553,7 @@ export default function HowToUseContent() {
                       </p>
                       <ul className="space-y-2 text-muted-foreground">
                         <li className="flex items-start gap-2">
-                          <CheckCircle className="h-5 w-5 text-teal-600 mt-0.5 flex-shrink-0" />
+                          <CheckCircle className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
                           <span>
                             <strong className="text-foreground">
                               Invoice Number:
@@ -561,7 +562,7 @@ export default function HowToUseContent() {
                           </span>
                         </li>
                         <li className="flex items-start gap-2">
-                          <CheckCircle className="h-5 w-5 text-teal-600 mt-0.5 flex-shrink-0" />
+                          <CheckCircle className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
                           <span>
                             <strong className="text-foreground">
                               Client Name:
@@ -570,14 +571,14 @@ export default function HowToUseContent() {
                           </span>
                         </li>
                         <li className="flex items-start gap-2">
-                          <CheckCircle className="h-5 w-5 text-teal-600 mt-0.5 flex-shrink-0" />
+                          <CheckCircle className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
                           <span>
                             <strong className="text-foreground">Amount:</strong>{" "}
                             Total invoice value with currency
                           </span>
                         </li>
                         <li className="flex items-start gap-2">
-                          <CheckCircle className="h-5 w-5 text-teal-600 mt-0.5 flex-shrink-0" />
+                          <CheckCircle className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
                           <span>
                             <strong className="text-foreground">
                               Status Badge:
@@ -586,7 +587,7 @@ export default function HowToUseContent() {
                           </span>
                         </li>
                         <li className="flex items-start gap-2">
-                          <CheckCircle className="h-5 w-5 text-teal-600 mt-0.5 flex-shrink-0" />
+                          <CheckCircle className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
                           <span>
                             <strong className="text-foreground">
                               Quick Actions:
@@ -610,7 +611,7 @@ export default function HowToUseContent() {
                       <div className="flex flex-wrap gap-3">
                         <Button
                           asChild
-                          className="bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700"
+                          className="bg-primary"
                         >
                           <Link href="/dashboard/invoices/new">
                             <Plus className="mr-2 h-4 w-4" />
@@ -620,7 +621,7 @@ export default function HowToUseContent() {
                         <Button asChild variant="outline">
                           <Link href="/dashboard/extract">
                             <Upload className="mr-2 h-4 w-4" />
-                            Extract Invoice
+                            Extract from chat
                           </Link>
                         </Button>
                         <Button asChild variant="outline">
@@ -642,11 +643,15 @@ export default function HowToUseContent() {
               </TabsContent>
 
               {/* Invoices Tab */}
-              <TabsContent value="invoices" className="mt-6 space-y-6">
-                <Card className="hover:border-[#14B8A6]/50 dark:hover:border-[#14B8A6] hover:shadow-lg transition-all duration-300">
+              <TabsContent
+                value="invoices"
+                forceMount
+                className="mt-6 space-y-6 data-[state=inactive]:hidden"
+              >
+                <Card className="hover:border-primary/50 hover:shadow-lg transition-all duration-300">
                   <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-2xl">
-                      <FileText className="h-6 w-6 text-teal-600" />
+                    <CardTitle as="h2" className="flex items-center gap-2 text-2xl">
+                      <FileText className="h-6 w-6 text-primary" />
                       Creating and Managing Invoices
                     </CardTitle>
                     <CardDescription>
@@ -685,7 +690,7 @@ export default function HowToUseContent() {
                           </span>
                           <div className="ml-6 mt-2 space-y-2">
                             <div className="flex items-start gap-2">
-                              <Calendar className="h-4 w-4 text-teal-600 mt-0.5" />
+                              <Calendar className="h-4 w-4 text-primary mt-0.5" />
                               <div className="text-sm">
                                 <span className="font-medium text-foreground">
                                   Issue Date:
@@ -694,7 +699,7 @@ export default function HowToUseContent() {
                               </div>
                             </div>
                             <div className="flex items-start gap-2">
-                              <Calendar className="h-4 w-4 text-teal-600 mt-0.5" />
+                              <Calendar className="h-4 w-4 text-primary mt-0.5" />
                               <div className="text-sm">
                                 <span className="font-medium text-foreground">
                                   Due Date:
@@ -703,7 +708,7 @@ export default function HowToUseContent() {
                               </div>
                             </div>
                             <div className="flex items-start gap-2">
-                              <DollarSign className="h-4 w-4 text-teal-600 mt-0.5" />
+                              <DollarSign className="h-4 w-4 text-primary mt-0.5" />
                               <div className="text-sm">
                                 <span className="font-medium text-foreground">
                                   Currency:
@@ -713,7 +718,7 @@ export default function HowToUseContent() {
                               </div>
                             </div>
                             <div className="flex items-start gap-2">
-                              <CheckCircle className="h-4 w-4 text-teal-600 mt-0.5" />
+                              <CheckCircle className="h-4 w-4 text-primary mt-0.5" />
                               <div className="text-sm">
                                 <span className="font-medium text-foreground">
                                   Status:
@@ -759,7 +764,7 @@ export default function HowToUseContent() {
                             Add a percentage or fixed-amount discount. The total
                             will update automatically to reflect the discount
                           </p>
-                          <div className="ml-6 mt-2 p-3 rounded-lg bg-blue-500/10 border border-blue-500/20">
+                          <div className="ml-6 mt-2 p-3 rounded-lg bg-primary/10 border border-primary/20">
                             <p className="text-sm text-foreground">
                               <strong>Example:</strong> Apply a 10% discount and
                               watch the total adjust in real-time
@@ -781,11 +786,12 @@ export default function HowToUseContent() {
 
                     {/* Screenshot Placeholder */}
                     <Image
-                      className="rounded-lg border-2 border-dashed border-muted-foreground/25 bg-muted/30 text-center"
+                      className="rounded-xl border bg-card shadow-frame"
                       src={NewInvoice}
-                      alt="new invoice shot"
+                      alt="Creating a new invoice: client, dates and line items"
                       width={1100}
-                      height={625}
+                      sizes="(min-width: 1024px) 880px, 100vw"
+                      height={739}
                     />
 
                     <Separator />
@@ -800,7 +806,7 @@ export default function HowToUseContent() {
                       </p>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="flex items-start gap-3 p-4 rounded-lg border bg-card">
-                          <Eye className="h-5 w-5 text-teal-600 mt-0.5" />
+                          <Eye className="h-5 w-5 text-primary mt-0.5" />
                           <div>
                             <p className="font-medium">View Invoice</p>
                             <p className="text-sm text-muted-foreground">
@@ -810,7 +816,7 @@ export default function HowToUseContent() {
                           </div>
                         </div>
                         <div className="flex items-start gap-3 p-4 rounded-lg border bg-card">
-                          <Download className="h-5 w-5 text-teal-600 mt-0.5" />
+                          <Download className="h-5 w-5 text-primary mt-0.5" />
                           <div>
                             <p className="font-medium">Download PDF</p>
                             <p className="text-sm text-muted-foreground">
@@ -819,7 +825,7 @@ export default function HowToUseContent() {
                           </div>
                         </div>
                         <div className="flex items-start gap-3 p-4 rounded-lg border bg-card">
-                          <Printer className="h-5 w-5 text-teal-600 mt-0.5" />
+                          <Printer className="h-5 w-5 text-primary mt-0.5" />
                           <div>
                             <p className="font-medium">Print Invoice</p>
                             <p className="text-sm text-muted-foreground">
@@ -828,7 +834,7 @@ export default function HowToUseContent() {
                           </div>
                         </div>
                         <div className="flex items-start gap-3 p-4 rounded-lg border bg-card">
-                          <ImageIcon className="h-5 w-5 text-teal-600 mt-0.5" />
+                          <ImageIcon className="h-5 w-5 text-primary mt-0.5" />
                           <div>
                             <p className="font-medium">Save as Image</p>
                             <p className="text-sm text-muted-foreground">
@@ -837,7 +843,7 @@ export default function HowToUseContent() {
                           </div>
                         </div>
                         <div className="flex items-start gap-3 p-4 rounded-lg border bg-card">
-                          <Edit className="h-5 w-5 text-teal-600 mt-0.5" />
+                          <Edit className="h-5 w-5 text-primary mt-0.5" />
                           <div>
                             <p className="font-medium">Edit Invoice</p>
                             <p className="text-sm text-muted-foreground">
@@ -846,7 +852,7 @@ export default function HowToUseContent() {
                           </div>
                         </div>
                         <div className="flex items-start gap-3 p-4 rounded-lg border bg-card">
-                          <Trash2 className="h-5 w-5 text-red-600 mt-0.5" />
+                          <Trash2 className="h-5 w-5 text-destructive mt-0.5" />
                           <div>
                             <p className="font-medium">Delete Invoice</p>
                             <p className="text-sm text-muted-foreground">
@@ -864,47 +870,56 @@ export default function HowToUseContent() {
                         AI Invoice Extraction
                       </h3>
                       <p className="text-muted-foreground mb-4">
-                        InvoyQ's AI-powered feature can extract data from
-                        uploaded invoice images or PDFs:
+                        Paste a WhatsApp or email conversation, or add a
+                        screenshot of it, and InvoyQ drafts the invoice for
+                        you:
                       </p>
                       <ol className="space-y-3 list-decimal list-inside text-muted-foreground">
                         <li className="pl-2">
                           <span className="font-medium text-foreground">
-                            Click "Extract Invoice"
+                            Click "Extract from chat"
                           </span>{" "}
-                          from the dashboard or invoices page
+                          in the sidebar or on the dashboard
                         </li>
                         <li className="pl-2">
                           <span className="font-medium text-foreground">
-                            Upload an invoice
+                            Paste the conversation
                           </span>{" "}
-                          image (PNG, JPG) or PDF file
+                          into the box, or add a screenshot (PNG or JPG)
                         </li>
                         <li className="pl-2">
                           <span className="font-medium text-foreground">
-                            AI processes the document
+                            The AI drafts the invoice
                           </span>{" "}
-                          and extracts key information (dates, amounts, line
-                          items)
+                          with the client, line items, amounts and due date
                         </li>
                         <li className="pl-2">
                           <span className="font-medium text-foreground">
                             Review and save
                           </span>{" "}
-                          the extracted data into your system
+                          the draft. Fields the AI filled in are marked, and
+                          nothing is saved until you check them
                         </li>
                       </ol>
-                      <div className="mt-4 p-4 rounded-lg bg-gradient-to-r from-[#6366F1]/10 to-[#14B8A6]/10 border border-teal-500/20">
+                      <Image
+                        className="mt-4 rounded-xl border bg-card shadow-frame"
+                        src={ExtractReview}
+                        alt="The review screen after extraction: the client, due date and currency the AI filled in are marked AI"
+                        width={1100}
+                        sizes="(min-width: 1024px) 880px, 100vw"
+                        height={739}
+                      />
+                      <div className="mt-4 p-4 rounded-lg bg-accent border border-primary/20">
                         <div className="flex items-start gap-3">
-                          <Zap className="h-5 w-5 text-[#6366F1] mt-0.5 flex-shrink-0" />
+                          <Zap className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
                           <div>
                             <p className="font-medium text-foreground">
                               Pro Tip
                             </p>
                             <p className="text-sm text-muted-foreground mt-1">
-                              The AI extraction feature saves hours of manual
-                              data entry and reduces errors when importing
-                              invoices from suppliers or clients
+                              Extraction saves you retyping what a client already
+                              told you in a chat. Free accounts get{" "}
+                              {FREE_EXTRACTIONS_PER_MONTH} extractions a month
                             </p>
                           </div>
                         </div>
@@ -913,17 +928,18 @@ export default function HowToUseContent() {
 
                     {/* Screenshot Placeholder */}
                     <Image
-                      className="rounded-lg border-2 border-dashed border-muted-foreground/25 bg-muted/30 text-center"
+                      className="rounded-xl border bg-card shadow-frame"
                       src={InvoiceDetail}
-                      alt="invoice shot"
+                      alt="An invoice detail page with download and print options"
                       width={1100}
-                      height={625}
+                      sizes="(min-width: 1024px) 880px, 100vw"
+                      height={739}
                     />
 
                     <div className="pt-4">
                       <Button
                         asChild
-                        className="bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 w-full sm:w-auto"
+                        className="bg-primary w-full sm:w-auto"
                       >
                         <Link href="/dashboard/invoices/new">
                           <Plus className="mr-2 h-4 w-4" />
@@ -936,11 +952,15 @@ export default function HowToUseContent() {
               </TabsContent>
 
               {/* Products Tab */}
-              <TabsContent value="products" className="mt-6 space-y-6">
-                <Card className="hover:border-[#14B8A6]/50 dark:hover:border-[#14B8A6] hover:shadow-lg transition-all duration-300">
+              <TabsContent
+                value="products"
+                forceMount
+                className="mt-6 space-y-6 data-[state=inactive]:hidden"
+              >
+                <Card className="hover:border-primary/50 hover:shadow-lg transition-all duration-300">
                   <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-2xl">
-                      <Package className="h-6 w-6 text-teal-600" />
+                    <CardTitle as="h2" className="flex items-center gap-2 text-2xl">
+                      <Package className="h-6 w-6 text-primary" />
                       Managing Products & Inventory
                     </CardTitle>
                     <CardDescription>
@@ -971,7 +991,7 @@ export default function HowToUseContent() {
                             "PROD-001" or "SKU-12345"). This helps you identify
                             and track each product
                           </p>
-                          <div className="ml-6 mt-2 p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/20">
+                          <div className="ml-6 mt-2 p-3 rounded-lg bg-warning/10 border border-warning/20">
                             <p className="text-sm text-foreground">
                               <strong>Important:</strong> SKU must be unique for
                               each product in your inventory
@@ -1009,7 +1029,7 @@ export default function HowToUseContent() {
                               easier invoice creation
                             </li>
                           </ul>
-                          <div className="ml-6 mt-2 p-3 rounded-lg bg-blue-500/10 border border-blue-500/20">
+                          <div className="ml-6 mt-2 p-3 rounded-lg bg-primary/10 border border-primary/20">
                             <p className="text-sm text-foreground">
                               <strong>Pro Tip:</strong> When creating invoices,
                               you can add entire categories at once instead of
@@ -1071,11 +1091,12 @@ export default function HowToUseContent() {
 
                     {/* Screenshot Placeholder */}
                     <Image
-                      className="rounded-lg border-2 border-dashed border-muted-foreground/25 bg-muted/30 text-center"
+                      className="rounded-xl border bg-card shadow-frame"
                       src={NewProduct}
-                      alt="new product shot"
+                      alt="The new product form with price, stock and category"
                       width={1100}
-                      height={625}
+                      sizes="(min-width: 1024px) 880px, 100vw"
+                      height={739}
                     />
 
                     <Separator />
@@ -1090,7 +1111,7 @@ export default function HowToUseContent() {
                       </p>
                       <div className="space-y-3">
                         <div className="flex items-start gap-3 p-4 rounded-lg border bg-card">
-                          <Tag className="h-5 w-5 text-teal-600 mt-0.5 flex-shrink-0" />
+                          <Tag className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
                           <div>
                             <p className="font-medium">
                               Group Related Products
@@ -1102,7 +1123,7 @@ export default function HowToUseContent() {
                           </div>
                         </div>
                         <div className="flex items-start gap-3 p-4 rounded-lg border bg-card">
-                          <Zap className="h-5 w-5 text-teal-600 mt-0.5 flex-shrink-0" />
+                          <Zap className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
                           <div>
                             <p className="font-medium">
                               Faster Invoice Creation
@@ -1115,7 +1136,7 @@ export default function HowToUseContent() {
                           </div>
                         </div>
                         <div className="flex items-start gap-3 p-4 rounded-lg border bg-card">
-                          <Filter className="h-5 w-5 text-teal-600 mt-0.5 flex-shrink-0" />
+                          <Filter className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
                           <div>
                             <p className="font-medium">Easy Filtering</p>
                             <p className="text-sm text-muted-foreground mt-1">
@@ -1125,7 +1146,7 @@ export default function HowToUseContent() {
                           </div>
                         </div>
                         <div className="flex items-start gap-3 p-4 rounded-lg border bg-card">
-                          <TrendingUp className="h-5 w-5 text-teal-600 mt-0.5 flex-shrink-0" />
+                          <TrendingUp className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
                           <div>
                             <p className="font-medium">Better Reporting</p>
                             <p className="text-sm text-muted-foreground mt-1">
@@ -1136,7 +1157,7 @@ export default function HowToUseContent() {
                         </div>
                       </div>
 
-                      <div className="mt-4 p-4 rounded-lg bg-gradient-to-r from-[#6366F1]/10 to-[#14B8A6]/10 border border-teal-500/20">
+                      <div className="mt-4 p-4 rounded-lg bg-accent border border-primary/20">
                         <p className="font-medium text-foreground mb-2">
                           Example: Creating Related Products
                         </p>
@@ -1176,7 +1197,7 @@ export default function HowToUseContent() {
                       </p>
                       <ul className="space-y-2 text-muted-foreground">
                         <li className="flex items-start gap-2">
-                          <CheckCircle className="h-5 w-5 text-teal-600 mt-0.5 flex-shrink-0" />
+                          <CheckCircle className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
                           <span>
                             <strong className="text-foreground">
                               Product Name & SKU:
@@ -1185,7 +1206,7 @@ export default function HowToUseContent() {
                           </span>
                         </li>
                         <li className="flex items-start gap-2">
-                          <CheckCircle className="h-5 w-5 text-teal-600 mt-0.5 flex-shrink-0" />
+                          <CheckCircle className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
                           <span>
                             <strong className="text-foreground">
                               Category Badge:
@@ -1194,7 +1215,7 @@ export default function HowToUseContent() {
                           </span>
                         </li>
                         <li className="flex items-start gap-2">
-                          <CheckCircle className="h-5 w-5 text-teal-600 mt-0.5 flex-shrink-0" />
+                          <CheckCircle className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
                           <span>
                             <strong className="text-foreground">
                               Current Stock:
@@ -1203,7 +1224,7 @@ export default function HowToUseContent() {
                           </span>
                         </li>
                         <li className="flex items-start gap-2">
-                          <CheckCircle className="h-5 w-5 text-teal-600 mt-0.5 flex-shrink-0" />
+                          <CheckCircle className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
                           <span>
                             <strong className="text-foreground">
                               Unit Price:
@@ -1212,7 +1233,7 @@ export default function HowToUseContent() {
                           </span>
                         </li>
                         <li className="flex items-start gap-2">
-                          <CheckCircle className="h-5 w-5 text-teal-600 mt-0.5 flex-shrink-0" />
+                          <CheckCircle className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
                           <span>
                             <strong className="text-foreground">
                               Actions:
@@ -1231,7 +1252,7 @@ export default function HowToUseContent() {
                       </h3>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="p-4 rounded-lg border bg-card">
-                          <CheckCircle className="h-5 w-5 text-green-600 mb-2" />
+                          <CheckCircle className="h-5 w-5 text-success mb-2" />
                           <p className="font-medium mb-1">
                             Automatic Stock Updates
                           </p>
@@ -1241,7 +1262,7 @@ export default function HowToUseContent() {
                           </p>
                         </div>
                         <div className="p-4 rounded-lg border bg-card">
-                          <CheckCircle className="h-5 w-5 text-orange-600 mb-2" />
+                          <CheckCircle className="h-5 w-5 text-warning mb-2" />
                           <p className="font-medium mb-1">Low Stock Alerts</p>
                           <p className="text-sm text-muted-foreground">
                             Get notified when inventory levels fall below
@@ -1249,7 +1270,7 @@ export default function HowToUseContent() {
                           </p>
                         </div>
                         <div className="p-4 rounded-lg border bg-card">
-                          <CheckCircle className="h-5 w-5 text-blue-600 mb-2" />
+                          <CheckCircle className="h-5 w-5 text-primary mb-2" />
                           <p className="font-medium mb-1">
                             Category Organization
                           </p>
@@ -1258,7 +1279,7 @@ export default function HowToUseContent() {
                           </p>
                         </div>
                         <div className="p-4 rounded-lg border bg-card">
-                          <CheckCircle className="h-5 w-5 text-purple-600 mb-2" />
+                          <CheckCircle className="h-5 w-5 text-primary mb-2" />
                           <p className="font-medium mb-1">Stock History</p>
                           <p className="text-sm text-muted-foreground">
                             Track product movement and inventory changes over
@@ -1270,17 +1291,18 @@ export default function HowToUseContent() {
 
                     {/* Screenshot Placeholder */}
                     <Image
-                      className="rounded-lg border-2 border-dashed border-muted-foreground/25 bg-muted/30 text-center"
+                      className="rounded-xl border bg-card shadow-frame"
                       src={ProductList}
-                      alt="product list shot"
+                      alt="The product list with prices and stock levels"
                       width={1100}
-                      height={625}
+                      sizes="(min-width: 1024px) 880px, 100vw"
+                      height={739}
                     />
 
                     <div className="pt-4">
                       <Button
                         asChild
-                        className="bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 w-full sm:w-auto"
+                        className="bg-primary w-full sm:w-auto"
                       >
                         <Link href="/dashboard/products/new">
                           <Plus className="mr-2 h-4 w-4" />
@@ -1293,11 +1315,15 @@ export default function HowToUseContent() {
               </TabsContent>
 
               {/* Clients Tab */}
-              <TabsContent value="clients" className="mt-6 space-y-6">
-                <Card className="hover:border-[#14B8A6]/50 dark:hover:border-[#14B8A6] hover:shadow-lg transition-all duration-300">
+              <TabsContent
+                value="clients"
+                forceMount
+                className="mt-6 space-y-6 data-[state=inactive]:hidden"
+              >
+                <Card className="hover:border-primary/50 hover:shadow-lg transition-all duration-300">
                   <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-2xl">
-                      <Users className="h-6 w-6 text-teal-600" />
+                    <CardTitle as="h2" className="flex items-center gap-2 text-2xl">
+                      <Users className="h-6 w-6 text-primary" />
                       Managing Clients
                     </CardTitle>
                     <CardDescription>
@@ -1384,7 +1410,7 @@ export default function HowToUseContent() {
                       </h3>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="flex items-start gap-3 p-4 rounded-lg border bg-card">
-                          <Zap className="h-5 w-5 text-teal-600 mt-0.5 flex-shrink-0" />
+                          <Zap className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
                           <div>
                             <p className="font-medium">
                               Faster Invoice Creation
@@ -1396,7 +1422,7 @@ export default function HowToUseContent() {
                           </div>
                         </div>
                         <div className="flex items-start gap-3 p-4 rounded-lg border bg-card">
-                          <CheckCircle className="h-5 w-5 text-teal-600 mt-0.5 flex-shrink-0" />
+                          <CheckCircle className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
                           <div>
                             <p className="font-medium">
                               Consistent Information
@@ -1408,7 +1434,7 @@ export default function HowToUseContent() {
                           </div>
                         </div>
                         <div className="flex items-start gap-3 p-4 rounded-lg border bg-card">
-                          <FileText className="h-5 w-5 text-teal-600 mt-0.5 flex-shrink-0" />
+                          <FileText className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
                           <div>
                             <p className="font-medium">Invoice History</p>
                             <p className="text-sm text-muted-foreground mt-1">
@@ -1417,7 +1443,7 @@ export default function HowToUseContent() {
                           </div>
                         </div>
                         <div className="flex items-start gap-3 p-4 rounded-lg border bg-card">
-                          <TrendingUp className="h-5 w-5 text-teal-600 mt-0.5 flex-shrink-0" />
+                          <TrendingUp className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
                           <div>
                             <p className="font-medium">Revenue Tracking</p>
                             <p className="text-sm text-muted-foreground mt-1">
@@ -1440,7 +1466,7 @@ export default function HowToUseContent() {
                       </p>
                       <ul className="space-y-2 text-muted-foreground">
                         <li className="flex items-start gap-2">
-                          <CheckCircle className="h-5 w-5 text-teal-600 mt-0.5 flex-shrink-0" />
+                          <CheckCircle className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
                           <span>
                             <strong className="text-foreground">
                               Client Name & Email:
@@ -1449,7 +1475,7 @@ export default function HowToUseContent() {
                           </span>
                         </li>
                         <li className="flex items-start gap-2">
-                          <CheckCircle className="h-5 w-5 text-teal-600 mt-0.5 flex-shrink-0" />
+                          <CheckCircle className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
                           <span>
                             <strong className="text-foreground">
                               Total Invoices:
@@ -1458,7 +1484,7 @@ export default function HowToUseContent() {
                           </span>
                         </li>
                         <li className="flex items-start gap-2">
-                          <CheckCircle className="h-5 w-5 text-teal-600 mt-0.5 flex-shrink-0" />
+                          <CheckCircle className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
                           <span>
                             <strong className="text-foreground">
                               Total Revenue:
@@ -1467,7 +1493,7 @@ export default function HowToUseContent() {
                           </span>
                         </li>
                         <li className="flex items-start gap-2">
-                          <CheckCircle className="h-5 w-5 text-teal-600 mt-0.5 flex-shrink-0" />
+                          <CheckCircle className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
                           <span>
                             <strong className="text-foreground">
                               Outstanding Balance:
@@ -1476,7 +1502,7 @@ export default function HowToUseContent() {
                           </span>
                         </li>
                         <li className="flex items-start gap-2">
-                          <CheckCircle className="h-5 w-5 text-teal-600 mt-0.5 flex-shrink-0" />
+                          <CheckCircle className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
                           <span>
                             <strong className="text-foreground">
                               Quick Actions:
@@ -1520,17 +1546,18 @@ export default function HowToUseContent() {
 
                     {/* Screenshot Placeholder */}
                     <Image
-                      className="rounded-lg border-2 border-dashed border-muted-foreground/25 bg-muted/30 text-center"
+                      className="rounded-xl border bg-card shadow-frame"
                       src={ClientsList}
-                      alt="clients list shot"
+                      alt="The client list with contact details"
                       width={1100}
-                      height={625}
+                      sizes="(min-width: 1024px) 880px, 100vw"
+                      height={739}
                     />
 
                     <div className="pt-4">
                       <Button
                         asChild
-                        className="bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 w-full sm:w-auto"
+                        className="bg-primary w-full sm:w-auto"
                       >
                         <Link href="/dashboard/clients">
                           <Plus className="mr-2 h-4 w-4" />
@@ -1543,11 +1570,15 @@ export default function HowToUseContent() {
               </TabsContent>
 
               {/* Expenses Tab */}
-              <TabsContent value="expenses" className="mt-6 space-y-6">
-                <Card className="hover:border-[#14B8A6]/50 dark:hover:border-[#14B8A6] hover:shadow-lg transition-all duration-300">
+              <TabsContent
+                value="expenses"
+                forceMount
+                className="mt-6 space-y-6 data-[state=inactive]:hidden"
+              >
+                <Card className="hover:border-primary/50 hover:shadow-lg transition-all duration-300">
                   <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-2xl">
-                      <Receipt className="h-6 w-6 text-teal-600" />
+                    <CardTitle as="h2" className="flex items-center gap-2 text-2xl">
+                      <Receipt className="h-6 w-6 text-primary" />
                       Tracking Business Expenses
                     </CardTitle>
                     <CardDescription>
@@ -1653,7 +1684,7 @@ export default function HowToUseContent() {
                       </h3>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="flex items-start gap-3 p-4 rounded-lg border bg-card">
-                          <DollarSign className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
+                          <DollarSign className="h-5 w-5 text-success mt-0.5 flex-shrink-0" />
                           <div>
                             <p className="font-medium">
                               Better Financial Oversight
@@ -1664,7 +1695,7 @@ export default function HowToUseContent() {
                           </div>
                         </div>
                         <div className="flex items-start gap-3 p-4 rounded-lg border bg-card">
-                          <TrendingUp className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                          <TrendingUp className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
                           <div>
                             <p className="font-medium">Profit Calculation</p>
                             <p className="text-sm text-muted-foreground mt-1">
@@ -1674,7 +1705,7 @@ export default function HowToUseContent() {
                           </div>
                         </div>
                         <div className="flex items-start gap-3 p-4 rounded-lg border bg-card">
-                          <Tag className="h-5 w-5 text-purple-600 mt-0.5 flex-shrink-0" />
+                          <Tag className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
                           <div>
                             <p className="font-medium">Category Analysis</p>
                             <p className="text-sm text-muted-foreground mt-1">
@@ -1683,7 +1714,7 @@ export default function HowToUseContent() {
                           </div>
                         </div>
                         <div className="flex items-start gap-3 p-4 rounded-lg border bg-card">
-                          <FileText className="h-5 w-5 text-orange-600 mt-0.5 flex-shrink-0" />
+                          <FileText className="h-5 w-5 text-warning mt-0.5 flex-shrink-0" />
                           <div>
                             <p className="font-medium">Tax Preparation</p>
                             <p className="text-sm text-muted-foreground mt-1">
@@ -1706,7 +1737,7 @@ export default function HowToUseContent() {
                       </p>
                       <ul className="space-y-2 text-muted-foreground">
                         <li className="flex items-start gap-2">
-                          <CheckCircle className="h-5 w-5 text-teal-600 mt-0.5 flex-shrink-0" />
+                          <CheckCircle className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
                           <span>
                             <strong className="text-foreground">
                               Monthly Total:
@@ -1715,7 +1746,7 @@ export default function HowToUseContent() {
                           </span>
                         </li>
                         <li className="flex items-start gap-2">
-                          <CheckCircle className="h-5 w-5 text-teal-600 mt-0.5 flex-shrink-0" />
+                          <CheckCircle className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
                           <span>
                             <strong className="text-foreground">
                               Category Breakdown:
@@ -1724,7 +1755,7 @@ export default function HowToUseContent() {
                           </span>
                         </li>
                         <li className="flex items-start gap-2">
-                          <CheckCircle className="h-5 w-5 text-teal-600 mt-0.5 flex-shrink-0" />
+                          <CheckCircle className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
                           <span>
                             <strong className="text-foreground">
                               Trend Analysis:
@@ -1733,7 +1764,7 @@ export default function HowToUseContent() {
                           </span>
                         </li>
                         <li className="flex items-start gap-2">
-                          <CheckCircle className="h-5 w-5 text-teal-600 mt-0.5 flex-shrink-0" />
+                          <CheckCircle className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
                           <span>
                             <strong className="text-foreground">
                               Export Options:
@@ -1755,9 +1786,9 @@ export default function HowToUseContent() {
                         alongside revenue statistics, giving you a complete
                         picture of your business finances:
                       </p>
-                      <div className="p-4 rounded-lg bg-gradient-to-r from-[#6366F1]/10 to-[#14B8A6]/10 border border-teal-500/20">
+                      <div className="p-4 rounded-lg bg-accent border border-primary/20">
                         <div className="flex items-start gap-3">
-                          <TrendingUp className="h-5 w-5 text-[#6366F1] mt-0.5 flex-shrink-0" />
+                          <TrendingUp className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
                           <div>
                             <p className="font-medium text-foreground">
                               Quick Financial Overview
@@ -1774,17 +1805,18 @@ export default function HowToUseContent() {
 
                     {/* Screenshot Placeholder */}
                     <Image
-                      className="rounded-lg border-2 border-dashed border-muted-foreground/25 bg-muted/30 text-center"
+                      className="rounded-xl border bg-card shadow-frame"
                       src={ExpenseDetail}
-                      alt="expense detail shot"
+                      alt="An expense detail page"
                       width={1100}
-                      height={625}
+                      sizes="(min-width: 1024px) 880px, 100vw"
+                      height={739}
                     />
 
                     <div className="pt-4">
                       <Button
                         asChild
-                        className="bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 w-full sm:w-auto"
+                        className="bg-primary w-full sm:w-auto"
                       >
                         <Link href="/dashboard/expenses">
                           <Plus className="mr-2 h-4 w-4" />
@@ -1800,11 +1832,11 @@ export default function HowToUseContent() {
         </section>
 
         {/* FAQ Section */}
-        <section className="py-16 px-4 sm:px-6 lg:px-8 bg-white/50 dark:bg-gray-800/50">
+        <section className="py-16 px-4 sm:px-6 lg:px-8 bg-card/50">
           <div className="max-w-4xl mx-auto">
             <div className="text-center mb-12">
               <h2 className="text-3xl sm:text-4xl font-bold tracking-tight mb-4">
-                <span className="bg-gradient-to-r from-[#6366F1] to-[#14B8A6] bg-clip-text text-transparent">
+                <span>
                   Frequently Asked Questions
                 </span>
               </h2>
@@ -1816,14 +1848,14 @@ export default function HowToUseContent() {
             <Accordion type="single" collapsible className="space-y-4">
               <AccordionItem
                 value="item-1"
-                className="border rounded-lg px-6 bg-white dark:bg-gray-800"
+                className="border rounded-lg px-6 bg-card"
               >
                 <AccordionTrigger className="hover:no-underline">
                   <span className="text-left font-semibold">
                     How does the AI invoice extraction feature work?
                   </span>
                 </AccordionTrigger>
-                <AccordionContent className="text-muted-foreground">
+                <AccordionContent forceMount className="text-muted-foreground">
                   Upload an invoice image (PNG, JPG) or PDF, and our AI
                   automatically extracts key information like dates, amounts,
                   client details, and line items. You can review the extracted
@@ -1835,14 +1867,14 @@ export default function HowToUseContent() {
 
               <AccordionItem
                 value="item-2"
-                className="border rounded-lg px-6 bg-white dark:bg-gray-800"
+                className="border rounded-lg px-6 bg-card"
               >
                 <AccordionTrigger className="hover:no-underline">
                   <span className="text-left font-semibold">
                     Can I customize my invoice design with my company logo?
                   </span>
                 </AccordionTrigger>
-                <AccordionContent className="text-muted-foreground">
+                <AccordionContent forceMount className="text-muted-foreground">
                   Yes! Go to Settings → Business Profile to upload your company
                   logo and add your business details. This information will
                   automatically appear on all your invoices, giving them a
@@ -1853,14 +1885,14 @@ export default function HowToUseContent() {
 
               <AccordionItem
                 value="item-3"
-                className="border rounded-lg px-6 bg-white dark:bg-gray-800"
+                className="border rounded-lg px-6 bg-card"
               >
                 <AccordionTrigger className="hover:no-underline">
                   <span className="text-left font-semibold">
                     Does InvoyQ support multiple currencies?
                   </span>
                 </AccordionTrigger>
-                <AccordionContent className="text-muted-foreground">
+                <AccordionContent forceMount className="text-muted-foreground">
                   Absolutely! InvoyQ supports major currencies including USD,
                   EUR, GBP, NGN, and many more. You can select the currency when
                   creating each invoice or set a default currency for your
@@ -1871,14 +1903,14 @@ export default function HowToUseContent() {
 
               <AccordionItem
                 value="item-4"
-                className="border rounded-lg px-6 bg-white dark:bg-gray-800"
+                className="border rounded-lg px-6 bg-card"
               >
                 <AccordionTrigger className="hover:no-underline">
                   <span className="text-left font-semibold">
                     How do low stock alerts work?
                   </span>
                 </AccordionTrigger>
-                <AccordionContent className="text-muted-foreground">
+                <AccordionContent forceMount className="text-muted-foreground">
                   When you add products with initial stock quantities, InvoyQ
                   automatically tracks inventory levels. As products are added
                   to invoices, the stock count decreases. You'll receive alerts
@@ -1890,14 +1922,14 @@ export default function HowToUseContent() {
 
               <AccordionItem
                 value="item-5"
-                className="border rounded-lg px-6 bg-white dark:bg-gary-800"
+                className="border rounded-lg px-6 bg-card"
               >
                 <AccordionTrigger className="hover:no-underline">
                   <span className="text-left font-semibold">
                     Is my data secure with InvoyQ?
                   </span>
                 </AccordionTrigger>
-                <AccordionContent className="text-muted-foreground">
+                <AccordionContent forceMount className="text-muted-foreground">
                   Yes, security is our top priority. All data is encrypted in
                   transit and at rest. We use industry-standard security
                   practices including secure authentication (with Google OAuth
@@ -1909,14 +1941,14 @@ export default function HowToUseContent() {
 
               <AccordionItem
                 value="item-6"
-                className="border rounded-lg px-6 bg-white dark:bg-gray-800"
+                className="border rounded-lg px-6 bg-card"
               >
                 <AccordionTrigger className="hover:no-underline">
                   <span className="text-left font-semibold">
                     Can I export my invoices and financial data?
                   </span>
                 </AccordionTrigger>
-                <AccordionContent className="text-muted-foreground">
+                <AccordionContent forceMount className="text-muted-foreground">
                   Yes! Individual invoices can be downloaded as PDF or saved as
                   images. You can also export lists of invoices, clients,
                   products, and expenses as CSV files for use in accounting
@@ -1927,24 +1959,24 @@ export default function HowToUseContent() {
 
               <AccordionItem
                 value="item-7"
-                className="border rounded-lg px-6 bg-white dark:bg-gray-800"
+                className="border rounded-lg px-6 bg-card"
               >
                 <AccordionTrigger className="hover:no-underline">
                   <span className="text-left font-semibold flex items-center gap-2 flex-wrap">
                     Is there a mobile app for InvoyQ?
-                    <Badge className="bg-gradient-to-r from-orange-500 to-amber-500 text-white border-none">
+                    <Badge variant="info">
                       Early Access
                     </Badge>
                   </span>
                 </AccordionTrigger>
-                <AccordionContent className="text-muted-foreground">
+                <AccordionContent forceMount className="text-muted-foreground">
                   Yes! InvoyQ mobile apps for iOS and Android are currently in
                   early access. Join the beta program to get early access and
                   manage invoices, track expenses, and view business stats on
                   the go.{" "}
                   <a
                     href="mailto:support@invoyq.com?subject=Mobile App Early Access Request"
-                    className="text-teal-600 hover:underline font-medium"
+                    className="text-primary hover:underline font-medium"
                   >
                     Contact us
                   </a>{" "}
@@ -1955,14 +1987,14 @@ export default function HowToUseContent() {
 
               <AccordionItem
                 value="item-8"
-                className="border rounded-lg px-6 bg-white dark:bg-gray-800"
+                className="border rounded-lg px-6 bg-card"
               >
                 <AccordionTrigger className="hover:no-underline">
                   <span className="text-left font-semibold">
                     What happens when an invoice becomes overdue?
                   </span>
                 </AccordionTrigger>
-                <AccordionContent className="text-muted-foreground">
+                <AccordionContent forceMount className="text-muted-foreground">
                   Invoices are automatically marked as "Overdue" when they pass
                   their due date without being paid. Overdue invoices are
                   highlighted on your dashboard with a distinctive badge, making
@@ -1978,11 +2010,11 @@ export default function HowToUseContent() {
         {/* Call to Action Section */}
         <section className="py-16 px-4 sm:px-6 lg:px-8">
           <div className="max-w-4xl mx-auto text-center">
-            <div className="p-8 sm:p-12 rounded-2xl bg-gradient-to-r from-[#6366F1] to-[#14B8A6] text-white">
+            <div className="p-8 sm:p-12 rounded-2xl bg-primary text-primary-foreground">
               <h2 className="text-3xl sm:text-4xl font-bold mb-4">
                 Ready to Streamline Your Invoicing?
               </h2>
-              <p className="text-lg text-white/90 mb-8 max-w-2xl mx-auto">
+              <p className="text-lg text-primary-foreground/90 mb-8 max-w-2xl mx-auto">
                 Join thousands of businesses using InvoyQ to create professional
                 invoices, track payments, and manage their finances with ease.
               </p>
@@ -1991,9 +2023,9 @@ export default function HowToUseContent() {
                   asChild
                   size="lg"
                   variant="secondary"
-                  className="bg-white text-[#6366F1] hover:bg-gray-100"
+                  className="bg-card text-primary hover:bg-muted"
                 >
-                  <Link href={user ? "/dashboard" : "/auth/login"}>
+                  <Link href={user ? "/dashboard" : "/login"}>
                     {user ? "Go to Dashboard" : "Get Started Free"}
                   </Link>
                 </Button>
@@ -2001,7 +2033,7 @@ export default function HowToUseContent() {
                   asChild
                   size="lg"
                   variant="outline"
-                  className="border-white text-white bg-white/10"
+                  className="border-primary-foreground text-primary-foreground bg-transparent dark:bg-transparent hover:bg-primary-foreground/10"
                 >
                   <Link href="/dashboard/settings">
                     <Settings className="mr-2 h-5 w-5" />

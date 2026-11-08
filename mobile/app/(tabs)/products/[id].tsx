@@ -17,15 +17,16 @@ import {
   useDeleteProduct,
   useAdjustProductQuantity,
 } from "@/hooks/useProducts";
-import { Card, Button, Badge, NumberInput, FormField } from "@/components/ui";
+import { Card, Button, Badge, NumberInput, FormField, ErrorState } from "@/components/ui";
 import { confirmDelete, showError, showSuccess } from "@/utils/alerts";
 import { formatCurrency } from "@/utils/formatters";
+import { MIN_TOUCH_TARGET } from '@/constants/colors';
 
 export default function ProductDetailScreen() {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const { id, from } = useLocalSearchParams<{ id: string; from?: string }>();
-  const { data: product, isLoading } = useProduct(id);
+  const { data: product, isLoading, refetch } = useProduct(id);
   const deleteProduct = useDeleteProduct();
   const adjustQuantity = useAdjustProductQuantity();
   const [showAdjustModal, setShowAdjustModal] = useState(false);
@@ -88,7 +89,7 @@ export default function ProductDetailScreen() {
           { backgroundColor: colors.background },
         ]}
       >
-        <ActivityIndicator size="large" color={colors.primary} />
+        <ActivityIndicator size="large" color={colors.primaryText} />
       </View>
     );
   }
@@ -102,9 +103,11 @@ export default function ProductDetailScreen() {
           { backgroundColor: colors.background },
         ]}
       >
-        <Text style={[styles.errorText, { color: colors.textSecondary }]}>
-          Product not found
-        </Text>
+        <ErrorState
+          title="Product not found"
+          message="It may have been deleted, or it couldn't be loaded. Check your connection and try again."
+          onRetry={() => refetch()}
+        />
       </View>
     );
   }
@@ -120,15 +123,19 @@ export default function ProductDetailScreen() {
             <View style={styles.headerActions}>
               <TouchableOpacity
                 onPress={handleEdit}
+                accessibilityRole="button"
+                accessibilityLabel="Edit product"
                 style={styles.headerButton}
               >
-                <Ionicons name="pencil" size={22} color={colors.primary} />
+                <Ionicons name="pencil" size={22} color={colors.primaryText} />
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={handleDelete}
+                accessibilityRole="button"
+                accessibilityLabel="Delete product"
                 style={styles.headerButton}
               >
-                <Ionicons name="trash-outline" size={22} color={colors.error} />
+                <Ionicons name="trash-outline" size={22} color={colors.errorText} />
               </TouchableOpacity>
             </View>
           ),
@@ -155,7 +162,7 @@ export default function ProductDetailScreen() {
           </View>
 
           <View style={styles.priceRow}>
-            <Text style={[styles.price, { color: colors.primary }]}>
+            <Text style={[styles.price, { color: colors.primaryText }]}>
               {formatCurrency(parseFloat(product.unit_price), product.currency)}
             </Text>
             {getStockBadge()}
@@ -309,7 +316,10 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   headerButton: {
-    padding: 8,
+    minWidth: MIN_TOUCH_TARGET,
+    minHeight: MIN_TOUCH_TARGET,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   content: {
     flex: 1,

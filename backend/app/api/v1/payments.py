@@ -13,7 +13,6 @@ from app.dependencies.auth import get_current_user
 from app.models.user import User
 from app.models.payment import Payment
 from app.services.paystack import create_subscription_payment_link as paystack_link, verify_payment as paystack_verify
-from app.services.stripe import create_subscription_payment_link as stripe_link, verify_payment as stripe_verify
 from app.schemas.user import UserRead
 from app.core.config import settings
 from app.utils.logger import get_logger
@@ -26,7 +25,7 @@ router = APIRouter()
 
 
 class CreateSubscriptionRequest(BaseModel):
-    provider: Literal["paystack", "stripe"] = "paystack"
+    provider: Literal["paystack"] = "paystack"
     currency: str = "USD"
     callback_url: str | None = None
 
@@ -38,7 +37,7 @@ class SubscriptionResponse(BaseModel):
 
 class VerifyPaymentRequest(BaseModel):
     reference: str
-    provider: Literal["paystack", "stripe"] = "paystack"
+    provider: Literal["paystack"] = "paystack"
 
 
 @router.post("/subscription/create", response_model=SubscriptionResponse)
@@ -51,8 +50,8 @@ def create_pro_subscription(
     if current_user.is_pro and current_user.subscription_status == "active":
         raise HTTPException(status_code=400, detail="User already has an active pro subscription")
     
-    # Define subscription pricing (you can make this configurable)
-    amount = Decimal("29.99") if request.currency.upper() == "USD" else Decimal("12000")  # $29.99 or ₦12,000
+    # Pro plan: $20/month or ₦15,000/month
+    amount = Decimal("20") if request.currency.upper() == "USD" else Decimal("15000")
     
     # Generate reference
     reference = f"pro_sub_{current_user.id}_{int(datetime.utcnow().timestamp())}"
@@ -72,20 +71,13 @@ def create_pro_subscription(
     db.commit()
     
     # Create payment link
-    if request.provider == "paystack":
-        payment_url = paystack_link(
-            amount=amount,
-            email=current_user.email,
-            reference=reference,
-            currency="NGN" if request.currency.upper() == "NGN" else "USD",
-            callback_url=request.callback_url
-        )
-    else:
-        payment_url = stripe_link(
-            amount=amount,
-            currency=request.currency.lower(),
-            reference=reference
-        )
+    payment_url = paystack_link(
+        amount=amount,
+        email=current_user.email,
+        reference=reference,
+        currency="NGN" if request.currency.upper() == "NGN" else "USD",
+        callback_url=request.callback_url
+    )
     
     return SubscriptionResponse(payment_url=payment_url, reference=reference)
 
@@ -107,12 +99,8 @@ def verify_subscription_payment(
         raise HTTPException(status_code=404, detail="Payment not found")
     
     # Verify with provider
-    if request.provider == "paystack":
-        result = paystack_verify(request.reference)
-        success = result.get("data", {}).get("status") == "success"
-    else:
-        result = stripe_verify(request.reference)
-        success = result.get("payment_status") == "paid"
+    result = paystack_verify(request.reference)
+    success = result.get("data", {}).get("status") == "success"
     
     if success:
         # Update payment status
@@ -339,18 +327,3 @@ async def _handle_paystack_subscription_disable(data: dict, db: Session):
             user.subscription_updated_at = datetime.utcnow()
             db.commit()
             logger.info(f"Disabled pro subscription for user {user.id}")
-
-
-@router.post("/webhook/stripe")
-def stripe_webhook(payload: dict):
-    """Handle Stripe webhook notifications."""
-    # Verify webhook signature (implement according to Stripe docs)
-    # For now, this is a placeholder
-    event_type = payload.get("type")
-    data = payload.get("data", {})
-    
-    if event_type == "checkout.session.completed":
-        # Handle successful subscription
-        pass
-    
-    return {"status": "received"}

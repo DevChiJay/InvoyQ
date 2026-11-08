@@ -31,6 +31,11 @@ export function formatErrorMessage(detail: unknown, fallback: string): string {
     return messages.length > 0 ? messages.join(', ') : fallback;
   }
   
+  // Structured errors from the API (e.g. plan limits) carry a human-readable `message`
+  if (detail && typeof detail === 'object' && 'message' in detail) {
+    return String((detail as Record<string, unknown>).message);
+  }
+
   // If detail is an object with a message property
   if (detail && typeof detail === 'object' && 'msg' in detail) {
     return String((detail as Record<string, unknown>).msg);

@@ -25,11 +25,11 @@ export default function NewExpensePage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" onClick={() => router.back()}>
+        <Button variant="ghost" size="icon" onClick={() => router.back()} aria-label="Go back">
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div>
-          <h1 className="text-3xl font-bold">New Expense</h1>
+          <h1 className="font-display text-2xl font-semibold tracking-tight sm:text-3xl">New Expense</h1>
           <p className="text-muted-foreground">
             Record a new business expense
           </p>

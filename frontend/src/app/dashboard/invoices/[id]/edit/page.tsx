@@ -60,7 +60,7 @@ export default function EditInvoicePage() {
             Back to Invoice
           </Link>
         </Button>
-        <h2 className="text-3xl font-bold tracking-tight">Edit Invoice</h2>
+        <h1 className="font-display text-2xl font-semibold tracking-tight sm:text-3xl">Edit Invoice</h1>
         <p className="text-muted-foreground">Update invoice {invoice.number}</p>
       </div>
 

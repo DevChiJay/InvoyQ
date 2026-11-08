@@ -3,7 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "@/hooks/useTheme";
 import { Typography } from "@/constants/typography";
-import { Spacing } from "@/constants/colors";
+import { Spacing, HIT_SLOP, MIN_TOUCH_TARGET } from "@/constants/colors";
 
 interface MonthNavigatorProps {
   month: number;
@@ -67,17 +67,30 @@ export function MonthNavigator({
         onPress={handlePrevious}
         style={[styles.navButton, { backgroundColor: colors.surface }]}
         activeOpacity={0.7}
+        accessibilityRole="button"
+        accessibilityLabel="Previous month"
       >
         <Ionicons name="chevron-back" size={24} color={colors.text} />
       </TouchableOpacity>
 
       <View style={styles.centerContent}>
-        <Text style={[styles.monthText, { color: colors.text }]}>
+        <Text
+          style={[styles.monthText, { color: colors.text }]}
+          accessibilityRole="header"
+          adjustsFontSizeToFit
+          numberOfLines={1}
+        >
           {MONTH_NAMES[month - 1]} {year}
         </Text>
         {showTodayButton && !isCurrentMonth() && (
-          <TouchableOpacity onPress={handleToday} style={styles.todayButton}>
-            <Text style={[styles.todayText, { color: colors.primary }]}>
+          <TouchableOpacity
+            onPress={handleToday}
+            style={styles.todayButton}
+            hitSlop={HIT_SLOP}
+            accessibilityRole="button"
+            accessibilityLabel="Jump to current month"
+          >
+            <Text style={[styles.todayText, { color: colors.primaryText }]}>
               Today
             </Text>
           </TouchableOpacity>
@@ -88,6 +101,8 @@ export function MonthNavigator({
         onPress={handleNext}
         style={[styles.navButton, { backgroundColor: colors.surface }]}
         activeOpacity={0.7}
+        accessibilityRole="button"
+        accessibilityLabel="Next month"
       >
         <Ionicons name="chevron-forward" size={24} color={colors.text} />
       </TouchableOpacity>
@@ -104,9 +119,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.lg,
   },
   navButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: MIN_TOUCH_TARGET,
+    height: MIN_TOUCH_TARGET,
+    borderRadius: MIN_TOUCH_TARGET / 2,
     alignItems: "center",
     justifyContent: "center",
   },

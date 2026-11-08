@@ -6,11 +6,12 @@ import {
   TouchableOpacity,
   ScrollView,
   StyleSheet,
-  SafeAreaView,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/hooks/useTheme';
 import { Button } from './Button';
+import { HIT_SLOP, MIN_TOUCH_TARGET } from '@/constants/colors';
 
 interface FilterModalProps {
   visible: boolean;
@@ -51,13 +52,23 @@ export function FilterModal({
         <View style={[styles.container, { backgroundColor: colors.background }]}>
           {/* Header */}
           <View style={[styles.header, { borderBottomColor: colors.border }]}>
-            <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+            <TouchableOpacity
+              onPress={onClose}
+              style={styles.closeButton}
+              accessibilityRole="button"
+              accessibilityLabel="Close filters"
+            >
               <Ionicons name="close" size={24} color={colors.text} />
             </TouchableOpacity>
             <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
             {onReset && (
-              <TouchableOpacity onPress={handleReset}>
-                <Text style={[styles.resetText, { color: colors.primary }]}>
+              <TouchableOpacity
+                onPress={handleReset}
+                hitSlop={HIT_SLOP}
+                accessibilityRole="button"
+                accessibilityLabel="Reset filters"
+              >
+                <Text style={[styles.resetText, { color: colors.primaryText }]}>
                   Reset
                 </Text>
               </TouchableOpacity>
@@ -104,8 +115,8 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
   },
   closeButton: {
-    width: 40,
-    height: 40,
+    width: MIN_TOUCH_TARGET,
+    height: MIN_TOUCH_TARGET,
     alignItems: 'flex-start',
     justifyContent: 'center',
   },

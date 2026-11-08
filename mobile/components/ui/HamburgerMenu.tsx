@@ -4,13 +4,15 @@ import { router } from 'expo-router';
 import { useAuth } from '@/hooks/useAuth';
 import { useTheme } from '@/hooks/useTheme';
 import { Ionicons } from '@expo/vector-icons';
-import { Spacing, BorderRadius } from '@/constants/colors';
+import { Spacing, BorderRadius, MIN_TOUCH_TARGET } from '@/constants/colors';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Typography } from '@/constants/typography';
 
 export function HamburgerMenu() {
   const [visible, setVisible] = useState(false);
   const { user, logout } = useAuth();
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
   const slideAnim = useRef(new Animated.Value(-300)).current;
 
   useEffect(() => {
@@ -43,8 +45,10 @@ export function HamburgerMenu() {
     <>
       <TouchableOpacity 
         onPress={() => setVisible(true)} 
-        style={[styles.menuButton, { backgroundColor: colors.border }]}
+        style={[styles.menuButton, { backgroundColor: colors.surfaceVariant }]}
         activeOpacity={0.7}
+        accessibilityRole="button"
+        accessibilityLabel="Open menu"
       >
         <Ionicons name="menu" size={24} color={colors.text} />
       </TouchableOpacity>
@@ -63,7 +67,11 @@ export function HamburgerMenu() {
           <Animated.View 
             style={[
               styles.menuContainer, 
-              { backgroundColor: colors.surface, transform: [{ translateX: slideAnim }] }
+              {
+                backgroundColor: colors.surfaceElevated,
+                paddingTop: insets.top + Spacing.md,
+                transform: [{ translateX: slideAnim }],
+              },
             ]}
             onStartShouldSetResponder={() => true}
           >
@@ -73,6 +81,8 @@ export function HamburgerMenu() {
                 style={styles.userInfo}
                 onPress={() => handleNavigation('/(tabs)/settings/profile')}
                 activeOpacity={0.7}
+                accessibilityRole="button"
+                accessibilityLabel={`Profile, ${user?.full_name || user?.email || 'User'}`}
               >
                 {user?.avatar_url ? (
                   <Image
@@ -99,6 +109,8 @@ export function HamburgerMenu() {
               <TouchableOpacity 
                 onPress={() => handleNavigation('/(tabs)/settings')}
                 style={[styles.settingsIcon, { backgroundColor: colors.surfaceVariant }]}
+                accessibilityRole="button"
+                accessibilityLabel="Settings"
               >
                 <Ionicons name="settings-outline" size={20} color={colors.text} />
               </TouchableOpacity>
@@ -130,9 +142,11 @@ export function HamburgerMenu() {
                 style={styles.logoutButton}
                 onPress={handleLogout}
                 activeOpacity={0.7}
+                accessibilityRole="button"
+                accessibilityLabel="Log out"
               >
-                <Ionicons name="log-out-outline" size={20} color={colors.error} />
-                <Text style={[styles.logoutText, { color: colors.error }]}>Logout</Text>
+                <Ionicons name="log-out-outline" size={20} color={colors.errorText} />
+                <Text style={[styles.logoutText, { color: colors.errorText }]}>Logout</Text>
               </TouchableOpacity>
             </View>
           </Animated.View>
@@ -146,14 +160,20 @@ interface MenuItemProps {
   icon: keyof typeof Ionicons.glyphMap;
   label: string;
   onPress: () => void;
-  colors: any;
+  colors: ReturnType<typeof useTheme>['colors'];
 }
 
 function MenuItem({ icon, label, onPress, colors }: MenuItemProps) {
   return (
-    <TouchableOpacity style={styles.menuItem} onPress={onPress} activeOpacity={0.7}>
-      <View style={[styles.iconContainer, { backgroundColor: colors.primaryLight + '20' }]}>
-        <Ionicons name={icon} size={20} color={colors.primary} />
+    <TouchableOpacity
+      style={styles.menuItem}
+      onPress={onPress}
+      activeOpacity={0.7}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+    >
+      <View style={[styles.iconContainer, { backgroundColor: colors.primarySoft }]}>
+        <Ionicons name={icon} size={20} color={colors.primaryText} />
       </View>
       <Text style={[styles.menuItemText, { color: colors.text }]}>{label}</Text>
       <Ionicons name="chevron-forward" size={20} color={colors.textTertiary} />
@@ -163,8 +183,8 @@ function MenuItem({ icon, label, onPress, colors }: MenuItemProps) {
 
 const styles = StyleSheet.create({
   menuButton: {
-    width: 40,
-    height: 40,
+    width: MIN_TOUCH_TARGET,
+    height: MIN_TOUCH_TARGET,
     borderRadius: BorderRadius.md,
     justifyContent: 'center',
     alignItems: 'center',
@@ -179,7 +199,6 @@ const styles = StyleSheet.create({
   menuContainer: {
     width: 300,
     height: '100%',
-    paddingTop: 60,
     shadowColor: '#000',
     shadowOffset: { width: 2, height: 0 },
     shadowOpacity: 0.25,
@@ -222,8 +241,8 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   settingsIcon: {
-    width: 36,
-    height: 36,
+    width: MIN_TOUCH_TARGET,
+    height: MIN_TOUCH_TARGET,
     borderRadius: BorderRadius.md,
     justifyContent: 'center',
     alignItems: 'center',

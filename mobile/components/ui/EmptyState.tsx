@@ -6,8 +6,10 @@ import { Button } from './Button';
 
 interface EmptyStateProps {
   icon: keyof typeof Ionicons.glyphMap;
-  title: string;
-  message: string;
+  title?: string;
+  /** Supporting text. `description` is accepted as an alias. */
+  message?: string;
+  description?: string;
   actionLabel?: string;
   onAction?: () => void;
 }
@@ -16,6 +18,7 @@ export function EmptyState({
   icon,
   title,
   message,
+  description,
   actionLabel,
   onAction,
 }: EmptyStateProps) {
@@ -23,11 +26,22 @@ export function EmptyState({
 
   return (
     <View style={styles.container}>
-      <View style={[styles.iconContainer, { backgroundColor: colors.primaryLight }]}>
-        <Ionicons name={icon} size={48} color={colors.primary} />
+      <View style={[styles.iconContainer, { backgroundColor: colors.primarySoft }]}>
+        <Ionicons name={icon} size={48} color={colors.primaryText} />
       </View>
-      <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
-      <Text style={[styles.message, { color: colors.textSecondary }]}>{message}</Text>
+      {title && (
+        <Text
+          style={[styles.title, { color: colors.text }]}
+          accessibilityRole="header"
+        >
+          {title}
+        </Text>
+      )}
+      {(message ?? description) && (
+        <Text style={[styles.message, { color: colors.textSecondary }]}>
+          {message ?? description}
+        </Text>
+      )}
       {actionLabel && onAction && (
         <Button
           title={actionLabel}

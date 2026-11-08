@@ -28,7 +28,7 @@ class ExtractionRepository(BaseRepository):
     """Repository for extraction CRUD operations"""
 
     def __init__(self, db: AsyncIOMotorDatabase):
-        super().__init__(db, "extractions")
+        super().__init__(db, "extractions", ExtractionInDB)
 
     async def create_extraction(
         self,

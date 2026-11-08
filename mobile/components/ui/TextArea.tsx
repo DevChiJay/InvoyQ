@@ -1,6 +1,7 @@
 import React from 'react';
 import { TextInput, StyleSheet, TextInputProps } from 'react-native';
 import { useTheme } from '@/hooks/useTheme';
+import { BorderRadius } from '@/constants/colors';
 
 interface TextAreaProps extends TextInputProps {
   error?: boolean;
@@ -12,20 +13,21 @@ export function TextArea({ error, numberOfLines = 4, style, ...props }: TextArea
 
   return (
     <TextInput
+      accessibilityLabel={props.accessibilityLabel ?? props.placeholder}
       multiline
       numberOfLines={numberOfLines}
       textAlignVertical="top"
       style={[
         styles.textArea,
         {
-          backgroundColor: colors.surface,
+          backgroundColor: colors.inputBackground,
           borderColor: error ? colors.error : colors.border,
           color: colors.text,
           minHeight: 48 * numberOfLines / 4,
         },
         style,
       ]}
-      placeholderTextColor={colors.textSecondary}
+      placeholderTextColor={colors.textTertiary}
       {...props}
     />
   );
@@ -34,7 +36,7 @@ export function TextArea({ error, numberOfLines = 4, style, ...props }: TextArea
 const styles = StyleSheet.create({
   textArea: {
     borderWidth: 1,
-    borderRadius: 8,
+    borderRadius: BorderRadius.md,
     paddingHorizontal: 16,
     paddingVertical: 12,
     fontSize: 16,

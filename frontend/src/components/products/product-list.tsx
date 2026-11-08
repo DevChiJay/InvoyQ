@@ -1,10 +1,15 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { Package, Pencil, Plus, Search, SearchX, Trash2 } from 'lucide-react';
+import { toast } from 'sonner';
 import { useProductStore } from '@/stores/product-store';
 import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Badge } from '@/components/ui/badge';
 import {
   Table,
   TableBody,
@@ -13,7 +18,6 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
 import {
   Select,
   SelectContent,
@@ -21,13 +25,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { formatCurrency } from '@/lib/format';
-import { Plus, Search, Package, Edit, Trash2 } from 'lucide-react';
-import { toast } from 'sonner';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { EmptyState } from '@/components/shared/empty-state';
+import { Money } from '@/components/shared/money';
+import { PageHeader } from '@/components/shared/page-header';
+import { SortableHead } from '@/components/shared/sortable-head';
 
 export function ProductList() {
-  const router = useRouter();
   const {
     products,
     total,
@@ -92,28 +96,37 @@ export function ProductList() {
     }
   };
 
-  return (
-    <div className="space-y-4">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold">Products</h1>
-          <p className="text-muted-foreground">
-            Manage your product catalog and inventory
-          </p>
-        </div>
-        <Button onClick={() => router.push('/dashboard/products/new')}>
-          <Plus className="mr-2 h-4 w-4" />
-          Add Product
-        </Button>
-      </div>
+  const sortDirection = (field: string) =>
+    filters.sort_by === field ? (filters.sort_order === -1 ? 'desc' : 'asc') : null;
+  const hasActiveFilter = Boolean(filters.search) || filters.is_active !== undefined;
+  const initialLoading = isLoading && products.length === 0;
 
-      {/* Filters */}
-      <div className="flex gap-4 items-center">
+  const statusBadge = (active: boolean) => (
+    <Badge variant={active ? 'success' : 'muted'}>{active ? 'Active' : 'Inactive'}</Badge>
+  );
+
+  return (
+    <div className="space-y-6">
+      <PageHeader
+        title="Products"
+        description="Manage your product catalog and inventory"
+        actions={
+          <Button asChild>
+            <Link href="/dashboard/products/new">
+              <Plus className="h-4 w-4" />
+              Add Product
+            </Link>
+          </Button>
+        }
+      />
+
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
           <Input
-            placeholder="Search by name, SKU, or description..."
+            type="search"
+            aria-label="Search products"
+            placeholder="Search by name, SKU, or description"
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
             className="pl-10"
@@ -125,7 +138,7 @@ export function ProductList() {
             handleFilterChange('is_active', value === 'all' ? undefined : value === 'active')
           }
         >
-          <SelectTrigger className="w-[180px]">
+          <SelectTrigger className="w-full sm:w-44" aria-label="Filter by status">
             <SelectValue placeholder="Filter by status" />
           </SelectTrigger>
           <SelectContent>
@@ -136,105 +149,129 @@ export function ProductList() {
         </Select>
       </div>
 
-      {/* Table */}
-      <div className="border rounded-lg">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead
-                className="cursor-pointer hover:bg-muted/50"
-                onClick={() => handleSort('sku')}
-              >
-                SKU {filters.sort_by === 'sku' && (filters.sort_order === -1 ? '↓' : '↑')}
-              </TableHead>
-              <TableHead
-                className="cursor-pointer hover:bg-muted/50"
-                onClick={() => handleSort('name')}
-              >
-                Name {filters.sort_by === 'name' && (filters.sort_order === -1 ? '↓' : '↑')}
-              </TableHead>
-              <TableHead
-                className="cursor-pointer hover:bg-muted/50"
-                onClick={() => handleSort('unit_price')}
-              >
-                Price {filters.sort_by === 'unit_price' && (filters.sort_order === -1 ? '↓' : '↑')}
-              </TableHead>
-              <TableHead
-                className="cursor-pointer hover:bg-muted/50"
-                onClick={() => handleSort('quantity_available')}
-              >
-                Quantity {filters.sort_by === 'quantity_available' && (filters.sort_order === -1 ? '↓' : '↑')}
-              </TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoading && products.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                  Loading products...
-                </TableCell>
-              </TableRow>
-            ) : products.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={6} className="text-center py-8">
-                  <Package className="mx-auto h-12 w-12 text-muted-foreground mb-2" />
-                  <p className="text-muted-foreground">No products found</p>
-                  <Button
-                    variant="link"
-                    onClick={() => router.push('/dashboard/products/new')}
-                    className="mt-2"
-                  >
-                    Create your first product
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ) : (
-              products.map((product) => (
-                <TableRow
-                  key={product.id}
-                  className="cursor-pointer hover:bg-muted/50"
-                  onClick={() => router.push(`/dashboard/products/${product.id}`)}
+      {initialLoading ? (
+        <Card className="gap-0 p-4" aria-busy="true">
+          <div className="space-y-3">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <Skeleton key={i} className="h-12 w-full" />
+            ))}
+          </div>
+        </Card>
+      ) : products.length === 0 ? (
+        <Card>
+          {hasActiveFilter ? (
+            <EmptyState
+              icon={SearchX}
+              title="No products match"
+              description="Try a different search or status."
+              action={
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setSearchInput('');
+                    handleFilterChange('is_active', undefined);
+                  }}
                 >
-                  <TableCell className="font-mono text-sm">{product.sku}</TableCell>
-                  <TableCell className="font-medium">{product.name}</TableCell>
-                  <TableCell>
-                    {formatCurrency(product.unit_price)} {product.currency}
-                  </TableCell>
-                  <TableCell>{product.quantity_available}</TableCell>
-                  <TableCell>
-                    <Badge variant={product.is_active ? 'default' : 'secondary'}>
-                      {product.is_active ? 'Active' : 'Inactive'}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-2" onClick={(e) => e.stopPropagation()}>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => router.push(`/dashboard/products/${product.id}`)}
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => setDeleteId(product.id)}
-                        disabled={!product.is_active}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
+                  Clear filters
+                </Button>
+              }
+            />
+          ) : (
+            <EmptyState
+              icon={Package}
+              title="No products yet"
+              description="Add the things you sell to pick them straight into invoices and track stock."
+              action={
+                <Button asChild>
+                  <Link href="/dashboard/products/new">Add your first product</Link>
+                </Button>
+              }
+            />
+          )}
+        </Card>
+      ) : (
+        <>
+          <Card className="hidden gap-0 py-0 md:block">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <SortableHead label="SKU" direction={sortDirection('sku')} onSort={() => handleSort('sku')} />
+                  <SortableHead label="Name" direction={sortDirection('name')} onSort={() => handleSort('name')} />
+                  <SortableHead label="Price" align="right" direction={sortDirection('unit_price')} onSort={() => handleSort('unit_price')} />
+                  <SortableHead label="In stock" align="right" direction={sortDirection('quantity_available')} onSort={() => handleSort('quantity_available')} />
+                  <TableHead>Status</TableHead>
+                  <TableHead className="w-24 text-right">
+                    <span className="sr-only">Actions</span>
+                  </TableHead>
                 </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </div>
+              </TableHeader>
+              <TableBody>
+                {products.map((product) => (
+                  <TableRow key={product.id}>
+                    <TableCell className="font-mono text-xs text-muted-foreground">{product.sku}</TableCell>
+                    <TableCell className="font-medium">
+                      <Link
+                        href={`/dashboard/products/${product.id}`}
+                        className="rounded-sm hover:underline focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                      >
+                        {product.name}
+                      </Link>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Money amount={product.unit_price} currency={product.currency} />
+                    </TableCell>
+                    <TableCell className="text-right tabular-nums">{product.quantity_available}</TableCell>
+                    <TableCell>{statusBadge(product.is_active)}</TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-1">
+                        <Button variant="ghost" size="icon-sm" asChild>
+                          <Link href={`/dashboard/products/${product.id}`} aria-label={`Edit ${product.name}`}>
+                            <Pencil />
+                          </Link>
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          aria-label={`Deactivate ${product.name}`}
+                          onClick={() => setDeleteId(product.id)}
+                          disabled={!product.is_active}
+                        >
+                          <Trash2 className="text-destructive" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </Card>
 
-      {/* Pagination */}
+          <ul className="space-y-2 md:hidden">
+            {products.map((product) => (
+              <li key={product.id}>
+                <Card className="flex-row items-center gap-3 p-4">
+                  <Link
+                    href={`/dashboard/products/${product.id}`}
+                    className="min-w-0 flex-1 rounded-sm focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <p className="font-medium">{product.name}</p>
+                      <Money amount={product.unit_price} currency={product.currency} className="font-semibold" />
+                    </div>
+                    <div className="mt-1 flex items-center justify-between gap-2 text-sm text-muted-foreground">
+                      <span className="tabular-nums">
+                        {product.sku} · {product.quantity_available} in stock
+                      </span>
+                      {statusBadge(product.is_active)}
+                    </div>
+                  </Link>
+                </Card>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+
       {hasMore && (
         <div className="flex justify-center">
           <Button variant="outline" onClick={handleLoadMore} disabled={isLoading}>
@@ -243,12 +280,12 @@ export function ProductList() {
         </div>
       )}
 
-      {/* Total count */}
-      <p className="text-sm text-muted-foreground text-center">
-        Showing {products.length} of {total} products
-      </p>
+      {products.length > 0 && (
+        <p className="text-center text-sm text-muted-foreground">
+          Showing {products.length} of {total} products
+        </p>
+      )}
 
-      {/* Delete confirmation */}
       <ConfirmDialog
         open={!!deleteId}
         onClose={() => setDeleteId(null)}

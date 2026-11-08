@@ -3,6 +3,7 @@ import { authApi } from '@/services/api/auth';
 import { userApi } from '@/services/api/user';
 import { tokenStorage } from '@/services/storage/tokenStorage';
 import { router } from 'expo-router';
+import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { LoginRequest, RegisterRequest, UserRead, UserUpdate } from '@/types/auth';
 
 export const AUTH_KEYS = {
@@ -56,6 +57,8 @@ export function useAuth() {
   const logoutMutation = useMutation({
     mutationFn: async () => {
       await authApi.logout(); // This will call the API and remove tokens
+      // Forget the native Google account too, so the next "Continue with Google" shows the account picker.
+      await GoogleSignin.signOut().catch(() => undefined);
       queryClient.clear(); // Clear all cached data
     },
     onSuccess: () => {

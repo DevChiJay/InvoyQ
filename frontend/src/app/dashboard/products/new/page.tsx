@@ -30,11 +30,12 @@ export default function NewProductPage() {
           variant="ghost"
           size="icon"
           onClick={() => router.back()}
+          aria-label="Go back"
         >
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div>
-          <h1 className="text-3xl font-bold">New Product</h1>
+          <h1 className="font-display text-2xl font-semibold tracking-tight sm:text-3xl">New Product</h1>
           <p className="text-muted-foreground">
             Add a new product to your catalog
           </p>

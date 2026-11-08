@@ -9,8 +9,10 @@ import { FormField, Input, TextArea, Button } from '@/components/ui';
 import { validateForm, hasErrors, sanitizeFormData, formatFormData, getFieldError } from '@/utils/formHelpers';
 import { clientSchema } from '@/utils/validation';
 import { showError } from '@/utils/alerts';
+import { useKeyboardOffset } from '@/hooks/useKeyboardOffset';
 
 export default function EditClientScreen() {
+  const keyboardOffset = useKeyboardOffset();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -72,7 +74,7 @@ export default function EditClientScreen() {
   if (isLoading) {
     return (
       <View style={[styles.container, styles.centered, { backgroundColor: colors.background }]}>
-        <ActivityIndicator size="large" color={colors.primary} />
+        <ActivityIndicator size="large" color={colors.primaryText} />
       </View>
     );
   }
@@ -103,7 +105,7 @@ export default function EditClientScreen() {
       <KeyboardAvoidingView
         style={styles.keyboardView}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={100}
+        keyboardVerticalOffset={keyboardOffset}
       >
         <ScrollView
           style={styles.content}

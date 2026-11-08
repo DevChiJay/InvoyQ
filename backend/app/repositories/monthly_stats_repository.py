@@ -6,9 +6,9 @@ from motor.motor_asyncio import AsyncIOMotorDatabase
 from datetime import date, datetime
 from calendar import monthrange
 from decimal import Decimal
-from typing import List, Optional
+from typing import Dict, List, Optional
 
-from app.schemas.monthly_stats import MonthlyStats, TopProduct
+from app.schemas.monthly_stats import DailyPoint, MonthlyStats, MonthTrendPoint, StatsTrend, TopProduct
 from app.utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -80,6 +80,7 @@ class MonthlyStatsRepository:
         total_invoices = 0
         paid_invoices = 0
         unpaid_invoices = 0
+        status_counts: Dict[str, int] = {}
         
         for result in results:
             status = result["_id"]
@@ -87,6 +88,7 @@ class MonthlyStatsRepository:
             amount = Decimal(str(result.get("total_amount", 0)))
             
             total_invoices += count
+            status_counts[str(status)] = status_counts.get(str(status), 0) + count
             
             if status == "paid":
                 total_revenue += amount
@@ -100,6 +102,7 @@ class MonthlyStatsRepository:
             "total_invoices": total_invoices,
             "paid_invoices": paid_invoices,
             "unpaid_invoices": unpaid_invoices,
+            "status_counts": status_counts,
         }
     
     async def get_monthly_expense_stats(
@@ -288,9 +291,125 @@ class MonthlyStatsRepository:
             total_invoices=invoice_stats["total_invoices"],
             paid_invoices=invoice_stats["paid_invoices"],
             unpaid_invoices=invoice_stats["unpaid_invoices"],
+            status_counts=invoice_stats["status_counts"],
             total_products_sold=total_products_sold,
             top_products=top_products,
             new_clients=new_clients,
             period_start=start_date.date(),
             period_end=end_date.date()
         )
+
+
+    @staticmethod
+    def _month_sequence(month: int, year: int, count: int) -> List[tuple[int, int]]:
+        """The `count` (year, month) pairs ending at (year, month), oldest first."""
+        seq = []
+        for back in range(count - 1, -1, -1):
+            index = year * 12 + (month - 1) - back
+            seq.append((index // 12, index % 12 + 1))
+        return seq
+
+    async def get_trend(
+        self,
+        user_id: str,
+        month: int,
+        year: int,
+        currency: str = "NGN",
+        months: int = 6,
+    ) -> StatsTrend:
+        """
+        Revenue and expenses for the `months` months ending at the selected month, plus the
+        daily figures of the selected month.
+
+        Same definitions as `get_monthly_stats`: revenue is paid invoices bucketed by
+        `issued_date`; expenses by `expense_date`. Months with no activity are zero-filled.
+        One aggregation per collection and shape, run in parallel.
+        """
+        import asyncio
+
+        sequence = self._month_sequence(month, year, months)
+        first_year, first_month = sequence[0]
+        range_start = datetime(first_year, first_month, 1)
+        _, range_end = self._get_month_boundaries(month, year)
+        month_start, month_end = self._get_month_boundaries(month, year)
+
+        def window(field: str, start: datetime, end: datetime) -> dict:
+            match = {"user_id": user_id, field: {"$gte": start, "$lte": end}}
+            if currency:
+                match["currency"] = currency
+            return match
+
+        invoices_by_month = self.invoices.aggregate([
+            {"$match": window("issued_date", range_start, range_end)},
+            {"$group": {
+                "_id": {"y": {"$year": "$issued_date"}, "m": {"$month": "$issued_date"}, "status": "$status"},
+                "count": {"$sum": 1},
+                "amount": {"$sum": {"$toDouble": "$total"}},
+            }},
+        ]).to_list(None)
+        expenses_by_month = self.expenses.aggregate([
+            {"$match": window("expense_date", range_start, range_end)},
+            {"$group": {
+                "_id": {"y": {"$year": "$expense_date"}, "m": {"$month": "$expense_date"}},
+                "amount": {"$sum": {"$toDouble": "$amount"}},
+            }},
+        ]).to_list(None)
+        revenue_by_day = self.invoices.aggregate([
+            {"$match": {**window("issued_date", month_start, month_end), "status": "paid"}},
+            {"$group": {"_id": {"$dayOfMonth": "$issued_date"}, "amount": {"$sum": {"$toDouble": "$total"}}}},
+        ]).to_list(None)
+        expenses_by_day = self.expenses.aggregate([
+            {"$match": window("expense_date", month_start, month_end)},
+            {"$group": {"_id": {"$dayOfMonth": "$expense_date"}, "amount": {"$sum": {"$toDouble": "$amount"}}}},
+        ]).to_list(None)
+
+        inv_rows, exp_rows, rev_days, exp_days = await asyncio.gather(
+            invoices_by_month, expenses_by_month, revenue_by_day, expenses_by_day
+        )
+
+        def money(value: float) -> Decimal:
+            return Decimal(str(value)).quantize(Decimal("0.01"))
+
+        points: Dict[tuple[int, int], dict] = {
+            key: {"revenue": Decimal("0.00"), "expenses": Decimal("0.00"), "total": 0, "paid": 0}
+            for key in sequence
+        }
+        for row in inv_rows:
+            key = (row["_id"]["y"], row["_id"]["m"])
+            if key not in points:
+                continue
+            points[key]["total"] += row["count"]
+            if row["_id"]["status"] == "paid":
+                points[key]["paid"] += row["count"]
+                points[key]["revenue"] += money(row["amount"])
+        for row in exp_rows:
+            key = (row["_id"]["y"], row["_id"]["m"])
+            if key in points:
+                points[key]["expenses"] += money(row["amount"])
+
+        trend_months = [
+            MonthTrendPoint(
+                month=m,
+                year=y,
+                revenue=points[(y, m)]["revenue"],
+                expenses=points[(y, m)]["expenses"],
+                net_income=points[(y, m)]["revenue"] - points[(y, m)]["expenses"],
+                total_invoices=points[(y, m)]["total"],
+                paid_invoices=points[(y, m)]["paid"],
+            )
+            for (y, m) in sequence
+        ]
+
+        revenue_map = {int(r["_id"]): money(r["amount"]) for r in rev_days}
+        expense_map = {int(r["_id"]): money(r["amount"]) for r in exp_days}
+        days_in_month = monthrange(year, month)[1]
+        daily = [
+            DailyPoint(
+                date=date(year, month, day),
+                revenue=revenue_map.get(day, Decimal("0.00")),
+                expenses=expense_map.get(day, Decimal("0.00")),
+            )
+            for day in range(1, days_in_month + 1)
+        ]
+
+        return StatsTrend(currency=currency, month=month, year=year, months=trend_months, daily=daily)

@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { ArrowLeft, Package, TrendingUp } from 'lucide-react';
 import { toast } from 'sonner';
+import { Skeleton } from '@/components/ui/skeleton';
 import { formatCurrency } from '@/lib/format';
 
 export default function ProductDetailPage() {
@@ -51,8 +52,9 @@ export default function ProductDetailPage() {
 
   if (isLoading && !currentProduct) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <p className="text-muted-foreground">Loading product...</p>
+      <div className="space-y-6" aria-busy="true">
+        <Skeleton className="h-9 w-56" />
+        <Skeleton className="h-96 w-full rounded-xl" />
       </div>
     );
   }
@@ -73,11 +75,11 @@ export default function ProductDetailPage() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" onClick={() => router.back()}>
+        <Button variant="ghost" size="icon" onClick={() => router.back()} aria-label="Go back">
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div className="flex-1">
-          <h1 className="text-3xl font-bold">{currentProduct.name}</h1>
+          <h1 className="font-display text-2xl font-semibold tracking-tight sm:text-3xl">{currentProduct.name}</h1>
           <p className="text-muted-foreground font-mono">{currentProduct.sku}</p>
         </div>
         <Badge variant={currentProduct.is_active ? 'default' : 'secondary'}>
@@ -99,7 +101,7 @@ export default function ProductDetailPage() {
               <div>
                 <p className="text-sm text-muted-foreground">Unit Price</p>
                 <p className="text-lg font-semibold">
-                  {formatCurrency(currentProduct.unit_price)} {currentProduct.currency}
+                  {formatCurrency(currentProduct.unit_price, currentProduct.currency)}
                 </p>
               </div>
               <div>

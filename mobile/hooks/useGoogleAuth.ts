@@ -1,103 +1,124 @@
-import { useState } from "react";
-import * as Google from "expo-auth-session/providers/google";
-import * as WebBrowser from "expo-web-browser";
+import { useEffect, useState } from "react";
 import { Alert, Platform } from "react-native";
+import { router } from "expo-router";
+import * as Device from "expo-device";
+import {
+  GoogleSignin,
+  isErrorWithCode,
+  statusCodes,
+} from "@react-native-google-signin/google-signin";
 import { googleAuthApi } from "@/services/api/google-auth";
 import { tokenStorage } from "@/services/storage/tokenStorage";
 import { useAuth } from "./useAuth";
-import { router } from "expo-router";
 import { logger } from "@/utils/logger";
-import Constants from "expo-constants";
 
-// Required for web-based Google Sign-In to work properly
-WebBrowser.maybeCompleteAuthSession();
-
-// Get Google Client IDs from environment variables
-const GOOGLE_IOS_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID_IOS || "";
-const GOOGLE_ANDROID_CLIENT_ID =
-  process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID_ANDROID || "";
+// Native Google Sign-In: the OS shows the account picker and hands back an ID token, so
+// there is no browser and no redirect URI to register. `webClientId` makes the token's
+// audience the Web client id, which is what the backend (`GOOGLE_CLIENT_ID`) verifies.
 const GOOGLE_WEB_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || "";
+const GOOGLE_IOS_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID_IOS || "";
+
+/** Google sign-in works only when the Web client id is configured (and, on iOS, the iOS one). */
+export const isGoogleSignInConfigured =
+  !!GOOGLE_WEB_CLIENT_ID && (Platform.OS !== "ios" || !!GOOGLE_IOS_CLIENT_ID);
+
+let configured = false;
+function configureGoogleSignIn() {
+  if (configured || !isGoogleSignInConfigured) return;
+  GoogleSignin.configure({
+    webClientId: GOOGLE_WEB_CLIENT_ID,
+    iosClientId: GOOGLE_IOS_CLIENT_ID || undefined,
+  });
+  configured = true;
+}
+
+// Same value the axios interceptor sends as X-Device-Id for email login.
+const getDeviceId = () => Device.modelName || Device.osName || "unknown-device";
+
+type SignInResult = { success: boolean; error?: unknown };
+
+function messageFor(error: unknown): string | null {
+  // Cancelling the picker is not an error worth an alert.
+  if (isErrorWithCode(error)) {
+    switch (error.code) {
+      case statusCodes.SIGN_IN_CANCELLED:
+      case statusCodes.IN_PROGRESS:
+        return null;
+      case statusCodes.PLAY_SERVICES_NOT_AVAILABLE:
+        return "Google Play Services is missing or out of date on this device.";
+    }
+  }
+
+  // Backend errors: FastAPI puts a readable string in `detail`.
+  const detail = (error as { response?: { data?: { detail?: unknown } } })
+    ?.response?.data?.detail;
+  if (typeof detail === "string" && detail) return detail;
+
+  if (!(error as { response?: unknown })?.response) {
+    const message = (error as { message?: string })?.message ?? "";
+    if (/network/i.test(message)) {
+      return "Can't reach InvoyQ. Check your connection and try again.";
+    }
+  }
+  return "Unable to sign in with Google. Please try again.";
+}
 
 export function useGoogleAuth() {
   const [isLoading, setIsLoading] = useState(false);
   const { fetchUser } = useAuth();
 
-  // Configure Google Auth with platform-specific client IDs
-  const [request, response, promptAsync] = Google.useIdTokenAuthRequest({
-    clientId: GOOGLE_WEB_CLIENT_ID, // Web client ID for redirect URI
-    // For Android - specify the Android client ID
-    ...(Platform.OS === "android" && {
-      androidClientId: GOOGLE_ANDROID_CLIENT_ID,
-    }),
-    // For iOS - use iOS client ID
-    ...(Platform.OS === "ios" && {
-      iosClientId: GOOGLE_IOS_CLIENT_ID,
-    }),
-  });
+  useEffect(() => {
+    configureGoogleSignIn();
+  }, []);
 
-  const signInWithGoogle = async () => {
+  const signInWithGoogle = async (): Promise<SignInResult> => {
+    if (!isGoogleSignInConfigured) {
+      Alert.alert(
+        "Google sign-in unavailable",
+        "Google sign-in isn't set up in this build.",
+      );
+      return { success: false };
+    }
+
     setIsLoading(true);
     try {
-      // Prompt user to sign in with Google
-      const result = await promptAsync();
-
-      if (result.type === "success") {
-        const { id_token } = result.params;
-
-        if (!id_token) {
-          throw new Error("No ID token received from Google");
-        }
-
-        // Log token preview in development mode
-        if (__DEV__) {
-          logger.debug(
-            "Google OAuth success - ID token preview:",
-            id_token.substring(0, 20) + "...",
-          );
-          logger.debug("Platform:", Platform.OS);
-        }
-
-        // Send ID token to backend
-        const tokenData = await googleAuthApi.authenticateWithGoogle(
-          id_token,
-          Constants.sessionId, // Use session ID as device ID
-        );
-
-        // Store tokens
-        await tokenStorage.setTokens(
-          tokenData.access_token,
-          tokenData.refresh_token,
-        );
-
-        // Refetch user data
-        await fetchUser();
-
-        // Navigate to dashboard
-        router.replace("/(tabs)");
-
-        return { success: true };
-      } else if (result.type === "error") {
-        logger.error("Google auth error:", result.error);
-        throw new Error("Google authentication failed");
+      configureGoogleSignIn();
+      if (Platform.OS === "android") {
+        await GoogleSignin.hasPlayServices({
+          showPlayServicesUpdateDialog: true,
+        });
       }
 
-      return { success: false };
-    } catch (error: any) {
+      const response = await GoogleSignin.signIn();
+      if (response.type !== "success") {
+        return { success: false }; // user closed the picker
+      }
+
+      const idToken = response.data.idToken;
+      if (!idToken) {
+        throw new Error("No ID token received from Google");
+      }
+
+      const tokenData = await googleAuthApi.authenticateWithGoogle(
+        idToken,
+        getDeviceId(),
+      );
+      await tokenStorage.setTokens(
+        tokenData.access_token,
+        tokenData.refresh_token,
+      );
+      await fetchUser();
+      router.replace("/(tabs)");
+
+      return { success: true };
+    } catch (error) {
       logger.error("Google sign-in error:", error);
+      // Leave no half-signed-in Google session behind if our backend refused it.
+      GoogleSignin.signOut().catch(() => undefined);
 
-      // Extract more meaningful error message
-      let errorMessage = "Unable to sign in with Google. Please try again.";
-
-      if (error.response?.data?.detail) {
-        errorMessage = error.response.data.detail;
-        if (__DEV__) {
-          logger.debug("Backend error detail:", error.response.data);
-        }
-      } else if (error.message) {
-        errorMessage = error.message;
-      }
-
-      Alert.alert("Authentication Failed", errorMessage);
+      const message = messageFor(error);
+      if (!message) return { success: false }; // cancelled, nothing to report
+      Alert.alert("Authentication Failed", message);
       return { success: false, error };
     } finally {
       setIsLoading(false);
@@ -107,6 +128,6 @@ export function useGoogleAuth() {
   return {
     signInWithGoogle,
     isLoading,
-    isReady: !!request,
+    isReady: isGoogleSignInConfigured,
   };
 }

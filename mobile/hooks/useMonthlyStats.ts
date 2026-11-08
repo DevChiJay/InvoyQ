@@ -1,6 +1,14 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { statsApi, MonthlyStats } from "@/services/api/stats";
+import { statsApi, MonthlyStats, StatsTrend } from "@/services/api/stats";
+
+export const STATS_KEYS = {
+  all: ["stats"] as const,
+  monthly: (month: number, year: number, currency: string) =>
+    ["stats", "monthly", month, year, currency] as const,
+  trend: (month: number, year: number, currency: string) =>
+    ["stats", "trend", month, year, currency] as const,
+};
 
 export function useMonthlyStats(initialMonth?: number, initialYear?: number) {
   const now = new Date();
@@ -9,9 +17,22 @@ export function useMonthlyStats(initialMonth?: number, initialYear?: number) {
   const [currency] = useState("NGN"); // Can be made configurable if needed
 
   const { data, isLoading, error, refetch } = useQuery<MonthlyStats>({
-    queryKey: ["monthly-stats", month, year, currency],
+    queryKey: STATS_KEYS.monthly(month, year, currency),
     queryFn: () => statsApi.getMonthlyStats({ month, year, currency }),
     staleTime: 5 * 60 * 1000, // 5 minutes - monthly data doesn't change often
+  });
+
+  // The trend is an extra on top of the monthly numbers: if it fails the
+  // screen still renders, so no retry and no error surfaced.
+  const {
+    data: trend,
+    isLoading: trendLoading,
+    refetch: refetchTrend,
+  } = useQuery<StatsTrend>({
+    queryKey: STATS_KEYS.trend(month, year, currency),
+    queryFn: () => statsApi.getTrend({ month, year, currency, months: 6 }),
+    staleTime: 5 * 60 * 1000,
+    retry: false,
   });
 
   const goToPreviousMonth = () => {
@@ -47,8 +68,14 @@ export function useMonthlyStats(initialMonth?: number, initialYear?: number) {
     return month === now.getMonth() + 1 && year === now.getFullYear();
   };
 
+  const refetchAll = async () => {
+    await Promise.all([refetch(), refetchTrend()]);
+  };
+
   return {
     stats: data,
+    trend,
+    trendLoading,
     isLoading,
     error,
     month,
@@ -60,5 +87,6 @@ export function useMonthlyStats(initialMonth?: number, initialYear?: number) {
     setMonthYear,
     isCurrentMonth: isCurrentMonth(),
     refetch,
+    refetchAll,
   };
 }

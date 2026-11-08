@@ -13,7 +13,7 @@ from httpx import AsyncClient, ASGITransport
 from datetime import datetime, timedelta
 
 from app.main import app
-from app.db.mongo import get_database
+from app.db.mongo import get_database, mongodb
 from app.dependencies.auth import get_current_user
 from app.core.security import get_password_hash
 from app.repositories.user_repository import UserRepository, UserInDB
@@ -84,6 +84,9 @@ async def _create_test_indexes(db: AsyncIOMotorDatabase):
     await db.invoices.create_index("user_id")
     await db.invoices.create_index("status")
     
+    # Plan usage (the unique index is what makes concurrent first-touch inserts safe)
+    await db.usage.create_index([("user_id", 1), ("period", 1)], unique=True)
+
     # Expenses
     await db.expenses.create_index([("user_id", 1), ("date", -1)])
     await db.expenses.create_index("category")
@@ -98,6 +101,8 @@ async def client(test_db: AsyncIOMotorDatabase) -> AsyncGenerator[AsyncClient, N
     """
     # Override database dependency
     app.dependency_overrides[get_database] = lambda: test_db
+    # The app lifespan doesn't run under ASGITransport; invoice creation starts a session on this client.
+    mongodb.client = test_db.client
     
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as ac:
@@ -105,6 +110,7 @@ async def client(test_db: AsyncIOMotorDatabase) -> AsyncGenerator[AsyncClient, N
     
     # Clear overrides
     app.dependency_overrides.clear()
+    mongodb.client = None
 
 
 @pytest.fixture
@@ -149,7 +155,7 @@ async def test_user_pro(test_db: AsyncIOMotorDatabase) -> UserInDB:
         user_id=user.id,
         is_pro=True,
         subscription_status="active",
-        subscription_provider="stripe",
+        subscription_provider="paystack",
         subscription_start_date=datetime.utcnow(),
         subscription_end_date=datetime.utcnow() + timedelta(days=30)
     )

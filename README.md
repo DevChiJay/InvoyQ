@@ -52,7 +52,7 @@ npx expo start
 - 💰 **Expense Tracking** - Monitor business expenses with categorization
 - 🔐 **Secure Authentication** - JWT-based auth with refresh tokens
 - 📧 **Email Notifications** - Automated invoices and payment reminders
-- 💳 **Payment Integration** - Paystack and Stripe support
+- 💳 **Payment Integration** - Paystack support
 - 📱 **Cross-Platform** - Web and native mobile apps (iOS/Android)
 - 🌐 **Offline Support** - Mobile app works offline with sync
 - 🎨 **Modern UI** - Consistent design across all platforms

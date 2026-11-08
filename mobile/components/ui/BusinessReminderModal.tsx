@@ -4,9 +4,9 @@ import {
   Text,
   Modal,
   StyleSheet,
-  SafeAreaView,
   TouchableOpacity,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useTheme } from "@/hooks/useTheme";
@@ -61,10 +61,10 @@ export function BusinessReminderModal({
           <View
             style={[
               styles.iconContainer,
-              { backgroundColor: colors.primaryLight },
+              { backgroundColor: colors.primarySoft },
             ]}
           >
-            <Ionicons name="business" size={48} color={colors.primary} />
+            <Ionicons name="business" size={48} color={colors.primaryText} />
           </View>
 
           {/* Title */}
@@ -98,7 +98,7 @@ export function BusinessReminderModal({
                 <Ionicons
                   name={benefit.icon as any}
                   size={20}
-                  color={colors.success}
+                  color={colors.successText}
                   style={styles.benefitIcon}
                 />
                 <Text style={[styles.benefitText, { color: colors.text }]}>

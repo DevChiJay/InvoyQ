@@ -1,125 +1,83 @@
-"use client";
-
 import Link from "next/link";
-import Image from "next/image";
-import { Separator } from "@/components/ui/separator";
-import { FileText } from "lucide-react";
+import { Logo } from "@/components/shared/logo";
+import StoreBadges from "./store-badges";
+
+const footerLinks = {
+  product: [
+    { name: "Features", href: "/#features" },
+    { name: "How it works", href: "/#how-it-works" },
+    { name: "Pricing", href: "/#pricing" },
+    { name: "Free invoice generator", href: "/invoice-generator" },
+    { name: "How to use", href: "/how-to-use" },
+    { name: "Contact", href: "/contact" },
+  ],
+  legal: [
+    { name: "Privacy Policy", href: "/privacy" },
+    { name: "Terms of Service", href: "/terms" },
+  ],
+};
+
+const linkClass =
+  "rounded-sm text-sm text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50";
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
 
-  const footerLinks = {
-    product: [
-      { name: "Features", href: "/#features" },
-      { name: "Pricing", href: "/#pricing" },
-      { name: "Contact", href: "/contact" },
-    ],
-    legal: [
-      { name: "Privacy Policy", href: "/privacy" },
-      { name: "Terms of Service", href: "/terms" },
-    ],
-  };
-
   return (
-    <footer className="bg-[#0F172A] text-[#E2E8F0] border-t border-white/10">
-      <div className="container mx-auto px-4 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-          {/* Brand */}
-          <div>
-            <Link href="/" className="flex items-center gap-2 mb-4">
-              <div className="p-2 bg-linear-to-br from-[#6366F1] to-[#14B8A6] rounded-lg">
-                <FileText className="h-5 w-5 text-white" />
-              </div>
-              <span className="text-xl font-bold text-white">InvoYQ</span>
-            </Link>
-            <p className="text-sm text-[#E2E8F0]/70 leading-relaxed">
+    <footer className="border-t bg-card">
+      <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
+        <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1.2fr]">
+          <div className="space-y-3">
+            <Logo height={36} />
+            <p className="max-w-xs text-sm leading-relaxed text-muted-foreground">
               All-in-one invoicing and business management platform.
             </p>
           </div>
 
-          {/* Product Links */}
-          <div>
-            <h3 className="font-semibold text-white mb-4">Product</h3>
-            <ul className="space-y-2">
+          <nav aria-label="Product">
+            <h2 className="text-sm font-semibold">Product</h2>
+            <ul className="mt-3 space-y-2">
               {footerLinks.product.map((link) => (
                 <li key={link.name}>
-                  <Link
-                    href={link.href}
-                    className="text-sm hover:text-white transition-colors"
-                  >
+                  <Link href={link.href} className={linkClass}>
                     {link.name}
                   </Link>
                 </li>
               ))}
             </ul>
-          </div>
+          </nav>
 
-          {/* Legal Links */}
-          <div>
-            <h3 className="font-semibold text-white mb-4">Legal</h3>
-            <ul className="space-y-2">
+          <nav aria-label="Legal">
+            <h2 className="text-sm font-semibold">Legal</h2>
+            <ul className="mt-3 space-y-2">
               {footerLinks.legal.map((link) => (
                 <li key={link.name}>
-                  <Link
-                    href={link.href}
-                    className="text-sm hover:text-white transition-colors"
-                  >
+                  <Link href={link.href} className={linkClass}>
                     {link.name}
                   </Link>
                 </li>
               ))}
             </ul>
-          </div>
+          </nav>
 
-          {/* Mobile App */}
           <div>
-            <h3 className="font-semibold text-white mb-4">
-              Download Mobile App
-            </h3>
-            <Link
-              href="https://play.google.com/store/apps/details?id=com.invoyq.app"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-block transition-transform hover:scale-105"
-            >
-              <Image
-                src="/google-play.png"
-                alt="Get it on Google Play"
-                width={180}
-                height={60}
-                className="h-[90px] w-auto"
-              />
-            </Link>
-            <Link
-              href="https://apps.apple.com/app/invoyq/id6761304674"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-block transition-transform hover:scale-105 ml-4"
-            >
-              <Image
-                src="/appstore.png"
-                alt="Download on the App Store"
-                width={180}
-                height={60}
-                className="h-[60px] w-auto"
-              />
-            </Link>
+            <h2 className="text-sm font-semibold">Get the mobile app</h2>
+            <StoreBadges className="mt-3" />
           </div>
         </div>
 
-        <Separator className="my-8 bg-gray-800" />
-
-        {/* Bottom Section */}
-        <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="text-sm text-gray-400">
-            <p>© {currentYear} InvoYQ. All rights reserved.</p>
-            <p className="mt-1">
-              Created by{" "}
-              <span className="text-white font-medium">
-                <a href="https://www.devchi.me" target="_blank">
-                  Devchi Digital
-                </a>
-              </span>
+        <div className="mt-10 flex flex-col gap-6 border-t pt-6 md:flex-row md:items-center md:justify-between">
+          <div className="space-y-1 text-sm text-muted-foreground">
+            <p>© {currentYear} InvoyQ. All rights reserved.</p>
+            <p>
+              Built by{" "}
+              <a href="https://www.devchi.me" target="_blank" rel="noopener" className="font-medium text-foreground hover:underline">
+                Devchi Digital
+              </a>
+              {" · "}
+              <a href="https://www.devchi.me" target="_blank" rel="noopener" className="hover:text-foreground hover:underline">
+                Need a custom API or integration?
+              </a>
             </p>
           </div>
 
@@ -128,7 +86,7 @@ export default function Footer() {
               href="https://twitter.com/devchijay"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-gray-400 hover:text-white transition-colors"
+              className="rounded-sm text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
               aria-label="Twitter"
             >
               <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
@@ -139,7 +97,7 @@ export default function Footer() {
               href="https://github.com/devchijay"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-gray-400 hover:text-white transition-colors"
+              className="rounded-sm text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
               aria-label="GitHub"
             >
               <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
@@ -154,7 +112,7 @@ export default function Footer() {
               href="https://www.linkedin.com/in/chiemela-james-3681b5246/"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-gray-400 hover:text-white transition-colors"
+              className="rounded-sm text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
               aria-label="LinkedIn"
             >
               <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">

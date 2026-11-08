@@ -1,39 +1,64 @@
 "use client";
 
+import Link from "next/link";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle2, Crown, Calendar, CreditCard } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
+import { Skeleton } from "@/components/ui/skeleton";
+import { CheckCircle2, Crown, Calendar, CreditCard, Mail } from "lucide-react";
 import { useSubscriptionStatus } from "@/lib/hooks/use-payments";
+import { useUsage } from "@/lib/hooks/use-usage";
 import { formatISODate } from "@/lib/format";
+import { formatResetDate, isProActive } from "@/lib/plan";
+import { FREE_EXTRACTIONS_PER_MONTH, FREE_INVOICES_PER_MONTH, PRO_PRICE_NGN, PRO_PRICE_USD } from "@/constants/plans";
+import type { UsageCounter } from "@/types/api";
 
 interface SubscriptionCardProps {
   onUpgrade: () => void;
 }
 
+function UsageRow({ label, counter }: { label: string; counter: UsageCounter }) {
+  const pct = counter.limit ? Math.min(100, Math.round((counter.used / counter.limit) * 100)) : 0;
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-center justify-between text-sm">
+        <span>{label}</span>
+        <span className="font-medium tabular-nums">
+          {counter.used}
+          {counter.limit !== null && ` of ${counter.limit}`} used
+        </span>
+      </div>
+      {counter.limit !== null && (
+        <Progress value={pct} aria-label={`${label}: ${counter.used} of ${counter.limit} used this month`} />
+      )}
+    </div>
+  );
+}
+
 export function SubscriptionCard({ onUpgrade }: SubscriptionCardProps) {
   const { data: subscription, isLoading } = useSubscriptionStatus();
+  const { data: usage } = useUsage();
 
   if (isLoading) {
     return (
       <Card>
         <CardHeader>
-          <div className="h-6 w-32 bg-muted animate-pulse rounded" />
+          <Skeleton className="h-6 w-32" />
         </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="h-4 bg-muted animate-pulse rounded" />
-            ))}
-          </div>
+        <CardContent className="space-y-3">
+          {[1, 2, 3].map((i) => (
+            <Skeleton key={i} className="h-4 w-full" />
+          ))}
         </CardContent>
       </Card>
     );
   }
 
-  const isPro = subscription?.is_pro;
-  const isActive = subscription?.subscription_status === "active";
-  const daysRemaining = subscription?.days_remaining || 0;
+  const isPro = isProActive(subscription);
+  const daysRemaining = subscription?.days_remaining ?? null;
+  const grantedByUs = subscription?.subscription_provider === "admin";
+  const paymentsEnabled = usage?.payments_enabled ?? false;
 
   return (
     <Card>
@@ -41,117 +66,90 @@ export function SubscriptionCard({ onUpgrade }: SubscriptionCardProps) {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             {isPro ? (
-              <Crown className="h-5 w-5 text-yellow-500" />
+              <Crown className="h-5 w-5 text-warning" aria-hidden="true" />
             ) : (
-              <CreditCard className="h-5 w-5 text-muted-foreground" />
+              <CreditCard className="h-5 w-5 text-muted-foreground" aria-hidden="true" />
             )}
-            <CardTitle>{isPro ? "Pro Plan" : "Free Plan"}</CardTitle>
+            <CardTitle>{isPro ? "Pro plan" : "Free plan"}</CardTitle>
           </div>
-          {isPro && isActive && (
-            <Badge className="bg-green-500/10 text-green-700 dark:text-green-400">
-              Active
-            </Badge>
-          )}
+          {isPro && <Badge variant="success">Active</Badge>}
         </div>
         <CardDescription>
           {isPro
-            ? "You have access to all pro features"
-            : "Upgrade to unlock premium features"}
+            ? "Unlimited invoices and AI extractions."
+            : `${FREE_INVOICES_PER_MONTH} invoices and ${FREE_EXTRACTIONS_PER_MONTH} AI extractions a month.`}
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-6">
         {isPro ? (
-          <>
-            {/* Pro Plan Details */}
-            <div className="space-y-3">
-              <div className="flex items-center gap-2 text-sm">
-                <Calendar className="h-4 w-4 text-muted-foreground" />
-                <span className="text-muted-foreground">Started:</span>
-                <span className="font-medium">
-                  {subscription?.subscription_start_date
-                    ? formatISODate(subscription.subscription_start_date)
-                    : "N/A"}
-                </span>
-              </div>
-              <div className="flex items-center gap-2 text-sm">
-                <Calendar className="h-4 w-4 text-muted-foreground" />
-                <span className="text-muted-foreground">Renews:</span>
-                <span className="font-medium">
-                  {subscription?.subscription_end_date
-                    ? formatISODate(subscription.subscription_end_date)
-                    : "N/A"}
-                </span>
-              </div>
-              {daysRemaining > 0 && (
-                <div className="flex items-center gap-2 text-sm">
-                  <CheckCircle2 className="h-4 w-4 text-green-500" />
-                  <span className="text-muted-foreground">
-                    {daysRemaining} days remaining
-                  </span>
-                </div>
-              )}
-              {subscription?.subscription_provider && (
-                <div className="flex items-center gap-2 text-sm">
-                  <CreditCard className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-muted-foreground">Payment via:</span>
-                  <span className="font-medium capitalize">
-                    {subscription.subscription_provider}
-                  </span>
-                </div>
-              )}
+          <div className="space-y-3 text-sm">
+            <div className="flex items-center gap-2">
+              <Calendar className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+              <span className="text-muted-foreground">Started:</span>
+              <span className="font-medium">
+                {subscription?.subscription_start_date ? formatISODate(subscription.subscription_start_date) : "N/A"}
+              </span>
             </div>
-
-            {/* Pro Features */}
-            <div className="pt-4 border-t">
-              <h4 className="text-sm font-semibold mb-3">Pro Features</h4>
-              <ul className="space-y-2">
-                {[
-                  "Unlimited invoice extractions",
-                  "Payment link generation",
-                  "Email reminders",
-                  "Priority support",
-                  "Advanced analytics",
-                ].map((feature) => (
-                  <li key={feature} className="flex items-center gap-2 text-sm">
-                    <CheckCircle2 className="h-4 w-4 text-green-500 flex-shrink-0" />
-                    <span>{feature}</span>
-                  </li>
-                ))}
-              </ul>
+            <div className="flex items-center gap-2">
+              <Calendar className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+              <span className="text-muted-foreground">{grantedByUs ? "Ends:" : "Renews:"}</span>
+              <span className="font-medium">
+                {subscription?.subscription_end_date ? formatISODate(subscription.subscription_end_date) : "No end date"}
+              </span>
             </div>
-          </>
+            {daysRemaining !== null && daysRemaining > 0 && (
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="h-4 w-4 text-success" aria-hidden="true" />
+                <span className="text-muted-foreground">{daysRemaining} days remaining</span>
+              </div>
+            )}
+            <div className="flex items-center gap-2">
+              <CreditCard className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+              <span className="text-muted-foreground">Plan source:</span>
+              <span className="font-medium capitalize">
+                {grantedByUs || !subscription?.subscription_provider ? "Added by InvoyQ" : subscription.subscription_provider}
+              </span>
+            </div>
+          </div>
         ) : (
           <>
-            {/* Free Plan Features */}
-            <div>
-              <h4 className="text-sm font-semibold mb-3">Current Features</h4>
-              <ul className="space-y-2">
-                {[
-                  "10 extractions per month",
-                  "Basic invoice management",
-                  "Client management",
-                  "PDF generation",
-                ].map((feature) => (
-                  <li key={feature} className="flex items-center gap-2 text-sm">
-                    <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" />
-                    <span>{feature}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {/* Upgrade CTA */}
-            <div className="pt-4 border-t">
-              <div className="bg-linear-to-r from-indigo-50 to-purple-50 dark:from-indigo-950/20 dark:to-purple-950/20 p-4 rounded-lg">
-                <h4 className="font-semibold mb-2">Upgrade to Pro</h4>
-                <p className="text-sm text-muted-foreground mb-3">
-                  Unlock unlimited extractions, payment links, and more
-                </p>
-                <Button onClick={onUpgrade} className="w-full">
-                  <Crown className="mr-2 h-4 w-4" />
-                  Upgrade Now - $29.99/month
-                </Button>
+            {usage && (
+              <div className="space-y-4">
+                <div>
+                  <h4 className="text-sm font-semibold">This month</h4>
+                  <p className="text-xs text-muted-foreground">Resets on {formatResetDate(usage.resets_at)}</p>
+                </div>
+                <UsageRow label="Invoices" counter={usage.invoices} />
+                <UsageRow label="AI extractions" counter={usage.extractions} />
               </div>
+            )}
+
+            <div className="rounded-lg bg-accent p-4">
+              <h4 className="mb-2 font-semibold">Upgrade to Pro</h4>
+              <p className="text-sm text-muted-foreground">
+                Unlimited invoices and unlimited AI extractions.
+              </p>
+              <p className="mb-3 mt-1 text-sm font-medium tabular-nums">
+                ${PRO_PRICE_USD}/month or ₦{PRO_PRICE_NGN.toLocaleString("en-NG")}/month
+              </p>
+              {paymentsEnabled ? (
+                <Button onClick={onUpgrade} className="w-full">
+                  <Crown className="mr-2 h-4 w-4" aria-hidden="true" />
+                  Upgrade to Pro
+                </Button>
+              ) : (
+                <>
+                  <p className="mb-3 text-sm">
+                    Online payment isn&apos;t available yet. Contact us and we&apos;ll upgrade your account.
+                  </p>
+                  <Button asChild className="w-full">
+                    <Link href="/contact">
+                      <Mail className="mr-2 h-4 w-4" aria-hidden="true" />
+                      Contact us to upgrade
+                    </Link>
+                  </Button>
+                </>
+              )}
             </div>
           </>
         )}

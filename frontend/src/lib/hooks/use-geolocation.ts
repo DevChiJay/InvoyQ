@@ -2,22 +2,23 @@
 
 import { useState, useEffect } from 'react';
 import { getCurrencyInfo, isNigerianUser } from '@/lib/geolocation';
+import { PRO_PRICE_USD } from '@/constants/plans';
 
 interface CurrencyInfo {
   currency: 'USD' | 'NGN';
   symbol: string;
   price: number;
   period: string;
-  paymentProviders: ('stripe' | 'paystack')[];
+  paymentProviders: 'paystack'[];
 }
 
 export const useGeolocation = () => {
   const [currencyInfo, setCurrencyInfo] = useState<CurrencyInfo>({
     currency: 'USD',
     symbol: '$',
-    price: 19,
+    price: PRO_PRICE_USD,
     period: '/month',
-    paymentProviders: ['stripe', 'paystack'],
+    paymentProviders: ['paystack'],
   });
   const [isNigerian, setIsNigerian] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -44,9 +45,9 @@ export const useGeolocation = () => {
         setCurrencyInfo({
           currency: 'USD',
           symbol: '$',
-          price: 19,
+          price: PRO_PRICE_USD,
           period: '/month',
-          paymentProviders: ['stripe', 'paystack'],
+          paymentProviders: ['paystack'],
         });
         setIsNigerian(false);
       } finally {

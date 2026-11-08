@@ -32,6 +32,7 @@ import {
 } from "@/utils/formHelpers";
 import { showError } from "@/utils/alerts";
 import { z } from "zod";
+import { useKeyboardOffset } from '@/hooks/useKeyboardOffset';
 
 const productSchema = z.object({
   sku: z.string().min(1, "SKU is required"),
@@ -53,6 +54,7 @@ const currencyOptions: SelectOption[] = [
 ];
 
 export default function CreateProductScreen() {
+  const keyboardOffset = useKeyboardOffset();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const createProduct = useCreateProduct();
@@ -156,7 +158,7 @@ export default function CreateProductScreen() {
       <KeyboardAvoidingView
         style={styles.keyboardView}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
-        keyboardVerticalOffset={100}
+        keyboardVerticalOffset={keyboardOffset}
       >
         <ScrollView
           style={styles.content}

@@ -5,9 +5,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/hooks/useTheme';
 import { useExpense, useDeleteExpense } from '@/hooks/useExpenses';
-import { Card } from '@/components/ui';
+import { Card, ErrorState } from '@/components/ui';
 import { confirmDelete, showError } from '@/utils/alerts';
 import { formatCurrency, formatDate } from '@/utils/formatters';
+import { MIN_TOUCH_TARGET } from '@/constants/colors';
 
 const categoryIcons: Record<string, keyof typeof Ionicons.glyphMap> = {
   'food-dining': 'restaurant',
@@ -35,7 +36,7 @@ export default function ExpenseDetailScreen() {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const { id, from } = useLocalSearchParams<{ id: string; from?: string }>();
-  const { data: expense, isLoading } = useExpense(id);
+  const { data: expense, isLoading, refetch } = useExpense(id);
   const deleteExpense = useDeleteExpense();
 
   const handleBack = () => {
@@ -65,7 +66,7 @@ export default function ExpenseDetailScreen() {
   if (isLoading) {
     return (
       <View style={[styles.container, styles.centered, { backgroundColor: colors.background }]}>
-        <ActivityIndicator size="large" color={colors.primary} />
+        <ActivityIndicator size="large" color={colors.primaryText} />
       </View>
     );
   }
@@ -73,7 +74,11 @@ export default function ExpenseDetailScreen() {
   if (!expense) {
     return (
       <View style={[styles.container, styles.centered, { backgroundColor: colors.background }]}>
-        <Text style={[styles.errorText, { color: colors.textSecondary }]}>Expense not found</Text>
+        <ErrorState
+          title="Expense not found"
+          message="It may have been deleted, or it couldn't be loaded. Check your connection and try again."
+          onRetry={() => refetch()}
+        />
       </View>
     );
   }
@@ -90,17 +95,23 @@ export default function ExpenseDetailScreen() {
           headerTintColor: colors.text,
           gestureEnabled: from !== 'dashboard',
           headerLeft: () => (
-            <TouchableOpacity onPress={handleBack} style={styles.headerButton}>
+            <TouchableOpacity onPress={handleBack} accessibilityRole="button"
+                accessibilityLabel="Go back"
+                style={styles.headerButton}>
               <Ionicons name="arrow-back" size={24} color={colors.text} />
             </TouchableOpacity>
           ),
           headerRight: () => (
             <View style={styles.headerActions}>
-              <TouchableOpacity onPress={handleEdit} style={styles.headerButton}>
-                <Ionicons name="pencil" size={22} color={colors.primary} />
+              <TouchableOpacity onPress={handleEdit} accessibilityRole="button"
+                accessibilityLabel="Edit expense"
+                style={styles.headerButton}>
+                <Ionicons name="pencil" size={22} color={colors.primaryText} />
               </TouchableOpacity>
-              <TouchableOpacity onPress={handleDelete} style={styles.headerButton}>
-                <Ionicons name="trash-outline" size={22} color={colors.error} />
+              <TouchableOpacity onPress={handleDelete} accessibilityRole="button"
+                accessibilityLabel="Delete expense"
+                style={styles.headerButton}>
+                <Ionicons name="trash-outline" size={22} color={colors.errorText} />
               </TouchableOpacity>
             </View>
           ),
@@ -111,7 +122,7 @@ export default function ExpenseDetailScreen() {
         {/* Amount Card */}
         <Card style={styles.amountCard}>
           <Text style={[styles.amountLabel, { color: colors.textSecondary }]}>Amount</Text>
-          <Text style={[styles.amount, { color: colors.error }]}>
+          <Text style={[styles.amount, { color: colors.errorText }]}>
             {formatCurrency(parseFloat(expense.amount), expense.currency)}
           </Text>
         </Card>
@@ -122,7 +133,7 @@ export default function ExpenseDetailScreen() {
 
           <View style={styles.detailRow}>
             <View style={styles.detailIcon}>
-              <Ionicons name={categoryIcon} size={20} color={colors.primary} />
+              <Ionicons name={categoryIcon} size={20} color={colors.primaryText} />
             </View>
             <View style={styles.detailContent}>
               <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Category</Text>
@@ -132,7 +143,7 @@ export default function ExpenseDetailScreen() {
 
           <View style={styles.detailRow}>
             <View style={styles.detailIcon}>
-              <Ionicons name="calendar-outline" size={20} color={colors.primary} />
+              <Ionicons name="calendar-outline" size={20} color={colors.primaryText} />
             </View>
             <View style={styles.detailContent}>
               <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Date</Text>
@@ -144,7 +155,7 @@ export default function ExpenseDetailScreen() {
 
           <View style={styles.detailRow}>
             <View style={styles.detailIcon}>
-              <Ionicons name="cash-outline" size={20} color={colors.primary} />
+              <Ionicons name="cash-outline" size={20} color={colors.primaryText} />
             </View>
             <View style={styles.detailContent}>
               <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Currency</Text>
@@ -155,7 +166,7 @@ export default function ExpenseDetailScreen() {
           {expense.vendor && (
             <View style={styles.detailRow}>
               <View style={styles.detailIcon}>
-                <Ionicons name="business-outline" size={20} color={colors.primary} />
+                <Ionicons name="business-outline" size={20} color={colors.primaryText} />
               </View>
               <View style={styles.detailContent}>
                 <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Vendor</Text>
@@ -181,9 +192,9 @@ export default function ExpenseDetailScreen() {
               {expense.tags.map((tag, index) => (
                 <View
                   key={index}
-                  style={[styles.tag, { backgroundColor: colors.primaryLight }]}
+                  style={[styles.tag, { backgroundColor: colors.primarySoft }]}
                 >
-                  <Text style={[styles.tagText, { color: colors.primary }]}>{tag}</Text>
+                  <Text style={[styles.tagText, { color: colors.primaryText }]}>{tag}</Text>
                 </View>
               ))}
             </View>
@@ -204,10 +215,12 @@ const styles = StyleSheet.create({
   },
   headerActions: {
     flexDirection: 'row',
-    gap: 8,
   },
   headerButton: {
-    padding: 8,
+    minWidth: MIN_TOUCH_TARGET,
+    minHeight: MIN_TOUCH_TARGET,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   content: {
     flex: 1,

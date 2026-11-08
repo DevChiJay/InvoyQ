@@ -1,44 +1,65 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, ViewStyle } from 'react-native';
 import { useTheme } from '@/hooks/useTheme';
+import { Spacing } from '@/constants/colors';
+import { Typography } from '@/constants/typography';
 
 interface FormFieldProps {
   label: string;
   error?: string;
   required?: boolean;
   children: React.ReactNode;
+  style?: ViewStyle;
 }
 
-export function FormField({ label, error, required, children }: FormFieldProps) {
+export function FormField({ label, error, required, children, style }: FormFieldProps) {
   const { colors } = useTheme();
 
+  // Screen readers have no `htmlFor`: pass the visible label down to a single
+  // child control (Input, TextArea, ...) unless it already names itself.
+  // Fragments can't take props, so only real elements are cloned.
+  const control =
+    React.isValidElement<{ accessibilityLabel?: string; accessibilityHint?: string }>(children) &&
+    children.type !== React.Fragment &&
+    !children.props.accessibilityLabel
+      ? React.cloneElement(children, {
+          accessibilityLabel: required ? `${label}, required` : label,
+          ...(error ? { accessibilityHint: error } : null),
+        })
+      : children;
+
   return (
-    <View style={styles.container}>
-      <Text style={[styles.label, { color: colors.text }]}>
+    <View style={[styles.container, style]}>
+      <Text style={[styles.label, { color: colors.text }]} maxFontSizeMultiplier={1.4}>
         {label}
-        {required && <Text style={[styles.required, { color: colors.error }]}> *</Text>}
+        {required && (
+          <Text style={[styles.label, { color: colors.errorText }]}> *</Text>
+        )}
       </Text>
-      {children}
-      {error && <Text style={[styles.error, { color: colors.error }]}>{error}</Text>}
+      {control}
+      {error && (
+        <Text
+          style={[styles.error, { color: colors.errorText }]}
+          accessibilityLiveRegion="polite"
+        >
+          {error}
+        </Text>
+      )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: 16,
+    marginBottom: Spacing.md,
   },
   label: {
-    fontSize: 14,
-    fontWeight: '600',
-    marginBottom: 8,
-  },
-  required: {
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: Typography.sizes.sm,
+    fontWeight: Typography.weights.semibold,
+    marginBottom: Spacing.sm,
   },
   error: {
-    fontSize: 12,
-    marginTop: 4,
+    fontSize: Typography.sizes.xs,
+    marginTop: Spacing.xs,
   },
 });

@@ -1,62 +1,35 @@
-"use client";
-
-import { useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
-import { useAuthStore } from "@/stores/auth-store";
+import type { Metadata } from "next";
 import Navbar from "@/components/landing/navbar";
 import HeroSection from "@/components/landing/hero-section";
 import FeaturesSection from "@/components/landing/features-section";
 import HowItWorks from "@/components/landing/how-it-works";
-import TestimonialsSection from "@/components/landing/testimonials-section";
 import PricingSection from "@/components/landing/pricing-section";
 import CTASection from "@/components/landing/cta-section";
 import Footer from "@/components/landing/footer";
-import ScrollToTop from "@/components/landing/scroll-to-top";
+import RedirectIfAuthed from "@/components/landing/redirect-if-authed";
+import { JsonLd } from "@/components/json-ld";
+import { pageMetadata, softwareApplicationJsonLd } from "@/lib/seo";
+
+export const metadata: Metadata = pageMetadata({
+  title: "InvoyQ - All-in-One Invoicing Platform",
+  description:
+    "All-in-one invoicing dashboard to create, manage, and track invoices, clients, products, stock, and expenses—built for speed, clarity, and getting paid faster.",
+  path: "/",
+  absoluteTitle: true,
+});
 
 export default function Home() {
-  const router = useRouter();
-  const { isAuthenticated, _hasHydrated } = useAuthStore();
-  const hasInitialized = useRef(false);
-
-  // Initialize auth state from localStorage once on mount
-  useEffect(() => {
-    if (!hasInitialized.current) {
-      hasInitialized.current = true;
-      useAuthStore.getState().initializeAuth();
-    }
-  }, []);
-
-  // Redirect authenticated users to dashboard
-  useEffect(() => {
-    if (_hasHydrated && isAuthenticated) {
-      router.push("/dashboard");
-    }
-  }, [_hasHydrated, isAuthenticated, router]);
-
-  // Show landing page for unauthenticated users
-  if (!_hasHydrated) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
-      </div>
-    );
-  }
-
-  if (isAuthenticated) {
-    return null; // Will redirect to dashboard
-  }
-
   return (
     <main className="min-h-screen">
+      <JsonLd data={softwareApplicationJsonLd} />
+      <RedirectIfAuthed />
       <Navbar />
       <HeroSection />
       <HowItWorks />
       <FeaturesSection />
-      <TestimonialsSection />
-      {/* <PricingSection /> */}
+      <PricingSection />
       <CTASection />
       <Footer />
-      <ScrollToTop />
     </main>
   );
 }

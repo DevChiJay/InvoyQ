@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/hooks/useTheme';
-import { Spacing } from '@/constants/colors';
+import { BorderRadius, MIN_TOUCH_TARGET, Spacing } from '@/constants/colors';
 import { Typography } from '@/constants/typography';
 
 interface ErrorStateProps {
@@ -23,7 +23,7 @@ export function ErrorState({
   return (
     <View style={styles.container}>
       <View style={[styles.iconContainer, { backgroundColor: colors.error + '20' }]}>
-        <Ionicons name="alert-circle-outline" size={48} color={colors.error} />
+        <Ionicons name="alert-circle-outline" size={48} color={colors.errorText} />
       </View>
       
       <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
@@ -33,9 +33,11 @@ export function ErrorState({
         <TouchableOpacity
           style={[styles.retryButton, { backgroundColor: colors.primary }]}
           onPress={onRetry}
+          accessibilityRole="button"
+          accessibilityLabel={retryLabel}
         >
-          <Ionicons name="refresh-outline" size={20} color="#FFFFFF" />
-          <Text style={styles.retryText}>{retryLabel}</Text>
+          <Ionicons name="refresh-outline" size={20} color={colors.onPrimary} />
+          <Text style={[styles.retryText, { color: colors.onPrimary }]}>{retryLabel}</Text>
         </TouchableOpacity>
       )}
     </View>
@@ -74,11 +76,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.md,
-    borderRadius: 8,
+    borderRadius: BorderRadius.md,
+    minHeight: MIN_TOUCH_TARGET,
     gap: Spacing.xs,
   },
   retryText: {
-    color: '#FFFFFF',
     fontSize: Typography.sizes.md,
     fontWeight: Typography.weights.semibold,
   },

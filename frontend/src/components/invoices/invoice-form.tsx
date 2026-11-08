@@ -27,7 +27,23 @@ import {
   Package,
   AlertCircle,
   Search,
+  Sparkles,
 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import type { ExtractedData } from "@/types/api";
+
+export const EXTRACTION_STORAGE_KEY = "extractedData";
+
+/** Small marker next to a field the AI filled in, so people know to check it. */
+function AiFilled({ label = "AI" }: { label?: string }) {
+  return (
+    <Badge variant="info" className="ml-2 gap-1 align-middle text-[11px]">
+      <Sparkles aria-hidden="true" />
+      {label}
+      <span className="sr-only"> filled this from your chat. Please check it.</span>
+    </Badge>
+  );
+}
 import { ClientFormModal } from "@/components/clients/client-form-modal";
 import type {
   Invoice,
@@ -61,6 +77,8 @@ interface InvoiceFormProps {
   isLoading?: boolean;
   isEdit?: boolean;
   preselectedClientId?: string;
+  /** Prefill from the AI extraction saved in sessionStorage. */
+  fromExtraction?: boolean;
 }
 
 // Calculate default due date (30 days from now)
@@ -76,9 +94,24 @@ export function InvoiceForm({
   isLoading,
   isEdit,
   preselectedClientId,
+  fromExtraction = false,
 }: InvoiceFormProps) {
+  // Extraction data is kept in sessionStorage until the invoice is saved, so a refresh doesn't lose it.
+  const [extractedData] = useState<ExtractedData | null>(() => {
+    if (invoice || isEdit || !fromExtraction || typeof window === "undefined") return null;
+    try {
+      const raw = sessionStorage.getItem(EXTRACTION_STORAGE_KEY);
+      return raw ? (JSON.parse(raw) as ExtractedData) : null;
+    } catch {
+      return null;
+    }
+  });
+
   const { data: defaultClients } = useClients(50, 0);
-  const [clientSearchTerm, setClientSearchTerm] = useState("");
+  // Search for the extracted client by name so the match isn't limited to the first page of clients.
+  const [clientSearchTerm, setClientSearchTerm] = useState(
+    extractedData?.client?.name ?? "",
+  );
   const debouncedClientSearch = useDebounce(clientSearchTerm, 300);
   const { data: searchedClients, isFetching: isClientSearching } =
     useClientSearch(debouncedClientSearch);
@@ -87,6 +120,12 @@ export function InvoiceForm({
   const clients = debouncedClientSearch ? searchedClients : defaultClients;
 
   const [isClientModalOpen, setIsClientModalOpen] = useState(false);
+  const [clientPrefill, setClientPrefill] = useState<{ name?: string; email?: string; address?: string } | undefined>();
+
+  const openClientModal = (prefill?: typeof clientPrefill) => {
+    setClientPrefill(prefill);
+    setIsClientModalOpen(true);
+  };
 
   // Fetch active products
   const {
@@ -100,24 +139,6 @@ export function InvoiceForm({
   }, [fetchProducts]);
 
   const activeProducts = products.filter((p) => p.is_active);
-
-  // Load extraction data from session storage
-  const extractedData = useMemo(() => {
-    if (invoice || isEdit) return null;
-
-    const extractedDataStr = sessionStorage.getItem("extractedData");
-    if (!extractedDataStr) return null;
-
-    try {
-      const data = JSON.parse(extractedDataStr);
-      // Clear after reading
-      sessionStorage.removeItem("extractedData");
-      return data;
-    } catch (error) {
-      console.error("Failed to parse extracted data:", error);
-      return null;
-    }
-  }, [invoice, isEdit]);
 
   // Try to match client by name or email if extraction data exists
   const matchedClient = useMemo(() => {
@@ -142,14 +163,28 @@ export function InvoiceForm({
         new Date().toISOString().split("T")[0],
     due_date: invoice?.due_date
       ? new Date(invoice.due_date).toISOString().split("T")[0]
-      : extractedData?.invoice_details?.due_date ||
-        new Date().toISOString().split("T")[0],
-    currency: invoice?.currency || DEFAULT_CURRENCY,
+      : extractedData?.invoice_details?.due_date || getDefaultDueDate(),
+    currency:
+      invoice?.currency ||
+      CURRENCIES.find(
+        (c) => c.code === extractedData?.invoice_details?.currency,
+      )?.code ||
+      DEFAULT_CURRENCY,
     discount: invoice?.discount ? parseFloat(invoice.discount) : 0,
-    tax: invoice?.tax ?? extractedData?.financial?.tax ?? 0,
-    status: invoice?.status || ("paid" as const),
+    tax:
+      invoice?.tax != null
+        ? parseFloat(invoice.tax) || 0
+        : (extractedData?.financial?.tax ?? 0),
+    status: invoice?.status || ("draft" as const),
     notes: invoice?.notes || extractedData?.notes || "",
   });
+
+  // Clients usually load after the first render, so apply the extracted-client match once they arrive.
+  useEffect(() => {
+    if (matchedClient && !formData.client_id) {
+      setFormData((prev) => ({ ...prev, client_id: matchedClient.id }));
+    }
+  }, [matchedClient, formData.client_id]);
 
   const [items, setItems] = useState<InvoiceItemForm[]>(
     invoice?.items.map((item) => ({
@@ -163,12 +198,12 @@ export function InvoiceForm({
       (extractedData?.line_items &&
       Array.isArray(extractedData.line_items) &&
       extractedData.line_items.length > 0
-        ? extractedData.line_items.map((item: InvoiceItem) => ({
-            product_id: item.product_id || null,
+        ? extractedData.line_items.map((item) => ({
+            product_id: null,
             description: item.description || "",
             quantity: Number(item.quantity) || 1,
             unit_price: Number(item.unit_price) || 0,
-            tax_rate: Number(item.tax_rate) || 0,
+            tax_rate: 0,
             amount:
               Number(item.amount) ||
               Number(item.quantity || 1) * Number(item.unit_price || 0),
@@ -414,12 +449,66 @@ export function InvoiceForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      {/* Client Form Modal */}
+      {/* Client Form Modal (remounted per prefill so new values apply) */}
       <ClientFormModal
+        key={JSON.stringify(clientPrefill ?? {})}
         open={isClientModalOpen}
         onOpenChange={setIsClientModalOpen}
         onClientCreated={handleClientCreated}
+        initialValues={clientPrefill}
       />
+
+      {extractedData && (
+        <Alert className="border-primary/30 bg-accent/60">
+          <Sparkles className="h-4 w-4 text-primary" />
+          <AlertDescription className="space-y-2 text-foreground">
+            <p className="font-medium">
+              Check the details the AI filled in before you save.
+              {typeof extractedData.confidence === "number" && (
+                <span className="font-normal text-muted-foreground">
+                  {" "}
+                  AI confidence: {Math.round(extractedData.confidence)}%.
+                </span>
+              )}
+            </p>
+            <p className="text-muted-foreground">
+              Fields marked <AiFilled /> came from your chat.
+            </p>
+            {extractedData.needs_review && extractedData.needs_review.length > 0 && (
+              <p className="text-muted-foreground">
+                The chat didn&apos;t give a price for:{" "}
+                <span className="font-medium text-foreground">
+                  {extractedData.needs_review.join(", ")}
+                </span>
+                . Enter those amounts below.
+              </p>
+            )}
+            {extractedData.client?.name && !matchedClient && !formData.client_id && (
+              <div className="flex flex-wrap items-center gap-2 pt-1">
+                <span>
+                  <span className="font-medium">{extractedData.client.name}</span>{" "}
+                  isn&apos;t in your clients yet.
+                </span>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() =>
+                    openClientModal({
+                      name: extractedData.client?.name,
+                      email: extractedData.client?.email,
+                      address: extractedData.client?.address,
+                    })
+                  }
+                >
+                  <UserPlus className="h-4 w-4" />
+                  Add as new client
+                </Button>
+              </div>
+            )}
+          </AlertDescription>
+        </Alert>
+      )}
 
       {/* Client & Dates */}
       <Card>
@@ -432,12 +521,13 @@ export function InvoiceForm({
             <div className="flex items-center justify-between">
               <Label htmlFor="client_id">
                 Client <span className="text-destructive">*</span>
+                {extractedData && matchedClient && formData.client_id === matchedClient.id && <AiFilled />}
               </Label>
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={() => setIsClientModalOpen(true)}
+                onClick={() => openClientModal()}
                 disabled={isLoading}
                 className="gap-1"
               >
@@ -448,6 +538,7 @@ export function InvoiceForm({
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
+                aria-label="Search clients"
                 placeholder="Search clients..."
                 value={clientSearchTerm}
                 onChange={(e) => setClientSearchTerm(e.target.value)}
@@ -498,6 +589,7 @@ export function InvoiceForm({
             <div className="space-y-2">
               <Label htmlFor="due_date">
                 Due Date <span className="text-destructive">*</span>
+                {extractedData?.invoice_details?.due_date && <AiFilled />}
               </Label>
               <Input
                 id="due_date"
@@ -516,13 +608,14 @@ export function InvoiceForm({
             <div className="space-y-2">
               <Label htmlFor="currency">
                 Currency <span className="text-destructive">*</span>
+                {extractedData?.invoice_details?.currency && <AiFilled />}
               </Label>
               <Select
                 value={formData.currency}
                 onValueChange={(value) => handleChange("currency", value)}
                 disabled={isLoading}
               >
-                <SelectTrigger>
+                <SelectTrigger id="currency">
                   <SelectValue placeholder="Select currency" />
                 </SelectTrigger>
                 <SelectContent>
@@ -544,7 +637,7 @@ export function InvoiceForm({
                 onValueChange={(value) => handleChange("status", value)}
                 disabled={isLoading}
               >
-                <SelectTrigger>
+                <SelectTrigger id="status">
                   <SelectValue placeholder="Select status" />
                 </SelectTrigger>
                 <SelectContent>
@@ -556,19 +649,19 @@ export function InvoiceForm({
                   </SelectItem>
                   <SelectItem value="sent">
                     <div className="flex items-center gap-2">
-                      <div className="h-2 w-2 rounded-full bg-blue-500" />
+                      <div className="h-2 w-2 rounded-full bg-primary" />
                       <span>Sent</span>
                     </div>
                   </SelectItem>
                   <SelectItem value="paid">
                     <div className="flex items-center gap-2">
-                      <div className="h-2 w-2 rounded-full bg-green-500" />
+                      <div className="h-2 w-2 rounded-full bg-success" />
                       <span>Paid</span>
                     </div>
                   </SelectItem>
                   <SelectItem value="overdue">
                     <div className="flex items-center gap-2">
-                      <div className="h-2 w-2 rounded-full bg-red-500" />
+                      <div className="h-2 w-2 rounded-full bg-destructive" />
                       <span>Overdue</span>
                     </div>
                   </SelectItem>
@@ -585,14 +678,17 @@ export function InvoiceForm({
       {/* Items */}
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
-              <CardTitle>Line Items</CardTitle>
+              <CardTitle>
+                Line Items
+                {extractedData?.line_items?.length ? <AiFilled /> : null}
+              </CardTitle>
               <CardDescription>
                 Select from your products or add custom items
               </CardDescription>
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               {activeProducts.length === 0 && (
                 <Link href="/dashboard/products/new">
                   <Button type="button" variant="outline" size="sm">
@@ -603,7 +699,7 @@ export function InvoiceForm({
               )}
               {categories.length > 0 && (
                 <Select onValueChange={handleAddCategory}>
-                  <SelectTrigger className="w-[180px]">
+                  <SelectTrigger className="w-44" aria-label="Add all products in a category">
                     <SelectValue placeholder="Add Category" />
                   </SelectTrigger>
                   <SelectContent>
@@ -696,6 +792,9 @@ export function InvoiceForm({
                 <div className="flex-1 space-y-2">
                   <Label htmlFor={`item-description-${index}`}>
                     Description
+                    {extractedData?.needs_review?.includes(item.description) && (
+                      <Badge variant="warning" className="ml-2">Check price</Badge>
+                    )}
                   </Label>
                   <Input
                     id={`item-description-${index}`}
@@ -747,11 +846,12 @@ export function InvoiceForm({
                   />
                 </div>
                 <div className="w-full md:w-32 space-y-2">
-                  <Label>Amount</Label>
+                  <Label htmlFor={`item-amount-${index}`}>Amount</Label>
                   <Input
+                    id={`item-amount-${index}`}
                     value={Number(item.amount).toFixed(2)}
                     disabled
-                    className="bg-muted"
+                    className="bg-muted tabular-nums"
                   />
                 </div>
                 <div className="flex items-end">
@@ -761,6 +861,7 @@ export function InvoiceForm({
                     size="sm"
                     onClick={() => removeItem(index)}
                     disabled={items.length === 1 || isLoading}
+                    aria-label={`Remove item ${index + 1}`}
                   >
                     <Trash2 className="h-4 w-4 text-destructive" />
                   </Button>
@@ -826,7 +927,7 @@ export function InvoiceForm({
           <div className="space-y-2 pt-4 border-t">
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Subtotal:</span>
-              <span>{formatCurrency(subtotal, formData.currency)}</span>
+              <span className="tabular-nums">{formatCurrency(subtotal, formData.currency)}</span>
             </div>
             {formData.discount > 0 && (
               <div className="flex justify-between text-sm">
@@ -842,16 +943,19 @@ export function InvoiceForm({
               <span className="text-muted-foreground">
                 Tax ({formData.tax}%):
               </span>
-              <span>{formatCurrency(taxAmount, formData.currency)}</span>
+              <span className="tabular-nums">{formatCurrency(taxAmount, formData.currency)}</span>
             </div>
-            <div className="flex justify-between text-lg font-bold">
+            <div className="flex justify-between font-display text-lg font-semibold">
               <span>Total:</span>
-              <span>{formatCurrency(total, formData.currency)}</span>
+              <span className="tabular-nums">{formatCurrency(total, formData.currency)}</span>
             </div>
           </div>
 
           <div className="space-y-2 pt-4">
-            <Label htmlFor="notes">Notes</Label>
+            <Label htmlFor="notes">
+              Notes
+              {extractedData?.notes && <AiFilled />}
+            </Label>
             <Textarea
               id="notes"
               value={formData.notes}
@@ -864,8 +968,11 @@ export function InvoiceForm({
         </CardContent>
       </Card>
 
-      {/* Actions */}
-      <div className="flex gap-2">
+      {/* Actions: sticky on small screens so the total and save button stay in reach */}
+      <div className="sticky bottom-0 z-10 -mx-4 flex flex-wrap items-center gap-2 border-t bg-card/95 px-4 py-3 sm:static sm:mx-0 sm:border-0 sm:bg-transparent sm:p-0">
+        <p className="mr-auto font-display text-base font-semibold tabular-nums sm:hidden">
+          {formatCurrency(total, formData.currency)}
+        </p>
         <Button type="submit" disabled={isLoading}>
           {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           {isEdit ? "Update Invoice" : "Create Invoice"}

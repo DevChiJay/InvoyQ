@@ -8,12 +8,15 @@ import {
   StyleSheet,
   ScrollView,
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "@/hooks/useTheme";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useDebounce } from "@/hooks/useDebounce";
 import { SearchBar } from "./SearchBar";
+import { HIT_SLOP } from "@/constants/colors";
 
 export interface SelectOption {
   label: string;
@@ -88,6 +91,9 @@ export function Select({
           },
         ]}
         onPress={() => setModalVisible(true)}
+        accessibilityRole="button"
+        accessibilityLabel={`${placeholder || "Select an option"}${selectedOption ? `, ${selectedOption.label}` : ""}`}
+        accessibilityHint="Opens a list of options"
       >
         <View style={styles.selectContent}>
           {selectedOption?.icon && (
@@ -118,7 +124,10 @@ export function Select({
         animationType="slide"
         onRequestClose={handleModalClose}
       >
-        <View style={styles.modalOverlay}>
+        <KeyboardAvoidingView
+          style={styles.modalOverlay}
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+        >
           <View
             style={[
               styles.modalContent,
@@ -131,7 +140,12 @@ export function Select({
               <Text style={[styles.modalTitle, { color: colors.text }]}>
                 {placeholder || "Select an option"}
               </Text>
-              <TouchableOpacity onPress={handleModalClose}>
+              <TouchableOpacity
+                onPress={handleModalClose}
+                hitSlop={HIT_SLOP}
+                accessibilityRole="button"
+                accessibilityLabel="Close"
+              >
                 <Ionicons name="close" size={24} color={colors.text} />
               </TouchableOpacity>
             </View>
@@ -148,7 +162,7 @@ export function Select({
 
             {loading && (
               <ActivityIndicator
-                color={colors.primary}
+                color={colors.primaryText}
                 style={{ marginVertical: 8 }}
               />
             )}
@@ -159,12 +173,15 @@ export function Select({
               style={styles.optionsList}
               renderItem={({ item: option }) => (
                 <TouchableOpacity
+                  accessibilityRole="button"
+                  accessibilityLabel={option.label}
+                  accessibilityState={{ selected: option.value === value }}
                   style={[
                     styles.option,
                     {
                       backgroundColor:
                         option.value === value
-                          ? colors.primaryLight
+                          ? colors.primarySoft
                           : "transparent",
                     },
                   ]}
@@ -178,7 +195,7 @@ export function Select({
                       name={option.icon}
                       size={20}
                       color={
-                        option.value === value ? colors.primary : colors.text
+                        option.value === value ? colors.primaryText : colors.text
                       }
                       style={styles.icon}
                     />
@@ -188,7 +205,7 @@ export function Select({
                       styles.optionText,
                       {
                         color:
-                          option.value === value ? colors.primary : colors.text,
+                          option.value === value ? colors.primaryText : colors.text,
                         fontWeight: option.value === value ? "600" : "400",
                       },
                     ]}
@@ -199,14 +216,14 @@ export function Select({
                     <Ionicons
                       name="checkmark"
                       size={20}
-                      color={colors.primary}
+                      color={colors.primaryText}
                     />
                   )}
                 </TouchableOpacity>
               )}
             />
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
     </>
   );
@@ -214,9 +231,10 @@ export function Select({
 
 const styles = StyleSheet.create({
   select: {
-    height: 48,
+    minHeight: 48,
+    paddingVertical: 8,
     borderWidth: 1,
-    borderRadius: 8,
+    borderRadius: 12,
     paddingHorizontal: 16,
     flexDirection: "row",
     alignItems: "center",
@@ -229,6 +247,7 @@ const styles = StyleSheet.create({
   },
   selectText: {
     fontSize: 16,
+    flexShrink: 1,
   },
   icon: {
     marginRight: 8,

@@ -1,18 +1,20 @@
 import { Metadata } from "next";
+import { pageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: "Privacy Policy",
   description:
-    "InvoYQ Privacy Policy — Learn how we collect, use, and protect your data.",
-};
+    "InvoyQ Privacy Policy — Learn how we collect, use, and protect your data.",
+  path: "/privacy",
+});
 
 export default function PrivacyPolicyPage() {
   return (
     <div className="min-h-screen bg-background">
-      <div className="container max-w-4xl py-16 px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-3xl px-4 py-16 sm:px-6">
         <div className="space-y-8">
           <div>
-            <h1 className="text-4xl font-bold tracking-tight">
+            <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
               Privacy Policy
             </h1>
             <p className="mt-4 text-muted-foreground">
@@ -20,7 +22,7 @@ export default function PrivacyPolicyPage() {
             </p>
           </div>
 
-          <div className="prose prose-slate dark:prose-invert max-w-none space-y-8">
+          <div className="prose prose-slate max-w-none space-y-8">
             <section>
               <h2 className="text-2xl font-semibold mt-8 mb-4">
                 1. Introduction
@@ -67,7 +69,7 @@ export default function PrivacyPolicyPage() {
                 </li>
                 <li>
                   <strong>Payment Information:</strong> Billing details
-                  (processed securely via Stripe and Paystack — we do not store
+                  (processed securely via Paystack — we do not store
                   your full card details)
                 </li>
               </ul>
@@ -182,7 +184,7 @@ export default function PrivacyPolicyPage() {
               </p>
               <ul className="list-disc pl-6 mt-3 space-y-2 text-muted-foreground">
                 <li>
-                  <strong>Payment Processors:</strong> Stripe and Paystack for
+                  <strong>Payment Processors:</strong> Paystack for
                   subscription and payment processing
                 </li>
                 <li>

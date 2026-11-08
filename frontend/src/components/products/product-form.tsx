@@ -173,7 +173,7 @@ export function ProductForm({ product, onSubmit, isSubmitting }: ProductFormProp
                       }
                     }}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger aria-label="Category">
                       <SelectValue placeholder="Select or enter new category" />
                     </SelectTrigger>
                     <SelectContent>
@@ -228,7 +228,7 @@ export function ProductForm({ product, onSubmit, isSubmitting }: ProductFormProp
                     className="font-mono"
                   />
                 </FormControl>
-                <FormDescription>Decimal as string</FormDescription>
+                <FormDescription>Price for one unit, e.g. 2500.00</FormDescription>
                 <FormMessage />
               </FormItem>
             )}
@@ -265,7 +265,7 @@ export function ProductForm({ product, onSubmit, isSubmitting }: ProductFormProp
                 <FormLabel>Currency</FormLabel>
                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                   <FormControl>
-                    <SelectTrigger>
+                    <SelectTrigger aria-label="Currency">
                       <SelectValue placeholder="Select currency" />
                     </SelectTrigger>
                   </FormControl>

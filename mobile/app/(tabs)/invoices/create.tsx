@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
   View,
   Text,
@@ -36,12 +36,18 @@ import { SearchBar } from "@/components/ui/SearchBar";
 import { BusinessReminderModal } from "@/components/ui/BusinessReminderModal";
 import { formatCurrency } from "@/utils/formatters";
 import { STORAGE_KEYS } from "@/constants/config";
+import { HIT_SLOP } from "@/constants/colors";
+import { useKeyboardOffset } from '@/hooks/useKeyboardOffset';
+import { parseLimitError } from "@/utils/limitError";
+import { useUsage } from "@/hooks/useUsage";
+import { ExtractWithAISheet } from "@/components/invoices/ExtractWithAISheet";
+import type { InvoicePrefill } from "@/types/extraction";
 
 // Validation schema
 const invoiceSchema = z.object({
   client_id: z.string().min(1, "Client is required"),
-  issued_date: z.date({ required_error: "Issue date is required" }),
-  due_date: z.date({ required_error: "Due date is required" }),
+  issued_date: z.date({ error: "Issue date is required" }),
+  due_date: z.date({ error: "Due date is required" }),
   currency: z.string().min(1, "Currency is required"),
 });
 
@@ -103,12 +109,18 @@ function isProductItem(item: LineItem): item is ProductItem {
 }
 
 export default function CreateInvoiceScreen() {
+  const keyboardOffset = useKeyboardOffset();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const createInvoice = useCreateInvoice();
   const createClient = useCreateClient();
   const createProduct = useCreateProduct();
   const { data: productsData } = useProducts();
+  const { data: usage } = useUsage();
+  const invoicesLeft =
+    usage && usage.invoices.limit !== null
+      ? Math.max(usage.invoices.limit - usage.invoices.used, 0)
+      : null;
 
   // Client search state (server-side)
   const [clientSearchQuery, setClientSearchQuery] = useState("");
@@ -197,9 +209,16 @@ export default function CreateInvoiceScreen() {
     );
   }, [products, debouncedProductSearch]);
 
+  // Keep the chosen client in the options even when it isn't in the current
+  // search results, otherwise the Select falls back to its placeholder.
+  const listedClients =
+    selectedClientData && !clients.some((c) => c.id === selectedClientData.id)
+      ? [selectedClientData, ...clients]
+      : clients;
+
   const clientOptions: SelectOption[] = [
     { label: "+ Create New Client", value: "__create_new__" },
-    ...clients.map((client) => ({
+    ...listedClients.map((client) => ({
       label: client.name,
       value: client.id,
     })),
@@ -230,6 +249,106 @@ export default function CreateInvoiceScreen() {
     }
   };
 
+  // --- AI extraction prefill -------------------------------------------------
+  const [showExtractSheet, setShowExtractSheet] = useState(false);
+  const [aiInfo, setAiInfo] = useState<{
+    confidence: number;
+    needsReview: string[];
+    currencyNote?: string;
+  } | null>(null);
+  // Extracted client waiting for the server search to come back, then either
+  // matched to an existing client or offered as a "create client" suggestion.
+  const [pendingClient, setPendingClient] = useState<
+    InvoicePrefill["client"] | null
+  >(null);
+  const [clientSuggestion, setClientSuggestion] = useState<
+    InvoicePrefill["client"] | null
+  >(null);
+  const matchQuery = pendingClient?.name ?? pendingClient?.email ?? "";
+  const { data: matchData, isFetching: isMatchingClient } =
+    useClientSearch(matchQuery);
+
+  useEffect(() => {
+    if (!pendingClient || !matchQuery || isMatchingClient || !matchData) return;
+    const name = pendingClient.name?.toLowerCase();
+    const email = pendingClient.email?.toLowerCase();
+    // Same rule as the web form: exact, case-insensitive name or email.
+    const match = matchData.find(
+      (c) =>
+        (name && c.name.toLowerCase() === name) ||
+        (email && c.email?.toLowerCase() === email),
+    );
+    if (match) {
+      handleChange("client_id", match.id);
+      setSelectedClientData(match);
+      setClientSuggestion(null);
+    } else {
+      setClientSuggestion(pendingClient);
+    }
+    setPendingClient(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendingClient, matchQuery, isMatchingClient, matchData]);
+
+  const handleExtracted = (prefill: InvoicePrefill) => {
+    setShowExtractSheet(false);
+
+    const supportedCurrency = currencyOptions.some(
+      (option) => option.value === prefill.currency,
+    );
+    setAiInfo({
+      confidence: prefill.confidence,
+      needsReview: prefill.needsReview,
+      currencyNote:
+        prefill.currency && !supportedCurrency
+          ? `Currency ${prefill.currency} isn't available here. Check the currency before saving.`
+          : undefined,
+    });
+
+    setFormData((prev) => ({
+      ...prev,
+      due_date: prefill.dueDate ?? prev.due_date,
+      currency:
+        prefill.currency && supportedCurrency ? prefill.currency : prev.currency,
+      // Never overwrite notes the user already typed.
+      notes: prev.notes.trim() ? prev.notes : (prefill.notes ?? prev.notes),
+    }));
+
+    if (prefill.items.length > 0) {
+      const stamp = Date.now();
+      setLineItems((prev) => [
+        ...prev,
+        ...prefill.items.map(
+          (item, index): CustomItem => ({
+            id: `${stamp}-${index}`,
+            description: item.description,
+            quantity: String(item.quantity),
+            unit_price: String(item.unitPrice),
+            tax_rate: "0",
+            amount: item.quantity * item.unitPrice,
+          }),
+        ),
+      ]);
+    }
+
+    // Leave a client the user already picked alone.
+    if (!formData.client_id && (prefill.client.name || prefill.client.email)) {
+      setClientSuggestion(null);
+      setPendingClient(prefill.client);
+    }
+  };
+
+  const handleCreateSuggestedClient = () => {
+    if (!clientSuggestion) return;
+    setNewClient({
+      name: clientSuggestion.name ?? "",
+      email: clientSuggestion.email ?? "",
+      phone: "",
+      address: clientSuggestion.address ?? "",
+    });
+    setClientSuggestion(null);
+    setShowCreateClientModal(true);
+  };
+
   const handleCreateClient = async () => {
     try {
       const validated = clientSchema.parse(newClient);
@@ -255,7 +374,7 @@ export default function CreateInvoiceScreen() {
     } catch (error: any) {
       if (error instanceof z.ZodError) {
         const fieldErrors: Record<string, string> = {};
-        error.errors.forEach((err) => {
+        error.issues.forEach((err) => {
           if (err.path[0]) {
             fieldErrors[err.path[0].toString()] = err.message;
           }
@@ -310,7 +429,7 @@ export default function CreateInvoiceScreen() {
     } catch (error: any) {
       if (error instanceof z.ZodError) {
         const fieldErrors: Record<string, string> = {};
-        error.errors.forEach((err) => {
+        error.issues.forEach((err) => {
           if (err.path[0]) {
             fieldErrors[err.path[0].toString()] = err.message;
           }
@@ -582,14 +701,20 @@ export default function CreateInvoiceScreen() {
     } catch (error: any) {
       if (error instanceof z.ZodError) {
         const fieldErrors: Record<string, string> = {};
-        error.errors.forEach((err) => {
+        error.issues.forEach((err) => {
           if (err.path[0]) {
             fieldErrors[err.path[0].toString()] = err.message;
           }
         });
         setErrors(fieldErrors);
       } else {
-        Alert.alert("Error", error.message || "Failed to create invoice");
+        const limit = parseLimitError(error);
+        if (limit) {
+          // Backend message already explains the cap and when it resets.
+          Alert.alert("Invoice limit reached", limit.message);
+        } else {
+          Alert.alert("Error", error.message || "Failed to create invoice");
+        }
       }
     }
   };
@@ -603,13 +728,72 @@ export default function CreateInvoiceScreen() {
       <KeyboardAvoidingView
         style={styles.keyboardView}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
-        keyboardVerticalOffset={100}
+        keyboardVerticalOffset={keyboardOffset}
       >
         <ScrollView
           style={styles.content}
           contentContainerStyle={styles.contentContainer}
           keyboardShouldPersistTaps="handled"
         >
+          {/* AI extraction */}
+          <Button
+            title="Extract with AI"
+            onPress={() => setShowExtractSheet(true)}
+            variant="outline"
+            style={styles.section}
+            accessibilityLabel="Extract invoice details with AI from text or a screenshot"
+            icon={
+              <Ionicons name="sparkles" size={18} color={colors.primaryText} />
+            }
+          />
+
+          {aiInfo && (
+            <Card variant="outlined" style={styles.section}>
+              <View style={styles.aiHeader}>
+                <Text style={[styles.aiTitle, { color: colors.text }]}>
+                  AI filled this in ({aiInfo.confidence}% confidence)
+                </Text>
+                <TouchableOpacity
+                  hitSlop={HIT_SLOP}
+                  accessibilityRole="button"
+                  accessibilityLabel="Dismiss AI summary"
+                  onPress={() => setAiInfo(null)}
+                >
+                  <Ionicons name="close" size={20} color={colors.textTertiary} />
+                </TouchableOpacity>
+              </View>
+              <Text style={[styles.aiText, { color: colors.textSecondary }]}>
+                Check every field before you save.
+              </Text>
+              {aiInfo.needsReview.length > 0 && (
+                <Text style={[styles.aiText, { color: colors.warningText }]}>
+                  Check the price on: {aiInfo.needsReview.join(", ")}
+                </Text>
+              )}
+              {aiInfo.currencyNote && (
+                <Text style={[styles.aiText, { color: colors.warningText }]}>
+                  {aiInfo.currencyNote}
+                </Text>
+              )}
+            </Card>
+          )}
+
+          {clientSuggestion && !formData.client_id && (
+            <Card variant="outlined" style={styles.section}>
+              <Text style={[styles.aiText, { color: colors.text }]}>
+                {clientSuggestion.name ?? clientSuggestion.email} isn't in your
+                clients yet.
+              </Text>
+              <Button
+                title="Create client"
+                size="sm"
+                variant="outline"
+                onPress={handleCreateSuggestedClient}
+                style={styles.aiAction}
+              />
+            </Card>
+          )}
+
           {/* Client Selection */}
           <Card style={styles.section}>
             <Text style={[styles.sectionTitle, { color: colors.text }]}>
@@ -752,7 +936,7 @@ export default function CreateInvoiceScreen() {
                   <Ionicons
                     name="cube-outline"
                     size={18}
-                    color={colors.primary}
+                    color={colors.primaryText}
                   />
                 }
               />
@@ -766,7 +950,7 @@ export default function CreateInvoiceScreen() {
                     <Ionicons
                       name="folder-outline"
                       size={18}
-                      color={colors.primary}
+                      color={colors.primaryText}
                     />
                   }
                 />
@@ -780,7 +964,7 @@ export default function CreateInvoiceScreen() {
                   <Ionicons
                     name="add-outline"
                     size={18}
-                    color={colors.primary}
+                    color={colors.primaryText}
                   />
                 }
               />
@@ -819,19 +1003,24 @@ export default function CreateInvoiceScreen() {
                         <Ionicons
                           name={isProductItem(item) ? "cube" : "document-text"}
                           size={14}
-                          color={colors.primary}
+                          color={colors.primaryText}
                         />
                         <Text
-                          style={[styles.itemType, { color: colors.primary }]}
+                          style={[styles.itemType, { color: colors.primaryText }]}
                         >
                           {isProductItem(item) ? "Product" : "Custom"}
                         </Text>
                       </View>
-                      <TouchableOpacity onPress={() => removeLineItem(item.id)}>
+                      <TouchableOpacity
+                        onPress={() => removeLineItem(item.id)}
+                        hitSlop={HIT_SLOP}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Remove ${isProductItem(item) ? item.name : item.description}`}
+                      >
                         <Ionicons
                           name="trash-outline"
                           size={20}
-                          color={colors.error}
+                          color={colors.errorText}
                         />
                       </TouchableOpacity>
                     </View>
@@ -929,7 +1118,7 @@ export default function CreateInvoiceScreen() {
                   >
                     Discount ({formData.discount}%)
                   </Text>
-                  <Text style={[styles.totalValue, { color: colors.error }]}>
+                  <Text style={[styles.totalValue, { color: colors.errorText }]}>
                     -{formatCurrency(totals.discountAmount, formData.currency)}
                   </Text>
                 </View>
@@ -957,15 +1146,34 @@ export default function CreateInvoiceScreen() {
                   Total
                 </Text>
                 <Text
-                  style={[styles.grandTotalValue, { color: colors.primary }]}
+                  style={[styles.grandTotalValue, { color: colors.primaryText }]}
                 >
                   {formatCurrency(totals.total, formData.currency)}
                 </Text>
               </View>
             </Card>
           )}
+
+          {invoicesLeft !== null && (
+            <Text
+              style={[
+                styles.limitHint,
+                { color: invoicesLeft === 0 ? colors.errorText : colors.textTertiary },
+              ]}
+            >
+              {invoicesLeft === 0
+                ? "You've used all your free invoices this month."
+                : `${invoicesLeft} free ${invoicesLeft === 1 ? "invoice" : "invoices"} left this month.`}
+            </Text>
+          )}
         </ScrollView>
       </KeyboardAvoidingView>
+
+      <ExtractWithAISheet
+        visible={showExtractSheet}
+        onClose={() => setShowExtractSheet(false)}
+        onExtracted={handleExtracted}
+      />
 
       {/* Footer Buttons */}
       <View
@@ -993,7 +1201,10 @@ export default function CreateInvoiceScreen() {
       </View>
 
       <Modal visible={showProductModal} animationType="slide" transparent>
-        <View style={styles.modalOverlay}>
+        <KeyboardAvoidingView
+          style={styles.modalOverlay}
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+        >
           <View
             style={[
               styles.modalContent,
@@ -1007,6 +1218,9 @@ export default function CreateInvoiceScreen() {
                 Select Product
               </Text>
               <TouchableOpacity
+                hitSlop={HIT_SLOP}
+                accessibilityRole="button"
+                accessibilityLabel="Close"
                 onPress={() => {
                   setShowProductModal(false);
                   setProductSearchQuery(""); // Reset search
@@ -1067,12 +1281,12 @@ export default function CreateInvoiceScreen() {
                         <Ionicons
                           name="add-circle"
                           size={20}
-                          color={colors.primary}
+                          color={colors.primaryText}
                         />
                         <Text
                           style={[
                             styles.productName,
-                            { color: colors.primary, fontWeight: "600" },
+                            { color: colors.primaryText, fontWeight: "600" },
                           ]}
                         >
                           {item.name}
@@ -1113,7 +1327,7 @@ export default function CreateInvoiceScreen() {
                       <Ionicons
                         name="add-circle-outline"
                         size={24}
-                        color={colors.primary}
+                        color={colors.primaryText}
                       />
                     </>
                   )}
@@ -1121,7 +1335,7 @@ export default function CreateInvoiceScreen() {
               )}
             />
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
 
       {/* Create Product Modal */}
@@ -1143,6 +1357,9 @@ export default function CreateInvoiceScreen() {
                 Create New Product
               </Text>
               <TouchableOpacity
+                hitSlop={HIT_SLOP}
+                accessibilityRole="button"
+                accessibilityLabel="Close"
                 onPress={() => setShowCreateProductModal(false)}
               >
                 <Ionicons name="close" size={24} color={colors.text} />
@@ -1267,7 +1484,10 @@ export default function CreateInvoiceScreen() {
 
       {/* Custom Item Modal */}
       <Modal visible={showCustomItemModal} animationType="slide" transparent>
-        <View style={styles.modalOverlay}>
+        <KeyboardAvoidingView
+          style={styles.modalOverlay}
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+        >
           <View
             style={[
               styles.modalContent,
@@ -1280,12 +1500,17 @@ export default function CreateInvoiceScreen() {
               <Text style={[styles.modalTitle, { color: colors.text }]}>
                 Add Custom Item
               </Text>
-              <TouchableOpacity onPress={() => setShowCustomItemModal(false)}>
+              <TouchableOpacity
+                onPress={() => setShowCustomItemModal(false)}
+                hitSlop={HIT_SLOP}
+                accessibilityRole="button"
+                accessibilityLabel="Close"
+              >
                 <Ionicons name="close" size={24} color={colors.text} />
               </TouchableOpacity>
             </View>
 
-            <ScrollView style={styles.modalBody}>
+            <ScrollView style={styles.modalBody} keyboardShouldPersistTaps="handled">
               <FormField
                 label="Description"
                 error={customItemErrors.description}
@@ -1366,7 +1591,7 @@ export default function CreateInvoiceScreen() {
               />
             </View>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
 
       {/* Category Modal */}
@@ -1384,7 +1609,12 @@ export default function CreateInvoiceScreen() {
               <Text style={[styles.modalTitle, { color: colors.text }]}>
                 Select Category
               </Text>
-              <TouchableOpacity onPress={() => setShowCategoryModal(false)}>
+              <TouchableOpacity
+                onPress={() => setShowCategoryModal(false)}
+                hitSlop={HIT_SLOP}
+                accessibilityRole="button"
+                accessibilityLabel="Close"
+              >
                 <Ionicons name="close" size={24} color={colors.text} />
               </TouchableOpacity>
             </View>
@@ -1400,7 +1630,7 @@ export default function CreateInvoiceScreen() {
                   return (
                     <TouchableOpacity
                       style={[
-                        styles.listItem,
+                        styles.productItem,
                         { borderBottomColor: colors.border },
                       ]}
                       onPress={() => handleAddCategory(category)}
@@ -1409,7 +1639,7 @@ export default function CreateInvoiceScreen() {
                         <Ionicons
                           name="folder"
                           size={24}
-                          color={colors.primary}
+                          color={colors.primaryText}
                         />
                         <View style={styles.categoryInfo}>
                           <Text
@@ -1433,7 +1663,7 @@ export default function CreateInvoiceScreen() {
                         <Ionicons
                           name="add-circle-outline"
                           size={24}
-                          color={colors.primary}
+                          color={colors.primaryText}
                         />
                       </View>
                     </TouchableOpacity>
@@ -1475,7 +1705,12 @@ export default function CreateInvoiceScreen() {
               <Text style={[styles.modalTitle, { color: colors.text }]}>
                 Create New Client
               </Text>
-              <TouchableOpacity onPress={() => setShowCreateClientModal(false)}>
+              <TouchableOpacity
+                onPress={() => setShowCreateClientModal(false)}
+                hitSlop={HIT_SLOP}
+                accessibilityRole="button"
+                accessibilityLabel="Close"
+              >
                 <Ionicons name="close" size={24} color={colors.text} />
               </TouchableOpacity>
             </View>
@@ -1584,6 +1819,31 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "600",
     marginBottom: 16,
+  },
+  aiHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 4,
+  },
+  aiTitle: {
+    fontSize: 15,
+    fontWeight: "600",
+    flex: 1,
+    marginRight: 8,
+  },
+  aiText: {
+    fontSize: 14,
+    marginTop: 4,
+  },
+  aiAction: {
+    alignSelf: "flex-start",
+    marginTop: 8,
+  },
+  limitHint: {
+    fontSize: 12,
+    textAlign: "center",
+    marginTop: 4,
   },
   clientPreview: {
     marginTop: 12,

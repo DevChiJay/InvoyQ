@@ -6,9 +6,10 @@ import {
   useDeleteInvoice,
 } from "@/lib/hooks/use-invoices";
 import { InvoiceList } from "@/components/invoices/invoice-list";
+import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
-import { Plus } from "lucide-react";
+import { Sparkles, Plus } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 import type { InvoiceListParams } from "@/types/api";
@@ -68,20 +69,26 @@ export default function InvoicesPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight">Invoices</h2>
-          <p className="text-muted-foreground">
-            Manage and track all your invoices
-          </p>
-        </div>
-        <Button asChild>
-          <Link href="/dashboard/invoices/new">
-            <Plus className="mr-2 h-4 w-4" />
-            Create Invoice
-          </Link>
-        </Button>
-      </div>
+      <PageHeader
+        title="Invoices"
+        description="Manage and track all your invoices"
+        actions={
+          <>
+            <Button variant="outline" asChild>
+              <Link href="/dashboard/extract">
+                <Sparkles className="h-4 w-4" />
+                From chat
+              </Link>
+            </Button>
+            <Button asChild>
+              <Link href="/dashboard/invoices/new">
+                <Plus className="h-4 w-4" />
+                Create Invoice
+              </Link>
+            </Button>
+          </>
+        }
+      />
 
       <InvoiceList
         invoices={invoices}
