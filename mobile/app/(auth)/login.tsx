@@ -16,6 +16,7 @@ import { useTheme } from "@/hooks/useTheme";
 import { Button } from "@/components/ui/Button";
 import { Logo } from "@/components/ui/Logo";
 import { AuthField } from "@/components/auth/AuthField";
+import { GoogleSignInSection } from "@/components/auth/GoogleSignInSection";
 import { Spacing, BorderRadius, HIT_SLOP } from "@/constants/colors";
 import { Typography } from "@/constants/typography";
 
@@ -110,7 +111,8 @@ export default function LoginScreen() {
               ]}
             >
               <Text style={[styles.errorText, { color: colors.errorText }]}>
-                Invalid email or password
+                Invalid email or password. If you signed up with Google, use
+                Continue with Google, or reset your password.
               </Text>
             </View>
           )}
@@ -124,6 +126,8 @@ export default function LoginScreen() {
             size="lg"
             style={styles.loginButton}
           />
+
+          <GoogleSignInSection mode="login" />
 
           <TouchableOpacity
             onPress={() => router.push("/(auth)/register")}

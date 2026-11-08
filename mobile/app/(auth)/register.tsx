@@ -17,6 +17,7 @@ import { useTheme } from "@/hooks/useTheme";
 import { Button } from "@/components/ui/Button";
 import { Logo } from "@/components/ui/Logo";
 import { AuthField } from "@/components/auth/AuthField";
+import { GoogleSignInSection } from "@/components/auth/GoogleSignInSection";
 import { Spacing, BorderRadius } from "@/constants/colors";
 import { Typography } from "@/constants/typography";
 
@@ -172,6 +173,8 @@ export default function RegisterScreen() {
             size="lg"
             style={styles.registerButton}
           />
+
+          <GoogleSignInSection mode="register" />
 
           <View style={styles.privacyContainer}>
             <Text style={[styles.privacyText, { color: colors.textSecondary }]}>
