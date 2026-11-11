@@ -189,7 +189,6 @@ async def resend_verification(request: ResendVerificationRequest, db: AsyncIOMot
 
 # ==================== Google OAuth ====================
 import logging
-import re
 from urllib.parse import urlencode
 from google.oauth2 import id_token
 from google.auth.transport import requests as google_requests
@@ -224,10 +223,7 @@ async def _find_or_create_google_user(user_repo: UserRepository, id_info: dict, 
 
     user = await user_repo.get_by_oauth(provider="google", provider_id=google_user_id)
     if not user:
-        # Exact match first, then case-insensitive (registration stores the email as typed).
-        user = await user_repo.get_by_email(email) or await user_repo.get_one(
-            {"email": {"$regex": f"^{re.escape(email)}$", "$options": "i"}}
-        )
+        user = await user_repo.get_by_email(email)  # case-insensitive
         if (
             user
             and user.oauth_provider == "google"

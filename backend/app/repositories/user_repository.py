@@ -7,10 +7,11 @@ and profile management.
 
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from app.repositories.base import BaseRepository
-from app.schemas.user import UserOut, UserCreate, UserUpdate
+from app.schemas.user import UserOut, UserCreate, UserUpdate, normalize_email
 from typing import Optional
 from datetime import datetime, timedelta
 from pydantic import Field
+import re
 
 
 class UserInDB(UserOut):
@@ -74,10 +75,22 @@ class UserRepository(BaseRepository[UserInDB]):
         Returns:
             User document or None if not found
             
+        Matching is case-insensitive: the normalized (trimmed, lower-cased) email is tried
+        first, then an anchored case-insensitive match for accounts created before emails
+        were normalized.
+
         Example:
-            user = await user_repo.get_by_email("test@example.com")
+            user = await user_repo.get_by_email("Test@Example.com")
         """
-        return await self.get_one({"email": email})
+        normalized = normalize_email(email)
+        if not normalized:
+            return None
+        user = await self.get_one({"email": normalized})
+        if user:
+            return user
+        return await self.get_one(
+            {"email": {"$regex": f"^{re.escape(normalized)}$", "$options": "i"}}
+        )
     
     async def get_by_oauth(
         self,
@@ -168,7 +181,7 @@ class UserRepository(BaseRepository[UserInDB]):
             )
         """
         doc = {
-            "email": email,
+            "email": normalize_email(email),
             "full_name": full_name,
             "hashed_password": hashed_password,
             "is_active": True,
@@ -322,7 +335,7 @@ class UserRepository(BaseRepository[UserInDB]):
         Returns:
             True if email exists, False otherwise
         """
-        return await self.exists({"email": email})
+        return await self.get_by_email(email) is not None
     
     async def list_users(
         self,
@@ -431,7 +444,7 @@ class UserRepository(BaseRepository[UserInDB]):
 
     async def find_by_emails(self, emails: list[str]) -> list[UserInDB]:
         """Users whose email matches any of `emails` (case-insensitive on the lower-cased form)."""
-        wanted = {e.strip().lower() for e in emails if e and e.strip()}
+        wanted = {normalize_email(e) for e in emails if e and e.strip()}
         if not wanted:
             return []
         cursor = self.collection.find({"email": {"$in": list(wanted | {e.strip() for e in emails if e})}})
@@ -471,8 +484,8 @@ class UserRepository(BaseRepository[UserInDB]):
         if full_name is not None:
             update_fields["full_name"] = full_name
         if email is not None:
-            update_fields["email"] = email
-        
+            update_fields["email"] = normalize_email(email)
+
         result = await self.collection.find_one_and_update(
             {"_id": self._to_object_id(user_id)},
             {"$set": update_fields},

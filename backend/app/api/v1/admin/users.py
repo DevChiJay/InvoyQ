@@ -9,7 +9,7 @@ from datetime import datetime
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from motor.motor_asyncio import AsyncIOMotorDatabase
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, field_validator
 
 from app.dependencies.auth import get_current_admin_user
 from app.db.mongo import get_database
@@ -17,6 +17,7 @@ from app.repositories.user_repository import UserRepository, UserInDB
 from app.repositories.invoice_repository import InvoiceRepository
 from app.repositories.client_repository import ClientRepository
 from app.schemas.invoice_mongo import InvoiceOut
+from app.schemas.user import normalize_email
 from app.services.plans import INVOICES, EXTRACTIONS, is_pro_active, period_bounds, period_for
 
 router = APIRouter()
@@ -75,6 +76,11 @@ class AdminUserUpdate(BaseModel):
     is_pro: Optional[bool] = None
     # With is_pro=true: how long the grant lasts. Omit for no end date.
     pro_days: Optional[int] = Field(None, ge=1, le=3650)
+
+    @field_validator("email", mode="before")
+    @classmethod
+    def _normalize_email(cls, v):
+        return normalize_email(v)
 
 
 class BulkProRequest(BaseModel):
@@ -267,9 +273,10 @@ async def update_user(
         )
     
     # Check email uniqueness if changing email
-    if update_data.email and update_data.email != existing_user.email:
-        email_exists = await user_repo.email_exists(update_data.email)
-        if email_exists:
+    if update_data.email:
+        # Case-insensitive; only a *different* account holding the email is a conflict.
+        holder = await user_repo.get_by_email(update_data.email)
+        if holder and holder.id != existing_user.id:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Email already in use"

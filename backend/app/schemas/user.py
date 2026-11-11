@@ -3,9 +3,20 @@ from pydantic import BaseModel, EmailStr, field_validator
 from typing import Optional
 import re
 
+
+def normalize_email(value):
+    """Trim and lower-case an email so lookups and uniqueness are case-insensitive."""
+    return value.strip().lower() if isinstance(value, str) else value
+
+
 class UserBase(BaseModel):
     email: EmailStr
     full_name: str | None = None
+
+    @field_validator('email', mode='before')
+    @classmethod
+    def _normalize_email(cls, v):
+        return normalize_email(v)
 
 class UserCreate(UserBase):
     password: str
@@ -77,6 +88,11 @@ class EmailVerificationResponse(BaseModel):
 class ResendVerificationRequest(BaseModel):
     """Request to resend verification email"""
     email: EmailStr
+
+    @field_validator('email', mode='before')
+    @classmethod
+    def _normalize_email(cls, v):
+        return normalize_email(v)
 
 
 class PasswordResetRequest(BaseModel):
