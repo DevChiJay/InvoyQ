@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { usersAPI } from "@/lib/api";
@@ -108,9 +108,8 @@ export function SecuritySettingsForm() {
       {!isOAuthUser && (
         <div className="space-y-2">
           <Label htmlFor="currentPassword">Current Password</Label>
-          <Input
+          <PasswordInput
             id="currentPassword"
-            type="password"
             value={formData.currentPassword}
             onChange={(e) => {
               setFormData({ ...formData, currentPassword: e.target.value });
@@ -136,9 +135,8 @@ export function SecuritySettingsForm() {
 
       <div className="space-y-2">
         <Label htmlFor="newPassword">New Password</Label>
-        <Input
+        <PasswordInput
           id="newPassword"
-          type="password"
           value={formData.newPassword}
           onChange={(e) => {
             setFormData({ ...formData, newPassword: e.target.value });
@@ -157,9 +155,8 @@ export function SecuritySettingsForm() {
 
       <div className="space-y-2">
         <Label htmlFor="confirmPassword">Confirm New Password</Label>
-        <Input
+        <PasswordInput
           id="confirmPassword"
-          type="password"
           value={formData.confirmPassword}
           onChange={(e) => {
             setFormData({ ...formData, confirmPassword: e.target.value });
