@@ -16,6 +16,8 @@ export const PRODUCT_KEYS = {
   list: (params: any) => ["products", "list", params] as const,
   detail: (id: string) => ["products", "detail", id] as const,
   stats: ["products", "stats"] as const,
+  // Under `all`, so creating a product refreshes the suggestion
+  nextSku: ["products", "next-sku"] as const,
 };
 
 export function useProducts(params?: {
@@ -45,6 +47,16 @@ export function useProduct(id: string) {
     queryKey: PRODUCT_KEYS.detail(id),
     queryFn: () => productsApi.get(id),
     enabled: !!id,
+  });
+}
+
+/** The server's next auto SKU, for prefilling product forms. */
+export function useNextSku(enabled = true) {
+  return useQuery({
+    queryKey: PRODUCT_KEYS.nextSku,
+    queryFn: () => productsApi.getNextSku(),
+    enabled,
+    staleTime: 0,
   });
 }
 

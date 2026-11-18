@@ -1,6 +1,7 @@
 """
-Admin growth stats: signups by platform and referral source, activation, invoices,
-AI extractions and Pro. Read-only (counts and aggregations only).
+Public growth stats: signups by platform and referral source, activation, invoices,
+AI extractions and Pro. Read-only and unauthenticated (polled by an external agent), so it
+returns counts only: never emails, names, ids or the referral free text. Rate-limited per IP.
 """
 
 from datetime import date, datetime, time, timedelta
@@ -10,9 +11,8 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from pydantic import BaseModel, Field
 
+from app.core.rate_limiter import stats_rate_limiter
 from app.db.mongo import get_database
-from app.dependencies.auth import get_current_admin_user
-from app.repositories.user_repository import UserInDB
 from app.schemas.user import REFERRAL_SOURCES
 from app.utils.platform import CLIENT_PLATFORMS, LEGACY_MOBILE
 
@@ -68,7 +68,7 @@ class ProStats(BaseModel):
     new_in_range: int  # subscription_start_date in range
 
 
-class AdminStatsOut(BaseModel):
+class StatsOverviewOut(BaseModel):
     range: StatsRange
     totals: StatsTotals
     new_users: NewUsers
@@ -131,14 +131,18 @@ async def _activation(db: AsyncIOMotorDatabase, window: dict, now: datetime) -> 
     )
 
 
-@router.get("", response_model=AdminStatsOut, response_model_by_alias=True)
+@router.get(
+    "/overview",
+    response_model=StatsOverviewOut,
+    response_model_by_alias=True,
+    dependencies=[Depends(stats_rate_limiter.dependency())],
+)
 async def get_stats(
     from_: Optional[date] = Query(None, alias="from", description="First day (UTC), default 30 days before 'to'"),
     to: Optional[date] = Query(None, description="Last day (UTC, inclusive), default today"),
     db: AsyncIOMotorDatabase = Depends(get_database),
-    admin_user: UserInDB = Depends(get_current_admin_user),
 ):
-    """Growth stats for a date range. Admin only, read-only."""
+    """Growth stats for a date range. Public (no auth), read-only, counts only."""
     now = datetime.utcnow()
     from_, to, start, end = _bounds(from_, to, now)
     window = {"$gte": start, "$lt": end}
@@ -161,7 +165,7 @@ async def get_stats(
     extractions_in_range = await db.extractions.count_documents({"created_at": window})
     anonymous = await db.extractions.count_documents({"created_at": window, "user_id": None})
 
-    return AdminStatsOut(
+    return StatsOverviewOut(
         range=StatsRange(from_=from_, to=to),
         totals=StatsTotals(
             users=await db.users.count_documents({}),

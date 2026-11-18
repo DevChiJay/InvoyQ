@@ -28,6 +28,12 @@ export const productsApi = {
     return response.data;
   },
 
+  /** Suggested next auto SKU (not reserved) */
+  getNextSku: async (): Promise<string> => {
+    const response = await apiClient.get<{ sku: string }>("/products/next-sku");
+    return response.data.sku;
+  },
+
   create: async (data: ProductCreate): Promise<ProductOut> => {
     const response = await apiClient.post("/products", data);
     return response.data;

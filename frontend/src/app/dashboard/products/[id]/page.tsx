@@ -37,7 +37,8 @@ export default function ProductDetailPage() {
       toast.success('Product updated successfully');
       setIsEditing(false);
     } catch (error: any) {
-      console.error('Failed to update product:', error);
+      // The store rethrows with the backend's detail (e.g. "SKU ... already exists")
+      toast.error(error?.message || 'Failed to update product');
     }
   };
 

@@ -49,6 +49,8 @@ npm run build:ios | build:android | build:all   # EAS builds (profiles in eas.js
 
 **Welcome**: `hooks/useWelcome.ts` + `components/onboarding/WelcomeModal.tsx`, rendered on the home tab. It shows once per account per device (AsyncStorage `WELCOME_SEEN_PREFIX + userId`), and only while the user has 0 invoices. If `referral_source` is unset (Google signups), it also asks "How did you hear about InvoyQ?" (`components/auth/ReferralSourcePicker.tsx`, also on the register form). It is a modal, not a route, because the root layout's one-shot guard would bounce a non-`(tabs)` route.
 
+**OTA updates**: `utils/updates.ts` `applyUpdateIfAvailable` checks, downloads and `reloadAsync`s a published update. The root layout runs it on startup (behind the loading spinner, 5 s cap) and on return to the app after ≥ 15 min in the background. If it times out it never reloads mid-use; the download applies on the next launch. It is JS only, so it ships OTA to any binary with matching `runtimeVersion` (= app version). Settings keeps its manual "Check for updates".
+
 **Theming**: `useTheme()` returns `Colors.light` or `Colors.dark` from `constants/colors.ts` based on the system scheme (no manual toggle). Use it instead of hard-coded colors; the root layout's loading and connection-error screens are the exception and are hard-coded light.
 
 **Other utilities**: `utils/logger.ts` (use instead of `console`; level- and `__DEV__`-aware), `utils/analytics.ts` (placeholder, no provider wired), `utils/fileValidation.ts` (checks and sanitizes picked files before upload), `utils/invoicePrint.ts` (invoice PDF via `expo-print` + `expo-sharing`), `utils/formatters.ts` (currency/date/phone).

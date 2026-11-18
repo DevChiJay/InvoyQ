@@ -1,22 +1,19 @@
-"""GET /v1/admin/stats."""
+"""GET /v1/stats/overview (public)."""
 from datetime import datetime, timedelta
 
 import pytest
 
-from app.api.v1.auth import create_access_token
-from app.core.security import get_password_hash
+from app.core.rate_limiter import stats_rate_limiter
 from app.repositories.user_repository import UserRepository
 
+URL = "/v1/stats/overview"
 
-@pytest.fixture
-async def admin_headers(test_db):
-    admin = await UserRepository(test_db).create_user(
-        email="admin@example.com", full_name="Admin", hashed_password=get_password_hash("x1y2z3"), is_verified=True
-    )
-    await test_db.users.update_one({"email": "admin@example.com"}, {"$set": {"is_admin": True}})
-    # Keep the admin out of the signup window being measured
-    await test_db.users.update_many({"email": "admin@example.com"}, {"$set": {"created_at": datetime(2020, 1, 1)}})
-    return {"Authorization": f"Bearer {create_access_token({'sub': admin.id})}"}
+
+@pytest.fixture(autouse=True)
+def reset_rate_limiter():
+    stats_rate_limiter.requests.clear()
+    yield
+    stats_rate_limiter.requests.clear()
 
 
 async def make_user(test_db, email, created_at, platform="web", referral=None, **extra):
@@ -32,7 +29,7 @@ async def add_invoice(test_db, user_id, created_at, n):
     await test_db.invoices.insert_one({"user_id": user_id, "number": f"INV-{n}", "created_at": created_at})
 
 
-async def test_stats(client, test_db, admin_headers):
+async def test_stats(client, test_db):
     now = datetime.utcnow()
     d20 = now - timedelta(days=20)
     fast = await make_user(test_db, "fast@x.com", d20, "ios", "instagram")
@@ -62,12 +59,12 @@ async def test_stats(client, test_db, admin_headers):
         {"user_id": None, "created_at": datetime(2021, 1, 1)},
     ])
 
-    r = await client.get("/v1/admin/stats", headers=admin_headers)
+    r = await client.get(URL)
     assert r.status_code == 200, r.text
     body = r.json()
 
     assert body["range"]["to"] == now.date().isoformat()
-    assert body["totals"] == {"users": 9, "verified_users": 8, "invoices": 4, "extractions": 3}
+    assert body["totals"] == {"users": 8, "verified_users": 7, "invoices": 4, "extractions": 3}
 
     new = body["new_users"]
     assert new["total"] == 6
@@ -85,21 +82,32 @@ async def test_stats(client, test_db, admin_headers):
     assert body["pro"] == {"active": 1, "new_in_range": 1}
 
 
-async def test_stats_custom_range(client, test_db, admin_headers):
+async def test_stats_custom_range(client, test_db):
     await make_user(test_db, "a@x.com", datetime(2025, 3, 10, 23, 59))
     await make_user(test_db, "b@x.com", datetime(2025, 3, 11, 0, 0))
-    r = await client.get("/v1/admin/stats?from=2025-03-01&to=2025-03-10", headers=admin_headers)
+    r = await client.get(f"{URL}?from=2025-03-01&to=2025-03-10")
     body = r.json()
     assert body["range"] == {"from": "2025-03-01", "to": "2025-03-10"}
     assert body["new_users"]["total"] == 1
     assert body["activation"]["rate"] == 0.0
 
 
-async def test_stats_bad_range(client, admin_headers):
-    r = await client.get("/v1/admin/stats?from=2025-03-10&to=2025-03-01", headers=admin_headers)
+async def test_stats_bad_range(client):
+    r = await client.get(f"{URL}?from=2025-03-10&to=2025-03-01")
     assert r.status_code == 400
 
 
-async def test_stats_requires_admin(client, auth_headers):
-    r = await client.get("/v1/admin/stats", headers=auth_headers)
-    assert r.status_code == 403
+async def test_stats_is_public_and_counts_only(client, test_db):
+    await make_user(test_db, "secret@x.com", datetime.utcnow(), referral="other")
+    await test_db.users.update_one(
+        {"email": "secret@x.com"}, {"$set": {"referral_source_other": "my private note"}}
+    )
+    r = await client.get(URL)  # no Authorization header
+    assert r.status_code == 200
+    assert "secret@x.com" not in r.text and "my private note" not in r.text
+
+
+async def test_stats_is_rate_limited(client):
+    for _ in range(stats_rate_limiter.max_requests):
+        assert (await client.get(URL)).status_code == 200
+    assert (await client.get(URL)).status_code == 429

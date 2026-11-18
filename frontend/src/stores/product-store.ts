@@ -25,7 +25,7 @@ interface ProductStore {
   fetchProducts: (filters?: ProductFilters) => Promise<void>;
   fetchProductById: (id: string) => Promise<void>;
   createProduct: (data: {
-    sku: string;
+    sku?: string;
     name: string;
     description?: string;
     unit_price: string;

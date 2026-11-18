@@ -77,6 +77,9 @@ class InMemoryRateLimiter:
 
 # --- Global rate limiter instances ---
 
+# Public stats overview (several aggregations per call): 30 req/min per IP
+stats_rate_limiter = InMemoryRateLimiter(max_requests=30, window_minutes=1)
+
 # Auth endpoints (login, register, Google auth): 5 req/min per IP
 auth_rate_limiter = InMemoryRateLimiter(max_requests=5, window_minutes=1)
 

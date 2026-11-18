@@ -36,9 +36,23 @@ class ProductBase(BaseModel):
         return v
 
 
+# Auto-generated SKUs: PROD-0001, PROD-0002, … (per user)
+SKU_PREFIX = "PROD-"
+SKU_PAD = 4
+
+
 class ProductCreate(ProductBase):
-    """Schema for creating a new product"""
-    pass
+    """Schema for creating a new product. Leave ``sku`` out (or blank) to get the next PROD-#### SKU."""
+    sku: Optional[str] = Field(None, max_length=100, description="Unique per user; auto-generated when omitted")
+
+    @field_validator('sku')
+    @classmethod
+    def validate_sku(cls, v: Optional[str]) -> Optional[str]:
+        """Trim; blank means auto-generate"""
+        if v is None:
+            return None
+        v = v.strip()
+        return v or None
 
 
 class ProductUpdate(BaseModel):

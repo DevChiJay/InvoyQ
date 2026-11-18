@@ -15,7 +15,7 @@ export interface ProductOut {
 }
 
 export interface ProductCreate {
-  sku: string;
+  sku?: string; // omit to get the next auto SKU (PROD-0001, …)
   name: string;
   description?: string;
   category?: string;

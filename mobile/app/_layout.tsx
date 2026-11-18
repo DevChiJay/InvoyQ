@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from "react";
+import { AppState } from "react-native";
 import { Slot, useRouter, useSegments } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -21,6 +22,13 @@ import { useTheme } from "@/hooks/useTheme";
 import { BorderRadius, MIN_TOUCH_TARGET } from "@/constants/colors";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import NetInfo from "@react-native-community/netinfo";
+import { applyUpdateIfAvailable } from "@/utils/updates";
+
+// OTA updates: wait this long on the startup spinner, and re-check on return to the app after
+// this long in the background (a quick app switch shouldn't reload and lose a half-filled form).
+const STARTUP_UPDATE_TIMEOUT_MS = 5000;
+const RESUME_UPDATE_TIMEOUT_MS = 10000;
+const RESUME_UPDATE_AFTER_MS = 15 * 60 * 1000;
 
 export default function RootLayout() {
   const { colors, isDark } = useTheme();
@@ -54,6 +62,9 @@ export default function RootLayout() {
       if (!netState.isConnected) {
         logger.warn("No network connection on startup");
         setConnectionError(true);
+      } else {
+        // Restarts into a newly published update before the app shows (no-op in dev)
+        await applyUpdateIfAvailable({ timeoutMs: STARTUP_UPDATE_TIMEOUT_MS });
       }
 
       await checkAuth();
@@ -81,6 +92,23 @@ export default function RootLayout() {
     setupNetworkManager();
 
     initializeApp();
+  }, []);
+
+  // Pick up OTA updates for users who leave the app open in the background for long periods
+  useEffect(() => {
+    let backgroundedAt: number | null = null;
+    const subscription = AppState.addEventListener("change", (state) => {
+      if (state === "background") {
+        backgroundedAt = Date.now();
+      } else if (state === "active" && backgroundedAt !== null) {
+        const away = Date.now() - backgroundedAt;
+        backgroundedAt = null;
+        if (away >= RESUME_UPDATE_AFTER_MS) {
+          void applyUpdateIfAvailable({ timeoutMs: RESUME_UPDATE_TIMEOUT_MS });
+        }
+      }
+    });
+    return () => subscription.remove();
   }, []);
 
   // Handle navigation based on auth and onboarding state

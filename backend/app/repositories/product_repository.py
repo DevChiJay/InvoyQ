@@ -7,10 +7,14 @@ and inventory tracking with atomic operations.
 
 from motor.motor_asyncio import AsyncIOMotorDatabase, AsyncIOMotorClientSession
 from app.repositories.base import BaseRepository
-from app.schemas.product import ProductOut, ProductCreate, ProductUpdate, ProductInDB, ProductStats
+from pymongo.errors import DuplicateKeyError
+from app.schemas.product import ProductOut, ProductCreate, ProductUpdate, ProductInDB, ProductStats, SKU_PAD, SKU_PREFIX
 from typing import List, Optional
 from datetime import datetime
 from decimal import Decimal
+
+
+AUTO_SKU_ATTEMPTS = 5
 
 
 class ProductRepository(BaseRepository[ProductInDB]):
@@ -43,15 +47,17 @@ class ProductRepository(BaseRepository[ProductInDB]):
                 ProductCreate(sku="LAPTOP-001", name="Laptop", unit_price=1000)
             )
         """
-        # Check if SKU already exists for this user
-        exists = await self.exists({
-            "user_id": user_id,
-            "sku": product_data.sku
-        })
-        if exists:
-            raise ValueError(f"Product with SKU '{product_data.sku}' already exists")
-        
         from app.repositories.base import _serialize_for_mongo
+
+        auto_sku = product_data.sku is None
+        if not auto_sku:
+            # Check if SKU already exists for this user
+            exists = await self.exists({
+                "user_id": user_id,
+                "sku": product_data.sku
+            })
+            if exists:
+                raise ValueError(f"Product with SKU '{product_data.sku}' already exists")
         
         doc = product_data.model_dump()
         doc.update({
@@ -62,11 +68,39 @@ class ProductRepository(BaseRepository[ProductInDB]):
         
         # Serialize Decimal and other non-BSON types
         doc = _serialize_for_mongo(doc)
-        
-        result = await self.collection.insert_one(doc)
-        doc["_id"] = str(result.inserted_id)
-        
-        return ProductInDB(**doc)
+
+        # Auto SKUs can collide with a concurrent create; the unique (user_id, sku) index
+        # catches it and we take the next number.
+        for _ in range(AUTO_SKU_ATTEMPTS if auto_sku else 1):
+            if auto_sku:
+                doc["sku"] = await self.next_sku(user_id)
+            doc.pop("_id", None)
+            try:
+                result = await self.collection.insert_one(doc)
+            except DuplicateKeyError:
+                if auto_sku:
+                    continue
+                raise ValueError(f"Product with SKU '{doc['sku']}' already exists")
+            doc["_id"] = str(result.inserted_id)
+            return ProductInDB(**doc)
+        raise ValueError("Couldn't generate a unique SKU, please try again")
+
+    async def next_sku(self, user_id: str) -> str:
+        """
+        Next auto SKU for a user: one past the highest PROD-<number> they have.
+
+        Counts soft-deleted products too (they still hold their SKU), so numbers aren't
+        reused. A preview only: nothing is reserved until a product is created with it.
+        """
+        pipeline = [
+            {"$match": {"user_id": user_id, "sku": {"$regex": f"^{SKU_PREFIX}[0-9]{{1,15}}$"}}},
+            {"$group": {"_id": None, "max": {"$max": {"$toLong": {"$substrCP": [
+                "$sku", len(SKU_PREFIX), 20
+            ]}}}}},
+        ]
+        rows = await self.collection.aggregate(pipeline).to_list(1)
+        highest = rows[0]["max"] if rows and rows[0]["max"] is not None else 0
+        return f"{SKU_PREFIX}{highest + 1:0{SKU_PAD}d}"
     
     async def get_by_id_and_user(
         self,

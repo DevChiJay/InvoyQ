@@ -18,8 +18,8 @@ export default function NewProductPage() {
       toast.success('Product created successfully');
       router.push('/dashboard/products');
     } catch (error: any) {
-      // Error already handled by store, just prevent navigation
-      console.error('Failed to create product:', error);
+      // The store rethrows with the backend's detail (e.g. "SKU ... already exists")
+      toast.error(error?.message || 'Failed to create product');
     }
   };
 

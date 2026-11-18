@@ -75,7 +75,8 @@ export const registerSchema = z.object({
 
 // Product Validation Schemas (NEW)
 export const productCreateSchema = z.object({
-  sku: z.string().min(1, 'SKU is required').max(100, 'SKU must be less than 100 characters').trim(),
+  // Blank = the server assigns the next PROD-#### SKU
+  sku: z.string().trim().max(100, 'SKU must be less than 100 characters').optional(),
   name: z.string().min(1, 'Name is required').max(255, 'Name must be less than 255 characters'),
   description: z.string().max(1000, 'Description must be less than 1000 characters').optional().or(z.literal('')),
   category: z.string().max(100, 'Category must be less than 100 characters').optional().or(z.literal('')),
@@ -96,7 +97,10 @@ export const productCreateSchema = z.object({
   is_active: z.boolean().optional(),
 });
 
-export const productUpdateSchema = productCreateSchema.partial();
+export const productUpdateSchema = productCreateSchema.partial().extend({
+  // Editable, but an existing product can't be left without one
+  sku: z.string().trim().min(1, 'SKU is required').max(100, 'SKU must be less than 100 characters').optional(),
+});
 
 export const productQuantityAdjustmentSchema = z.object({
   adjustment: z.number().int().refine((val) => val !== 0, 'Adjustment cannot be zero'),

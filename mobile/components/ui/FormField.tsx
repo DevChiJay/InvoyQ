@@ -7,12 +7,14 @@ import { Typography } from '@/constants/typography';
 interface FormFieldProps {
   label: string;
   error?: string;
+  /** Helper text under the control, hidden while an error shows */
+  hint?: string;
   required?: boolean;
   children: React.ReactNode;
   style?: ViewStyle;
 }
 
-export function FormField({ label, error, required, children, style }: FormFieldProps) {
+export function FormField({ label, error, hint, required, children, style }: FormFieldProps) {
   const { colors } = useTheme();
 
   // Screen readers have no `htmlFor`: pass the visible label down to a single
@@ -45,6 +47,9 @@ export function FormField({ label, error, required, children, style }: FormField
           {error}
         </Text>
       )}
+      {!error && hint && (
+        <Text style={[styles.hint, { color: colors.textTertiary }]}>{hint}</Text>
+      )}
     </View>
   );
 }
@@ -59,6 +64,10 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.sm,
   },
   error: {
+    fontSize: Typography.sizes.xs,
+    marginTop: Spacing.xs,
+  },
+  hint: {
     fontSize: Typography.sizes.xs,
     marginTop: Spacing.xs,
   },

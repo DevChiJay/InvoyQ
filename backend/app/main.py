@@ -16,6 +16,7 @@ from app.api.v1.reminders import router as reminders_router
 from app.api.v1.products import router as products_router
 from app.api.v1.expenses import router as expenses_router
 from app.api.v1.monthly_stats import router as monthly_stats_router
+from app.api.v1.stats_overview import router as stats_overview_router
 from app.api.v1.usage import router as usage_router
 from app.api.v1.admin import router as admin_router
 from app.db.mongo import connect_to_mongo, close_mongo_connection, get_database
@@ -181,6 +182,7 @@ app.include_router(extraction_router, prefix="/v1", tags=["extraction"])
 app.include_router(reminders_router, prefix="/v1", tags=["reminders"])
 app.include_router(usage_router, prefix="/v1", tags=["usage"])
 app.include_router(monthly_stats_router, prefix="/v1/stats", tags=["stats"])
+app.include_router(stats_overview_router, prefix="/v1/stats", tags=["stats"])
 app.include_router(admin_router, prefix="/v1/admin", tags=["admin"]) 
 
 # Serve generated files via /static for local/dev usage

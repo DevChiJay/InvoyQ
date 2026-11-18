@@ -6,6 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { productCreateSchema, productUpdateSchema } from '@/lib/validations';
 import { Product } from '@/types/api';
 import { useProductStore } from '@/stores/product-store';
+import { productsAPI } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import {
   Form,
@@ -74,6 +75,25 @@ export function ProductForm({ product, onSubmit, isSubmitting }: ProductFormProp
     },
   });
 
+  // New products: prefill the next auto SKU unless the user has already typed one
+  useEffect(() => {
+    if (isEdit) return;
+    let cancelled = false;
+    productsAPI
+      .getNextSku()
+      .then(({ data }) => {
+        if (!cancelled && !form.getFieldState('sku').isDirty) {
+          form.setValue('sku', data.sku);
+        }
+      })
+      .catch(() => {
+        // Leave it blank; the server assigns one on save
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [isEdit, form]);
+
   // Update category mode when form value changes
   useEffect(() => {
     const currentCategory = form.watch('category');
@@ -84,6 +104,9 @@ export function ProductForm({ product, onSubmit, isSubmitting }: ProductFormProp
 
   const handleSubmit = async (data: any) => {
     // Schema already handles quantity_available conversion via preprocess
+    if (!isEdit && !data.sku) {
+      delete data.sku; // server assigns the next PROD-####
+    }
     await onSubmit(data);
   };
 
@@ -97,17 +120,18 @@ export function ProductForm({ product, onSubmit, isSubmitting }: ProductFormProp
             name="sku"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>SKU *</FormLabel>
+                <FormLabel>SKU{isEdit ? ' *' : ''}</FormLabel>
                 <FormControl>
                   <Input
-                    placeholder="PROD-001"
+                    placeholder={isEdit ? 'PROD-0001' : 'Auto-generated'}
                     {...field}
-                    disabled={isEdit}
                     className="font-mono"
                   />
                 </FormControl>
                 <FormDescription>
-                  {isEdit ? 'SKU cannot be changed' : 'Unique product identifier (1-100 characters)'}
+                  {isEdit
+                    ? 'Unique product identifier. You can change it.'
+                    : 'Auto-generated. You can change it.'}
                 </FormDescription>
                 <FormMessage />
               </FormItem>

@@ -11,6 +11,7 @@ Handles product catalog CRUD operations including:
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from motor.motor_asyncio import AsyncIOMotorDatabase
+from pydantic import BaseModel
 
 from app.db.mongo import get_database
 from app.dependencies.auth import get_current_user
@@ -71,7 +72,7 @@ async def create_product(
     """
     Create a new product in the catalog.
     
-    - **sku**: Unique stock keeping unit (unique per user)
+    - **sku**: Unique stock keeping unit (unique per user). Omit or leave blank to auto-generate the next PROD-####
     - **name**: Product name
     - **description**: Optional product description
     - **unit_price**: Price per unit
@@ -149,6 +150,28 @@ async def list_products(
         offset=skip,
         has_more=(skip + len(products)) < total
     )
+
+
+class NextSkuOut(BaseModel):
+    sku: str
+
+
+@router.get(
+    "/next-sku",
+    response_model=NextSkuOut,
+    summary="Suggest the next auto-generated SKU"
+)
+async def get_next_sku(
+    db: AsyncIOMotorDatabase = Depends(get_database),
+    current_user: UserInDB = Depends(get_current_user)
+):
+    """
+    The SKU a product created without one would get right now (PROD-0001, PROD-0002, …).
+
+    For prefilling forms; it isn't reserved, so two forms open at once can show the same
+    value and the second save gets a 400 (or leave the SKU blank to let the server assign one).
+    """
+    return NextSkuOut(sku=await ProductRepository(db).next_sku(str(current_user.id)))
 
 
 @router.get(

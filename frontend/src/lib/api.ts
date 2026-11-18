@@ -394,6 +394,9 @@ export const productsAPI = {
 
   create: (data: ProductCreate) => api.post<Product>("/v1/products", data),
 
+  /** Suggested next auto SKU (PROD-0001, …); not reserved */
+  getNextSku: () => api.get<{ sku: string }>("/v1/products/next-sku"),
+
   update: (id: string, data: ProductUpdate) =>
     api.put<Product>(`/v1/products/${id}`, data),
 
