@@ -6,6 +6,9 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { CheckCircle2, XCircle, Loader2, Mail, Smartphone } from 'lucide-react'
 
+// Accounts created in the app: "ios"/"android", or "mobile" from app builds before platform tracking
+const MOBILE_SOURCES = ['mobile', 'ios', 'android']
+
 export default function VerifyEmailClient() {
   const searchParams = useSearchParams()
   const router = useRouter()
@@ -16,6 +19,7 @@ export default function VerifyEmailClient() {
   const [message, setMessage] = useState('')
   const [email, setEmail] = useState('')
   const [registrationSource, setRegistrationSource] = useState<string>('web')
+  const isMobileSignup = MOBILE_SOURCES.includes(registrationSource)
 
   useEffect(() => {
     const verifyEmail = async () => {
@@ -100,7 +104,7 @@ export default function VerifyEmailClient() {
                   {email}
                 </p>
               )}
-              {registrationSource === 'mobile' ? (
+              {isMobileSignup ? (
                 <div className="pt-4 space-y-3">
                   <div className="flex items-center justify-center gap-2 p-4 bg-accent rounded-lg">
                     <Smartphone className="h-5 w-5 text-primary" />
@@ -131,7 +135,7 @@ export default function VerifyEmailClient() {
         </CardContent>
 
         <CardFooter className="flex flex-col gap-2">
-          {status === 'success' && registrationSource !== 'mobile' && (
+          {status === 'success' && !isMobileSignup && (
             <Button onClick={handleGoToLogin} className="w-full">
               Go to Login
             </Button>

@@ -57,10 +57,12 @@ def google_env(monkeypatch):
     password_reset_rate_limiter.requests.clear()
 
 
-async def google_login(client: AsyncClient, tokens: dict, payload: dict, token: str = "tok"):
+async def google_login(
+    client: AsyncClient, tokens: dict, payload: dict, token: str = "tok", headers: dict | None = None
+):
     tokens[token] = payload
     return await client.post(
-        "/v1/auth/google/mobile", json={"id_token": token, "device_id": "test-device"}
+        "/v1/auth/google/mobile", json={"id_token": token, "device_id": "test-device"}, headers=headers or {}
     )
 
 
@@ -91,6 +93,19 @@ class TestGoogleMobileAuth:
         assert me.json()["email"] == "ada@example.com"
         assert me.json()["has_password"] is False
         assert me.json()["oauth_provider"] == "google"
+
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("platform", ["ios", "android"])
+    async def test_new_user_records_platform_header(
+        self, client: AsyncClient, test_db: AsyncIOMotorDatabase, google_env, platform
+    ):
+        response = await google_login(
+            client, google_env, make_payload(), headers={"X-Client-Platform": platform}
+        )
+        assert response.status_code == 200
+        doc = await test_db.users.find_one({"email": "ada@example.com"})
+        assert doc["registration_source"] == platform
 
     @pytest.mark.asyncio
     async def test_second_login_reuses_the_same_user(

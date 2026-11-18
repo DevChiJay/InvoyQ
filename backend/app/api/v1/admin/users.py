@@ -35,6 +35,8 @@ class AdminUserOut(BaseModel):
     is_admin: bool = False
     avatar_url: Optional[str] = None
     registration_source: Optional[str] = None
+    referral_source: Optional[str] = None
+    referral_source_other: Optional[str] = None
     created_at: str
     updated_at: str
     
@@ -161,6 +163,8 @@ def _user_to_admin_out(
         is_admin=getattr(user, 'is_admin', False),
         avatar_url=user.avatar_url,
         registration_source=user.registration_source,
+        referral_source=user.referral_source,
+        referral_source_other=user.referral_source_other,
         created_at=user.created_at.isoformat() if user.created_at else "",
         updated_at=user.updated_at.isoformat() if user.updated_at else "",
         subscription_status=user.subscription_status,
@@ -180,7 +184,7 @@ async def list_users(
     search: Optional[str] = Query(None, description="Search by email or name"),
     is_active: Optional[bool] = Query(None, description="Filter by active status"),
     is_pro: Optional[bool] = Query(None, description="Filter by pro status"),
-    registration_source: Optional[str] = Query(None, description="Filter by source: web or mobile"),
+    registration_source: Optional[str] = Query(None, description="Filter by platform: web, ios, android (or legacy mobile)"),
     limit: int = Query(50, ge=1, le=100),
     skip: int = Query(0, ge=0),
     sort_by: str = Query("created_at", description="Field to sort by"),

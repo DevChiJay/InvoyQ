@@ -47,6 +47,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Typography } from "@/constants/typography";
 import { Ionicons } from "@expo/vector-icons";
 import { useEffect } from "react";
+import { useWelcome } from "@/hooks/useWelcome";
+import { WelcomeModal } from "@/components/onboarding/WelcomeModal";
 
 export default function DashboardScreen() {
   const { user } = useAuth();
@@ -57,6 +59,7 @@ export default function DashboardScreen() {
   const scrollY = useRef(new Animated.Value(0)).current;
   const queryClient = useQueryClient();
   const [refreshing, setRefreshing] = useState(false);
+  const welcome = useWelcome();
 
   // Pull-to-refresh: every dashboard query lives under one of these prefix keys,
   // so refetching them re-pulls all the cards and recent lists (no new endpoint needed).
@@ -639,6 +642,8 @@ export default function DashboardScreen() {
         onPress={() => router.push("/(tabs)/invoices/create")}
         accessibilityLabel="Create invoice"
       />
+
+      <WelcomeModal {...welcome} />
     </View>
   );
 }

@@ -4,6 +4,22 @@ export interface Token {
   token_type: string;
 }
 
+/** Answers to "How did you hear about InvoyQ?" (mirrors backend ReferralSource) */
+export const REFERRAL_SOURCES = [
+  "instagram",
+  "friend",
+  "x",
+  "linkedin",
+  "app_store",
+  "other",
+] as const;
+export type ReferralSource = (typeof REFERRAL_SOURCES)[number];
+
+export type ReferralAnswer = {
+  referral_source?: ReferralSource;
+  referral_source_other?: string;
+};
+
 export interface UserRead {
   id: string;
   email: string;
@@ -21,6 +37,8 @@ export interface UserRead {
   website: string | null;
   oauth_provider: string | null; // 'google' if OAuth user
   has_password: boolean; // true if user has set a password
+  referral_source?: ReferralSource | null; // null = not answered yet
+  referral_source_other?: string | null;
 }
 
 export interface LoginRequest {
@@ -28,14 +46,14 @@ export interface LoginRequest {
   password: string;
 }
 
-export interface RegisterRequest {
+// The platform is sent as the X-Client-Platform header by the API client, not in the body.
+export interface RegisterRequest extends ReferralAnswer {
   email: string;
   full_name: string;
   password: string;
-  registration_source?: string;
 }
 
-export interface UserUpdate {
+export interface UserUpdate extends ReferralAnswer {
   full_name?: string;
   phone?: string;
   company_name?: string;

@@ -48,6 +48,8 @@ export const STORAGE_KEYS = {
   OFFLINE_QUEUE: "invoyq_offline_queue",
   BUSINESS_REMINDER_DISMISSED: "invoyq_business_reminder_dismissed",
   FIRST_INVOICE_CREATED: "invoyq_first_invoice_created",
+  // Suffixed with the user id, so each account on the device sees the welcome once
+  WELCOME_SEEN_PREFIX: "invoyq_welcome_seen_",
 };
 
 export const CURRENCIES = {

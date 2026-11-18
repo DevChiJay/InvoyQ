@@ -16,6 +16,7 @@ from app.schemas.user import UserCreate, UserOut, EmailVerificationResponse, Res
 from app.core.security import verify_password, get_password_hash
 from app.services.email import email_service
 from app.core.rate_limiter import auth_rate_limiter, password_reset_rate_limiter
+from app.utils.platform import PLATFORM_HEADER, resolve_platform
 
 router = APIRouter()
 
@@ -62,8 +63,13 @@ async def send_verification_email(user_id: str, email: str, full_name: str, db: 
 
 
 @router.post("/register", response_model=UserOut, status_code=status.HTTP_201_CREATED, dependencies=[Depends(auth_rate_limiter.dependency())])
-async def register(user_in: UserCreate, db: AsyncIOMotorDatabase = Depends(get_database)):
+async def register(
+    user_in: UserCreate,
+    db: AsyncIOMotorDatabase = Depends(get_database),
+    x_client_platform: Optional[str] = Header(None, alias=PLATFORM_HEADER),
+):
     user_repo = UserRepository(db)
+    registration_source = resolve_platform(x_client_platform, user_in.registration_source)
     
     existing = await user_repo.get_by_email(user_in.email)
     if existing:
@@ -75,7 +81,9 @@ async def register(user_in: UserCreate, db: AsyncIOMotorDatabase = Depends(get_d
         full_name=user_in.full_name,
         hashed_password=get_password_hash(user_in.password),
         is_verified=False,
-        registration_source=user_in.registration_source or "web"
+        registration_source=registration_source,
+        referral_source=user_in.referral_source,
+        referral_source_other=user_in.referral_source_other,
     )
     
     # Send verification email (don't fail registration if email fails)
@@ -85,7 +93,7 @@ async def register(user_in: UserCreate, db: AsyncIOMotorDatabase = Depends(get_d
             user.email, 
             user.full_name, 
             db,
-            user_in.registration_source or "web"
+            registration_source
         )
     except Exception as e:
         # Log error but don't fail registration
@@ -339,7 +347,8 @@ async def google_callback(code: str, db: AsyncIOMotorDatabase = Depends(get_data
 @router.post("/google/mobile", response_model=Token, dependencies=[Depends(auth_rate_limiter.dependency())])
 async def google_mobile_auth(
     auth_request: GoogleAuthRequest,
-    db: AsyncIOMotorDatabase = Depends(get_database)
+    db: AsyncIOMotorDatabase = Depends(get_database),
+    x_client_platform: Optional[str] = Header(None, alias=PLATFORM_HEADER),
 ):
     """
     Authenticate mobile users with Google ID token.
@@ -366,7 +375,9 @@ async def google_mobile_auth(
     user_repo = UserRepository(db)
     refresh_token_repo = RefreshTokenRepository(db)
 
-    user = await _find_or_create_google_user(user_repo, id_info, registration_source="mobile")
+    # Only used when this creates the account; old app builds send no header → legacy "mobile".
+    registration_source = resolve_platform(x_client_platform, "mobile")
+    user = await _find_or_create_google_user(user_repo, id_info, registration_source=registration_source)
 
     access_token = create_access_token({"sub": user.id})
     refresh_token_doc = await refresh_token_repo.create_refresh_token(

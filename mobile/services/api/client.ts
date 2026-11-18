@@ -1,5 +1,6 @@
 import axios, { AxiosError, AxiosInstance, InternalAxiosRequestConfig } from 'axios';
 import * as Device from 'expo-device';
+import { Platform } from 'react-native';
 import { API_CONFIG } from '@/constants/config';
 import { tokenStorage } from '@/services/storage/tokenStorage';
 import { router } from 'expo-router';
@@ -30,9 +31,12 @@ export const apiClient: AxiosInstance = axios.create({
   },
 });
 
-// Request interceptor - attach token and device ID
+// Request interceptor - attach platform, token and device ID
 apiClient.interceptors.request.use(
   async (config: InternalAxiosRequestConfig) => {
+    // Always sent (register and Google sign-in have no token yet): the backend records it
+    // as the account's registration_source.
+    config.headers?.set('X-Client-Platform', Platform.OS);
     const token = await tokenStorage.getToken();
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;

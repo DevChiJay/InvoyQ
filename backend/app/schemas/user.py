@@ -1,7 +1,20 @@
 from datetime import datetime
-from pydantic import BaseModel, EmailStr, field_validator
-from typing import Optional
+from pydantic import BaseModel, EmailStr, field_validator, model_validator
+from typing import Literal, Optional, get_args
 import re
+
+# "How did you hear about InvoyQ?" answers
+ReferralSource = Literal["instagram", "friend", "x", "linkedin", "app_store", "other"]
+REFERRAL_SOURCES = get_args(ReferralSource)
+REFERRAL_OTHER_MAX = 200
+
+
+def clean_referral_other(source, other):
+    """Free text is only kept for "other", trimmed and capped; blank becomes None."""
+    if source != "other" or not isinstance(other, str):
+        return None
+    other = other.strip()[:REFERRAL_OTHER_MAX]
+    return other or None
 
 
 def normalize_email(value):
@@ -20,7 +33,15 @@ class UserBase(BaseModel):
 
 class UserCreate(UserBase):
     password: str
-    registration_source: Optional[str] = "web"  # "web" or "mobile"
+    # Legacy: old app builds send "mobile". The platform now comes from the X-Client-Platform header.
+    registration_source: Optional[str] = None
+    referral_source: Optional[ReferralSource] = None
+    referral_source_other: Optional[str] = None
+
+    @model_validator(mode="after")
+    def _clean_referral(self):
+        self.referral_source_other = clean_referral_other(self.referral_source, self.referral_source_other)
+        return self
     
     @field_validator('password')
     @classmethod
@@ -41,6 +62,14 @@ class UserUpdate(BaseModel):
     company_address: Optional[str] = None
     tax_id: Optional[str] = None
     website: Optional[str] = None
+    referral_source: Optional[ReferralSource] = None
+    referral_source_other: Optional[str] = None
+
+    @model_validator(mode="after")
+    def _clean_referral(self):
+        if "referral_source" in self.model_fields_set:
+            self.referral_source_other = clean_referral_other(self.referral_source, self.referral_source_other)
+        return self
 
 class UserOut(UserBase):
     id: str
@@ -72,6 +101,10 @@ class UserRead(UserBase):
     # OAuth and password fields for password management
     oauth_provider: str | None = None  # 'google' if OAuth user
     has_password: bool = False  # true if user has set a password
+
+    # "How did you hear about InvoyQ?" (None = not answered yet)
+    referral_source: str | None = None
+    referral_source_other: str | None = None
 
     class Config:
         from_attributes = True

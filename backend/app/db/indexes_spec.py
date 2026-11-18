@@ -25,6 +25,10 @@ MONGO_INDEXES = {
         {
             "keys": [("subscription_status", 1), ("is_pro", 1)],
             "name": "idx_users_subscription"
+        },
+        {
+            "keys": [("created_at", -1)],
+            "name": "idx_users_created"  # admin stats date ranges
         }
     ],
     

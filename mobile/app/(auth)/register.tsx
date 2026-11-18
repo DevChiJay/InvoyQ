@@ -18,6 +18,11 @@ import { Button } from "@/components/ui/Button";
 import { Logo } from "@/components/ui/Logo";
 import { AuthField } from "@/components/auth/AuthField";
 import { GoogleSignInSection } from "@/components/auth/GoogleSignInSection";
+import {
+  ReferralSourcePicker,
+  referralPayload,
+} from "@/components/auth/ReferralSourcePicker";
+import type { ReferralSource } from "@/types/auth";
 import { Spacing, BorderRadius } from "@/constants/colors";
 import { Typography } from "@/constants/typography";
 
@@ -26,6 +31,8 @@ export default function RegisterScreen() {
   const [fullName, setFullName] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [referralSource, setReferralSource] = useState<ReferralSource | null>(null);
+  const [referralOther, setReferralOther] = useState("");
   const emailRef = useRef<TextInput>(null);
   const passwordRef = useRef<TextInput>(null);
   const confirmRef = useRef<TextInput>(null);
@@ -53,7 +60,7 @@ export default function RegisterScreen() {
         email: email.trim(),
         full_name: fullName.trim(),
         password: password.trim(),
-        registration_source: "mobile",
+        ...referralPayload(referralSource, referralOther),
       },
       {
         onSuccess: () => {
@@ -148,6 +155,13 @@ export default function RegisterScreen() {
             returnKeyType="go"
             ref={confirmRef}
             onSubmitEditing={handleRegister}
+          />
+
+          <ReferralSourcePicker
+            source={referralSource}
+            otherText={referralOther}
+            onChangeSource={setReferralSource}
+            onChangeOtherText={setReferralOther}
           />
 
           {registerError && (

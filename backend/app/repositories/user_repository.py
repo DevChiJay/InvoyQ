@@ -53,7 +53,11 @@ class UserInDB(UserOut):
     password_reset_token_expires: Optional[datetime] = None
     
     # Registration source tracking
-    registration_source: Optional[str] = "web"  # "web" or "mobile"
+    registration_source: Optional[str] = "web"  # "web", "ios", "android" (or legacy "mobile")
+
+    # "How did you hear about InvoyQ?"
+    referral_source: Optional[str] = None
+    referral_source_other: Optional[str] = None
     
     class Config:
         populate_by_name = True
@@ -154,7 +158,9 @@ class UserRepository(BaseRepository[UserInDB]):
         oauth_provider_id: Optional[str] = None,
         avatar_url: Optional[str] = None,
         is_verified: bool = False,
-        registration_source: str = "web"
+        registration_source: str = "web",
+        referral_source: Optional[str] = None,
+        referral_source_other: Optional[str] = None,
     ) -> UserInDB:
         """
         Create a new user.
@@ -167,7 +173,9 @@ class UserRepository(BaseRepository[UserInDB]):
             oauth_provider_id: Optional OAuth provider user ID
             avatar_url: Optional avatar URL
             is_verified: Email verification status
-            registration_source: Source of registration ("web" or "mobile")
+            registration_source: Platform of registration ("web", "ios", "android"; legacy "mobile")
+            referral_source: "How did you hear about InvoyQ?" answer
+            referral_source_other: Free text when referral_source is "other"
             
         Returns:
             Created user document
@@ -177,7 +185,7 @@ class UserRepository(BaseRepository[UserInDB]):
                 email="test@example.com",
                 full_name="Test User",
                 hashed_password=hash_password("secret"),
-                registration_source="mobile"
+                registration_source="ios"
             )
         """
         doc = {
@@ -192,6 +200,8 @@ class UserRepository(BaseRepository[UserInDB]):
             "oauth_provider_id": oauth_provider_id,
             "avatar_url": avatar_url,
             "registration_source": registration_source,
+            "referral_source": referral_source,
+            "referral_source_other": referral_source_other,
             "created_at": datetime.utcnow(),
             "updated_at": datetime.utcnow()
         }

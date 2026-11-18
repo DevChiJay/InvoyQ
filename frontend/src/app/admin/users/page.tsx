@@ -353,7 +353,9 @@ export default function AdminUsersPage() {
             <SelectContent>
               <SelectItem value="all">All Sources</SelectItem>
               <SelectItem value="web">Web</SelectItem>
-              <SelectItem value="mobile">Mobile</SelectItem>
+              <SelectItem value="ios">iOS</SelectItem>
+              <SelectItem value="android">Android</SelectItem>
+              <SelectItem value="mobile">Mobile (legacy)</SelectItem>
             </SelectContent>
           </Select>
         </div>

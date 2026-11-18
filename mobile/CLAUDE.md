@@ -18,7 +18,7 @@ npm run build:ios | build:android | build:all   # EAS builds (profiles in eas.js
 
 - There is **no test runner** (no Jest config or test files, despite `README.md` claiming Jest/RNTL). Verify by type-checking and running the app.
 - **`npm run lint` does not work**: `eslint` is not a dependency and there is no ESLint config.
-- `npm run type-check` currently reports ~51 errors that predate you (e.g. `HamburgerMenu.tsx` uses a non-existent `colors.surfaceVariant`; `utils/formHelpers.ts` uses Zod 3 APIs like `ZodError.errors` against Zod 4). Compare against that baseline rather than expecting a clean run, and don't add to it.
+- `npm run type-check` currently reports 7 errors that predate you. Compare against that baseline rather than expecting a clean run, and don't add to it.
 - `README.md` is a stale "implementation complete" summary; don't trust it. `../STANDARD-IMPLEMENTATION-FOR-NEW-APPS.md` (repo root) holds the UI conventions: always apply `useSafeAreaInsets()` bottom padding to ScrollViews/footers, wrap forms in `KeyboardAvoidingView` (`padding` on iOS, `height` on Android) with `keyboardShouldPersistTaps="handled"`.
 
 ## Configuration
@@ -39,13 +39,15 @@ npm run build:ios | build:android | build:all   # EAS builds (profiles in eas.js
 4. Screens in `app/` consume hooks, using `components/ui/*` (barrel `components/ui/index.ts`) and `utils/validation.ts` (Zod schemas) / `utils/formHelpers.ts` for forms.
 
 **Networking** (`services/api/client.ts`, `utils/queryClient.ts`, `utils/offline.ts`):
-- The request interceptor attaches `Authorization: Bearer` and `X-Device-Id`. The response interceptor handles 401 by calling `/auth/refresh` with the stored refresh token, queueing concurrent requests behind a single in-flight refresh (`isRefreshing` / `failedQueue`), retrying them with the new token, and on failure clearing tokens and redirecting to login. Don't add a second refresh path.
+- The request interceptor always attaches `X-Client-Platform: Platform.OS` (the backend records it as the account's `registration_source`), and `Authorization: Bearer` and `X-Device-Id` when a token exists. The response interceptor handles 401 by calling `/auth/refresh` with the stored refresh token, queueing concurrent requests behind a single in-flight refresh (`isRefreshing` / `failedQueue`), retrying them with the new token, and on failure clearing tokens and redirecting to login. Don't add a second refresh path.
 - `queryClient` defaults to `networkMode: 'offlineFirst'` (serves cache, pauses fetches while offline), 5 min `staleTime`, no retry on 401/403 (queries) or any 4xx (mutations). `setupNetworkManager()` (called from the root layout) wires NetInfo into React Query's `onlineManager`. Offline is cache-only: there is no persisted query cache and no offline write queue (`STORAGE_KEYS.OFFLINE_QUEUE` is defined but unused).
 - Backend limit responses (HTTP 403 `{code: "limit_reached", ...}`) come back as ordinary axios errors, so retry is disabled for them via the 403 rule.
 
 **Storage**: `services/storage/tokenStorage.ts` (SecureStore: access + refresh tokens) and `settingsStorage.ts` (AsyncStorage preferences). All keys are in `STORAGE_KEYS` in `constants/config.ts`.
 
 **Google sign-in**: native, via `@react-native-google-signin/google-signin` (no browser, no redirect URI; needs a dev client, not Expo Go). `hooks/useGoogleAuth.ts` configures it with `webClientId` (the backend's `GOOGLE_CLIENT_ID`) and gets an ID token, exchanges it at `POST /auth/google/mobile` (`services/api/google-auth.ts`) and stores the returned tokens. The button (`components/auth/GoogleSignInSection.tsx`) hides itself unless the Web (and on iOS, iOS) client ids are set. The config plugin in `app.config.ts` registers the iOS URL scheme, so run `npx expo prebuild --clean` after changing it. Setup steps: `../GOOGLE-OAUTH-SETUP.md`. Don't wire the browser flow (`/auth/google/login`) into the app: its callback always ends on the web frontend.
+
+**Welcome**: `hooks/useWelcome.ts` + `components/onboarding/WelcomeModal.tsx`, rendered on the home tab. It shows once per account per device (AsyncStorage `WELCOME_SEEN_PREFIX + userId`), and only while the user has 0 invoices. If `referral_source` is unset (Google signups), it also asks "How did you hear about InvoyQ?" (`components/auth/ReferralSourcePicker.tsx`, also on the register form). It is a modal, not a route, because the root layout's one-shot guard would bounce a non-`(tabs)` route.
 
 **Theming**: `useTheme()` returns `Colors.light` or `Colors.dark` from `constants/colors.ts` based on the system scheme (no manual toggle). Use it instead of hard-coded colors; the root layout's loading and connection-error screens are the exception and are hard-coded light.
 

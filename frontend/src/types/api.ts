@@ -566,7 +566,11 @@ export interface AdminUser {
   is_pro: boolean;
   is_admin: boolean;
   avatar_url: string | null;
+  /** "web" | "ios" | "android", or "mobile" for older app signups */
   registration_source: string | null;
+  /** "How did you hear about InvoyQ?" (null = not answered) */
+  referral_source: string | null;
+  referral_source_other: string | null;
   created_at: string;
   updated_at: string;
   subscription_status: string | null;
