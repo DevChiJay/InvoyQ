@@ -25,7 +25,7 @@ npm run build:ios | build:android | build:all   # EAS builds (profiles in eas.js
 
 - `app.config.ts` (not `app.json`) is the Expo config. Project-specific values come from env vars so the repo holds no real ids: `EAS_PROJECT_ID`, `EXPO_OWNER`, `EXPO_PUBLIC_GOOGLE_CLIENT_ID_IOS|ANDROID`, `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID`. Locally these live in git-ignored `.env`; on EAS they are hosted environment variables. The iOS Google URL scheme is derived at config time from the iOS client id.
 - The API URL is read as `EXPO_PUBLIC_API_BASE_URL` in `constants/config.ts`, and `API_CONFIG.BASE_URL` appends `/v1`. `.env.example` is out of date: it lists `..._DEV`/`..._PROD` variants that the code never reads. In production builds an invalid or non-HTTPS URL throws at startup.
-- `ios/` and `android/` are git-ignored generated native projects (prebuild output), as are `dist/` and `.env`, so don't edit them by hand; change `app.config.ts`/plugins instead. `runtimeVersion` policy is `appVersion`, so a native change needs a version bump to avoid OTA updates hitting an incompatible binary.
+- `ios/` and `android/` are git-ignored generated native projects (prebuild output), as are `dist/` and `.env`, so don't edit them by hand; change `app.config.ts`/plugins instead. `runtimeVersion` is currently **pinned to `"1.2.0"`** (app version 1.2.1) so one OTA reaches both the 1.2.0 and 1.2.1 store binaries, which share the same native code. Any native change (new native dependency, Expo SDK bump, config-plugin change) must change it, by going back to `{ policy: "appVersion" }` or using a new string, or OTA updates will hit an incompatible binary.
 - Imports use the `@/` alias for the `mobile/` root. `experiments.typedRoutes` is on.
 
 ## Architecture
@@ -49,7 +49,7 @@ npm run build:ios | build:android | build:all   # EAS builds (profiles in eas.js
 
 **Welcome**: `hooks/useWelcome.ts` + `components/onboarding/WelcomeModal.tsx`, rendered on the home tab. It shows once per account per device (AsyncStorage `WELCOME_SEEN_PREFIX + userId`), and only while the user has 0 invoices. If `referral_source` is unset (Google signups), it also asks "How did you hear about InvoyQ?" (`components/auth/ReferralSourcePicker.tsx`, also on the register form). It is a modal, not a route, because the root layout's one-shot guard would bounce a non-`(tabs)` route.
 
-**OTA updates**: `utils/updates.ts` `applyUpdateIfAvailable` checks, downloads and `reloadAsync`s a published update. The root layout runs it on startup (behind the loading spinner, 5 s cap) and on return to the app after ≥ 15 min in the background. If it times out it never reloads mid-use; the download applies on the next launch. It is JS only, so it ships OTA to any binary with matching `runtimeVersion` (= app version). Settings keeps its manual "Check for updates".
+**OTA updates**: `utils/updates.ts` `applyUpdateIfAvailable` checks, downloads and `reloadAsync`s a published update. The root layout runs it on startup (behind the loading spinner, 5 s cap) and on return to the app after ≥ 15 min in the background. If it times out it never reloads mid-use; the download applies on the next launch. It is JS only, so it ships OTA to any binary with a matching `runtimeVersion`. Settings keeps its manual "Check for updates".
 
 **Theming**: `useTheme()` returns `Colors.light` or `Colors.dark` from `constants/colors.ts` based on the system scheme (no manual toggle). Use it instead of hard-coded colors; the root layout's loading and connection-error screens are the exception and are hard-coded light.
 

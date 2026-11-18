@@ -25,8 +25,14 @@ const googleIosUrlScheme = iosGoogleClientId
 const config: ExpoConfig = {
   name: "Invoyq",
   slug: "invoyq",
-  version: "1.2.0",
-  runtimeVersion: { policy: "appVersion" },
+  version: "1.2.1",
+  // Pinned to the live 1.2.0 binaries' runtime so one `eas update` reaches both 1.2.0 and
+  // 1.2.1 installs (1.2.1 has no native changes). Switch back to { policy: "appVersion" }
+  // (or bump this string) as soon as a release changes native code or dependencies.
+  runtimeVersion: "1.2.0",
+  // Native only: without this, `eas update` (--platform=all) also exports web and fails,
+  // because react-native-web isn't installed.
+  platforms: ["ios", "android"],
   orientation: "portrait",
   icon: "./assets/icon.png",
   userInterfaceStyle: "automatic",
