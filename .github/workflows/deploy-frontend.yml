@@ -1,0 +1,42 @@
+name: Deploy frontend to VPS
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "frontend/**"
+      - ".github/workflows/deploy-frontend.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-frontend
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy via SSH (npm ci + build + pm2 restart)
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          port: ${{ secrets.SSH_PORT || 22 }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          command_timeout: 30m
+          script: |
+            set -e
+            # node/npm/pm2 may be installed via nvm, which non-interactive shells don't load
+            [ -s "$HOME/.nvm/nvm.sh" ] && . "$HOME/.nvm/nvm.sh"
+
+            cd "${{ secrets.REMOTE_APP_DIR }}"
+            git fetch origin main --prune
+            git reset --hard origin/main
+
+            cd frontend
+            npm ci
+            npm run build
+
+            pm2 restart "${{ secrets.PM2_FRONTEND_NAME }}" --update-env
+            pm2 save
+            echo "Frontend deployed at $(git rev-parse --short HEAD)"
