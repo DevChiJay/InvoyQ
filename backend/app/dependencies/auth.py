@@ -1,6 +1,7 @@
+import secrets
 from typing import Optional
 from fastapi import Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer, OAuth2PasswordBearer
 from jose import jwt, JWTError
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from app.core.config import settings
@@ -8,6 +9,22 @@ from app.db.mongo import get_database
 from app.repositories.user_repository import UserRepository, UserInDB
 
 reuse_oauth2 = OAuth2PasswordBearer(tokenUrl="/v1/auth/login")
+stats_bearer = HTTPBearer(auto_error=False, scheme_name="StatsToken")
+
+
+async def require_stats_token(
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(stats_bearer),
+) -> None:
+    """Gate for machine-polled stats: `Authorization: Bearer <STATS_API_TOKEN>`. Fails closed if unset."""
+    expected = settings.STATS_API_TOKEN
+    if not expected:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Stats API token not configured")
+    if credentials is None or not secrets.compare_digest(credentials.credentials.encode(), expected.encode()):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or missing stats token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
 
 
 async def get_current_user(

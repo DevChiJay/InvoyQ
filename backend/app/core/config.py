@@ -64,6 +64,10 @@ class Settings(BaseModel):
         ids += [c.strip() for c in self.GOOGLE_ALLOWED_CLIENT_IDS.split(",") if c.strip()]
         return list(dict.fromkeys(ids))
 
+    # Shared secret for GET /v1/stats/overview (sent as "Authorization: Bearer <token>").
+    # Unset = the endpoint answers 503, never public.
+    STATS_API_TOKEN: str | None = os.getenv("STATS_API_TOKEN") or None
+
     # MongoDB settings
     MONGODB_URI: str = os.getenv("MONGODB_URI", "mongodb://localhost:27017")
     MONGODB_DB_NAME: str = os.getenv("MONGODB_DB_NAME", "invoyq")

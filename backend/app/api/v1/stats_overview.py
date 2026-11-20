@@ -1,7 +1,7 @@
 """
 Public growth stats: signups by platform and referral source, activation, invoices,
-AI extractions and Pro. Read-only and unauthenticated (polled by an external agent), so it
-returns counts only: never emails, names, ids or the referral free text. Rate-limited per IP.
+AI extractions and Pro. Read-only, polled by an external agent that authenticates with a
+static token (`Authorization: Bearer $STATS_API_TOKEN`). Returns counts only: never emails, names, ids or the referral free text. Rate-limited per IP.
 """
 
 from datetime import date, datetime, time, timedelta
@@ -13,6 +13,7 @@ from pydantic import BaseModel, Field
 
 from app.core.rate_limiter import stats_rate_limiter
 from app.db.mongo import get_database
+from app.dependencies.auth import require_stats_token
 from app.schemas.user import REFERRAL_SOURCES
 from app.utils.platform import CLIENT_PLATFORMS, LEGACY_MOBILE
 
@@ -135,14 +136,15 @@ async def _activation(db: AsyncIOMotorDatabase, window: dict, now: datetime) -> 
     "/overview",
     response_model=StatsOverviewOut,
     response_model_by_alias=True,
-    dependencies=[Depends(stats_rate_limiter.dependency())],
+    # rate limit first, so token guesses are capped too
+    dependencies=[Depends(stats_rate_limiter.dependency()), Depends(require_stats_token)],
 )
 async def get_stats(
     from_: Optional[date] = Query(None, alias="from", description="First day (UTC), default 30 days before 'to'"),
     to: Optional[date] = Query(None, description="Last day (UTC, inclusive), default today"),
     db: AsyncIOMotorDatabase = Depends(get_database),
 ):
-    """Growth stats for a date range. Public (no auth), read-only, counts only."""
+    """Growth stats for a date range. Requires the stats token; read-only, counts only."""
     now = datetime.utcnow()
     from_, to, start, end = _bounds(from_, to, now)
     window = {"$gte": start, "$lt": end}
